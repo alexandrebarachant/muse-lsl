@@ -1,11 +1,17 @@
 from muse import Muse
 from time import sleep
 from pylsl import StreamInfo, StreamOutlet
+from optparse import OptionParser
 
-YOUR_DEVICE_ADDRESS = "00:55:DA:B0:06:D6"
+parser = OptionParser()
+parser.add_option("-a", "--address",
+                  dest="address", type='string', default="00:55:DA:B0:06:D6",
+                  help="device mac adress.")
+
+(options, args) = parser.parse_args()
 
 info = info = StreamInfo('Muse', 'EEG', 5, 256, 'float32',
-                         'Muse%s' % YOUR_DEVICE_ADDRESS)
+                         'Muse%s' % options.address)
 
 info.desc().append_child_value("manufacturer", "Muse")
 channels = info.desc().append_child("channels")
@@ -22,7 +28,7 @@ def process(data, timestamps):
     for ii in range(12):
         outlet.push_sample(data[:, ii], timestamps[ii])
 
-muse = Muse(address=YOUR_DEVICE_ADDRESS, callback=process)
+muse = Muse(address=options.address, callback=process)
 
 muse.connect()
 print('Connected')

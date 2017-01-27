@@ -1,17 +1,25 @@
 from muse import Muse
-from time import time, sleep
+from time import sleep
 import numpy as np
 import pandas as pd
-YOUR_DEVICE_ADDRESS = "00:55:DA:B0:06:D6"
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-a", "--address",
+                  dest="address", type='string', default="00:55:DA:B0:06:D6",
+                  help="device mac adress.")
+
+(options, args) = parser.parse_args()
 
 full_time = []
 full_data = []
+
 
 def process(data, timestamps):
     full_time.append(timestamps)
     full_data.append(data)
 
-muse = Muse(YOUR_DEVICE_ADDRESS, process)
+muse = Muse(options.address, process)
 
 muse.connect()
 muse.start()
