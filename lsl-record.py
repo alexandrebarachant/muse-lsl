@@ -1,4 +1,4 @@
-"""Test."""
+#!/usr/bin/env python
 import numpy as np
 import pandas as pd
 from time import time, strftime, gmtime
@@ -71,7 +71,6 @@ while (time() - t_init) < options.duration:
 res = np.concatenate(res, axis=0)
 timestamps = np.array(timestamps)
 res = np.c_[timestamps, res]
-print res.shape
 data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
 
 data['Marker'] = 0

@@ -1,4 +1,4 @@
-"""Test."""
+#!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
@@ -34,7 +34,6 @@ buf = 12
 (options, args) = parser.parse_args()
 
 figsize = np.int16(options.figure.split('x'))
-print figsize
 
 print("looking for an EEG stream...")
 streams = resolve_byprop('type', 'EEG', timeout=2)
@@ -78,7 +77,7 @@ while k < to_read:
         k += 1
 dur = time() - t_init
 data = np.concatenate(res, axis=0)
-print data.shape
+
 if options.avgref:
     data -= np.atleast_2d(data.mean(1)).T
 ffts = np.abs(np.fft.fft(data[:, 0:], n=128, axis=0))
@@ -98,7 +97,7 @@ time = np.arange(len(data))/freq
 
 lines = []
 impedances = np.log(ffts[ix_noise].mean(0)) / np.log(ffts[ix_signal].mean(0))
-print impedances
+
 for i, ix in enumerate(picks):
     line, = axes.plot(time[::subsample],
                       data[::subsample, ix] - (i * options.scale * 2),
