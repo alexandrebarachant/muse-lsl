@@ -20,3 +20,17 @@ to stream data with lsl
 Once the stream is up and running, you can visualize stream with
 
 `python lsl-viewer.py`
+
+## Run the P300 experiment
+
+First, you have to run the muse lsl script as above.
+
+In another terminal, run
+
+`python generate_Visual_P300.py -d 120 & python lsl-record.py -d 120`
+
+this will launch the P300 paradigm and record data for 2 minutes.
+
+The task is to count the amount of time you see an stimulus with horizontal stripes.
+
+For the data analysis, check [this notebook](notebooks/P300 with Muse.ipynb)
