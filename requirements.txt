@@ -4,3 +4,5 @@ psychopy
 scikit-learn
 pandas
 numpy
+mne
+seaborn
