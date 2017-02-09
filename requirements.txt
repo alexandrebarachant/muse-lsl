@@ -1,3 +1,4 @@
+bitstring
 pylsl
 pygatt
 psychopy

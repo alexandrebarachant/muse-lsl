@@ -95,7 +95,7 @@ class Muse():
         wait until we get 35 and call the data
         """
         timestamp = time()
-        index = (handle - 32) / 3
+        index = int((handle - 32) / 3)
         tm, d = self._unpack_eeg_channel(data)
         self.data[index] = d
         self.timestamps[index] = timestamp
