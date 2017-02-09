@@ -6,7 +6,7 @@ from optparse import OptionParser
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
 
-default_fname = ("data_%s.csv" % strftime("%Y-%m-%d-%H:%M:%S", gmtime()))
+default_fname = ("data_%s.csv" % strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
 parser = OptionParser()
 parser.add_option("-d", "--duration",
                   dest="duration", type='int', default=60,
