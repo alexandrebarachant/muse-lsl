@@ -2,6 +2,8 @@ import bitstring
 import pygatt
 import numpy as np
 from time import time
+from sys import platform
+
 
 class Muse():
     """Muse 2016 headband"""
@@ -15,9 +17,14 @@ class Muse():
         self.accelero = accelero
         self.giro = giro
 
-    def connect(self, interface='hci0'):
+    def connect(self, interface=None):
         """Connect to the device"""
-        self.adapter = pygatt.GATTToolBackend(interface)
+        if platform == "linux" or platform == "linux2":
+            interface = interface or 'hci0'
+            self.adapter = pygatt.GATTToolBackend(interface)
+        else:
+            self.adapter = pygatt.BGAPIBackend(serial_port=interface)
+
         self.adapter.start()
         self.device = self.adapter.connect(self.address)
 
