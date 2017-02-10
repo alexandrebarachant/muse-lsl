@@ -1,7 +1,7 @@
 import bitstring
 import pygatt
 import numpy as np
-from time import time
+from time import time, sleep
 from sys import platform
 
 
@@ -9,21 +9,34 @@ class Muse():
     """Muse 2016 headband"""
 
     def __init__(self, address, callback, eeg=True, accelero=False,
-                 giro=False):
+                 giro=False, backend='auto', interface=None):
         """Initialize"""
         self.address = address
         self.callback = callback
         self.eeg = eeg
         self.accelero = accelero
         self.giro = giro
+        self.interface = interface
 
-    def connect(self, interface=None):
-        """Connect to the device"""
-        if platform == "linux" or platform == "linux2":
-            interface = interface or 'hci0'
-            self.adapter = pygatt.GATTToolBackend(interface)
+        if backend in ['auto', 'gatt', 'bgapi']:
+            if backend == 'auto':
+                if platform == "linux" or platform == "linux2":
+                    self.backend = 'gatt'
+                else:
+                    self.backend = 'bgapi'
+            else:
+                self.backend = backend
         else:
-            self.adapter = pygatt.BGAPIBackend(serial_port=interface)
+            raise(ValueError('Backend must be auto, gatt or bgapi'))
+
+    def connect(self, interface=None, backend='auto'):
+        """Connect to the device"""
+
+        if self.backend == 'gatt':
+            self.interface = self.interface or 'hci0'
+            self.adapter = pygatt.GATTToolBackend(self.interface)
+        else:
+            self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
 
         self.adapter.start()
         self.device = self.adapter.connect(self.address)

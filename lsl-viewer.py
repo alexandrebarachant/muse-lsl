@@ -2,9 +2,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
-from time import time
+from time import time, sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
+from threading import Thread
+
 sns.set(style="whitegrid")
 
 from optparse import OptionParser
@@ -23,9 +25,6 @@ parser.add_option("-r", "--refresh",
 parser.add_option("-f", "--figure",
                   dest="figure", type='string', default="15x6",
                   help="window size.")
-parser.add_option("-a", "--avgref",
-                  dest="avgref", action="store_false", default=False,
-                  help="Activate average reference.")
 
 filt = True
 subsample = 2
@@ -33,119 +32,158 @@ buf = 12
 
 (options, args) = parser.parse_args()
 
+window = options.window
+scale = options.scale
 figsize = np.int16(options.figure.split('x'))
 
 print("looking for an EEG stream...")
 streams = resolve_byprop('type', 'EEG', timeout=2)
 
 if len(streams) == 0:
-    raise(RuntimeError, "Cant find EEG stream")
+    raise(RuntimeError("Cant find EEG stream"))
 print("Start aquiring data")
 
-inlet = StreamInlet(streams[0], max_chunklen=buf)
 
-info = inlet.info()
-description = info.desc()
+class LSLViewer():
 
-freq = info.nominal_srate()
-Nchan = info.channel_count()
+    def __init__(self, stream, fig, axes,  window, scale, dejitter=True):
+        """Init"""
+        self.stream = stream
+        self.window = window
+        self.scale = scale
+        self.dejitter = dejitter
+        self.inlet = StreamInlet(stream, max_chunklen=buf)
+        self.filt = True
+        info = self.inlet.info()
+        description = info.desc()
 
-ch = description.child('channels').first_child()
-ch_names = [ch.child_value('label')]
-for i in range(Nchan):
-    ch = ch.next_sibling()
-    ch_names.append(ch.child_value('label'))
+        self.sfreq = info.nominal_srate()
+        self.n_samples = int(self.sfreq * self.window)
+        self.n_chan = info.channel_count()
 
-picks = range(Nchan)
-# create a new inlet to read from the stream
+        ch = description.child('channels').first_child()
+        ch_names = [ch.child_value('label')]
 
-frs = np.fft.fftfreq(n=128, d=1.0/freq)
+        for i in range(self.n_chan):
+            ch = ch.next_sibling()
+            ch_names.append(ch.child_value('label'))
 
-ix_noise = (frs > 55) & (frs < 65)
-ix_signal = (frs > 25) & (frs < 35)
+        self.ch_names = ch_names
 
-to_read = int(options.window * (freq / buf))
-Nchan_plot = len(ch_names)
+        fig.canvas.mpl_connect('key_press_event', self.OnKeypress)
+        fig.canvas.mpl_connect('button_press_event', self.onclick)
 
-res = []
-t_init = time()
-k = 0
-while k < to_read:
-    data, timestamps = inlet.pull_chunk(timeout=1.0, max_samples=buf)
-    if timestamps:
-        res.append(data)
-        k += 1
-dur = time() - t_init
-data = np.concatenate(res, axis=0)
+        self.fig = fig
+        self.axes = axes
 
-if options.avgref:
-    data -= np.atleast_2d(data.mean(1)).T
-ffts = np.abs(np.fft.fft(data[:, 0:], n=128, axis=0))
-dur = data[-1, 0] - data[0, 0]
+        sns.despine(left=True)
 
-bf, af = butter(4, np.array([1, 40])/(freq/2.), 'bandpass')
+        self.data = np.zeros((self.n_samples, self.n_chan))
+        self.times = np.arange(-self.window, 0, 1./self.sfreq)
+        impedances = np.std(self.data, axis=0)
+        lines = []
 
-# You probably won't need this if you're embedding things in a tkinter plot...
-plt.ion()
+        for ii in range(self.n_chan):
+            line, = axes.plot(self.times[::subsample],
+                              self.data[::subsample, ii] - ii, lw=1)
+            lines.append(line)
+        self.lines = lines
 
-fig, axes = plt.subplots(1, 1, figsize=figsize,
-                         sharex=True)
-sns.despine(left=True)
+        axes.set_ylim(-self.n_chan + 0.5, 0.5)
+        ticks = np.arange(0, -self.n_chan, -1)
+
+        axes.set_xlabel('Time (s)')
+        axes.xaxis.grid(False)
+        axes.set_yticks(ticks)
+
+        ticks_labels = ['%s - %.1f' % (ch_names[ii], impedances[ii])
+                        for ii in range(self.n_chan)]
+        axes.set_yticklabels(ticks_labels)
+
+        self.display_every = int(0.2 / (12/self.sfreq))
+
+        self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
+                                  'bandpass')
+
+    def update_plot(self):
+        k = 0
+        while self.started:
+            samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
+                                                        max_samples=12)
+            if timestamps:
+                self.data = np.vstack([self.data, samples])
+                if self.dejitter:
+                    timestamps = np.float64(np.arange(len(timestamps)))
+                    timestamps /= self.sfreq
+                    timestamps += self.times[-1] + 1./self.sfreq
+                self.times = np.concatenate([self.times, timestamps])
+
+                self.n_samples = int(self.sfreq * self.window)
+                self.data = self.data[-self.n_samples:]
+                self.times = self.times[-self.n_samples:]
+                k += 1
+                if k == self.display_every:
+                    if self.filt:
+                        data_f = filtfilt(self.bf, self.af, self.data, axis=0)
+                    else:
+                        data_f = self.data
+                        data_f -= data_f.mean(axis=0)
+
+                    for ii in range(self.n_chan):
+                        self.lines[ii].set_xdata(self.times[::subsample] -
+                                                 self.times[-1])
+                        self.lines[ii].set_ydata(data_f[::subsample, ii] /
+                                                 self.scale - ii)
+
+                    impedances = np.std(data_f, axis=0)
+                    ticks_labels = ['%s - %.2f' % (self.ch_names[ii], impedances[ii])
+                                    for ii in range(self.n_chan)]
+                    self.axes.set_yticklabels(ticks_labels)
+                    self.axes.set_xlim(-self.window, 0)
+                    self.fig.canvas.draw()
+                    k = 0
+            else:
+                sleep(0.2)
+
+    def onclick(self, event):
+        print((event.button, event.x, event.y, event.xdata, event.ydata))
+
+    def OnKeypress(self, event):
+        if event.key == '/':
+            self.scale *= 1.2
+        elif event.key == '*':
+            self.scale /= 1.2
+        elif event.key == '+':
+            self.window += 1
+        elif event.key == '-':
+            if self.window > 1:
+                self.window -= 1
+        elif event.key == 'd':
+            self.filt = not(self.filt)
+
+    def start(self):
+        self.started = True
+        self.thread = Thread(target=self.update_plot)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def stop(self):
+        self.started = False
 
 
-time = np.arange(len(data))/freq
+fig, axes = plt.subplots(1, 1, figsize=figsize, sharex=True)
+lslv = LSLViewer(streams[0], fig, axes, window, scale)
 
-lines = []
-impedances = np.log(ffts[ix_noise].mean(0)) / np.log(ffts[ix_signal].mean(0))
+help_str = """
+            toggle filter : d
+            toogle full screen : f
+            zoom out : /
+            zoom in : *
+            increase time scale : -
+            decrease time scale : +
+           """
+print(help_str)
+lslv.start()
 
-for i, ix in enumerate(picks):
-    line, = axes.plot(time[::subsample],
-                      data[::subsample, ix] - (i * options.scale * 2),
-                      lw=1)
-    lines.append(line)
-vmin = 0
-vmax = 0
-axes.set_ylim(-len(picks) * options.scale * 2,
-              2 * options.scale)
-ticks = np.arange(0, -Nchan * options.scale * 2, -options.scale * 2)
-
-axes.set_yticks(ticks)
-axes.get_xaxis().set_visible(False)
-
-ticks_labels = ['%s - %.1f' % (ch_names[i], impedances[i])
-                for i in picks]
-axes.set_yticklabels(ticks_labels)
 plt.show()
-
-display_every = int(options.refresh / (buf/freq))
-k = 0
-while 1:
-    try:
-        data, timestamps = inlet.pull_chunk(timeout=1.0, max_samples=buf)
-        if timestamps:
-            res.append(data)
-            res.pop(0)
-            k += 1
-            if k == display_every:
-                data = np.concatenate(res, axis=0)
-                if options.avgref:
-                    data -= np.atleast_2d(data.mean(1)).T
-                #ffts = np.abs(np.fft.fft(data[:, 1:], n=128, axis=0))
-
-                if filt:
-                    data = filtfilt(bf, af, data, axis=0)
-                for i, ix in enumerate(picks):
-                    lines[i].set_ydata(data[::subsample, ix] -
-                                       (i * options.scale * 2))
-                    # axes.relim()
-                    # axes.autoscale_view()
-                #impedances = (np.log(ffts[ix_noise].mean(0)) /
-                #              np.log(ffts[ix_signal].mean(0)))
-                impedances = np.std(data[:, 0:], 0)
-                ticks_labels = ['%s - %.2f' % (ch_names[i], impedances[i])
-                                for i in picks]
-                axes.set_yticklabels(ticks_labels)
-                fig.canvas.draw()
-                k = 0
-    except KeyboardInterrupt:
-        break
+lslv.stop()

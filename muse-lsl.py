@@ -7,6 +7,9 @@ parser = OptionParser()
 parser.add_option("-a", "--address",
                   dest="address", type='string', default="00:55:DA:B0:06:D6",
                   help="device mac adress.")
+parser.add_option("-b", "--backend",
+                  dest="backend", type='string', default="auto",
+                  help="pygatt backend to use. can be auto, gatt or bgapi")
 
 (options, args) = parser.parse_args()
 
@@ -28,7 +31,9 @@ def process(data, timestamps):
     for ii in range(12):
         outlet.push_sample(data[:, ii], timestamps[ii])
 
-muse = Muse(address=options.address, callback=process)
+muse = Muse(address=options.address, callback=process,
+            backend=options.backend,
+            interface='/dev/ttyACM0')
 
 muse.connect()
 print('Connected')
