@@ -16,7 +16,7 @@ parser.add_option("-f", "--filename",
                   help="Name of the recording file.")
 
 # dejitter timestamps
-dejitter = True
+dejitter = False
 
 (options, args) = parser.parse_args()
 

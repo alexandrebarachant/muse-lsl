@@ -1,6 +1,6 @@
 from muse import Muse
 from time import sleep
-from pylsl import StreamInfo, StreamOutlet
+from pylsl import StreamInfo, StreamOutlet, local_clock
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -32,7 +32,7 @@ def process(data, timestamps):
         outlet.push_sample(data[:, ii], timestamps[ii])
 
 muse = Muse(address=options.address, callback=process,
-            backend=options.backend,
+            backend=options.backend, time_func=local_clock,
             interface='/dev/ttyACM0')
 
 muse.connect()

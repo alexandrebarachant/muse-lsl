@@ -9,7 +9,7 @@ class Muse():
     """Muse 2016 headband"""
 
     def __init__(self, address, callback, eeg=True, accelero=False,
-                 giro=False, backend='auto', interface=None):
+                 giro=False, backend='auto', interface=None, time_func=time):
         """Initialize"""
         self.address = address
         self.callback = callback
@@ -17,6 +17,7 @@ class Muse():
         self.accelero = accelero
         self.giro = giro
         self.interface = interface
+        self.time_func = time_func
 
         if backend in ['auto', 'gatt', 'bgapi']:
             if backend == 'auto':
@@ -107,7 +108,7 @@ class Muse():
         sample are received in this oder : 44, 41, 38, 32, 35
         wait until we get 35 and call the data
         """
-        timestamp = time()
+        timestamp = self.time_func()
         index = int((handle - 32) / 3)
         tm, d = self._unpack_eeg_channel(data)
         self.data[index] = d
