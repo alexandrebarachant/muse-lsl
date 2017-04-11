@@ -10,6 +10,9 @@ parser.add_option("-a", "--address",
 parser.add_option("-b", "--backend",
                   dest="backend", type='string', default="auto",
                   help="pygatt backend to use. can be auto, gatt or bgapi")
+parser.add_option("-i", "--interface",
+                  dest="interface", type='string', default=None,
+                  help="The interface to use, 'hci0' for gatt or a com port for bgapi")
 
 (options, args) = parser.parse_args()
 
@@ -33,7 +36,7 @@ def process(data, timestamps):
 
 muse = Muse(address=options.address, callback=process,
             backend=options.backend, time_func=local_clock,
-            interface='/dev/ttyACM0')
+            interface=options.interface)
 
 muse.connect()
 print('Connected')
