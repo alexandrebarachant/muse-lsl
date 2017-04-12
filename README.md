@@ -7,9 +7,17 @@ This is a collection of python script to use the muse 2016 BLE headset with LSL.
 ## Requirements
 
 The code rely on [pygatt](https://github.com/peplin/pygatt) for the BLE communication.
-pygatt works on linux and should work on window and OSX provided that you have a BLED112 dongle (however, there is currently a bug in pygatt with this two system. A fix should be provided soon).
+pygatt works on linux and should work on window and OSX provided that you have a BLED112 dongle.
+You have to use the development version of pygatt, that can be installed with pip using :
 
-You will also need to find the mac address of you Muse headset
+`pip install git+https://github.com/peplin/pygatt`
+
+You will also need to find the mac address of you Muse headset. **This code is
+only compatible with the 2016 version of the muse headset**
+
+Finally, the code is for streaming and recording data is compatible with python
+2.7 and python 3.x. However, the code for generating P300 stimulus rely on
+psychopy and is only working with python 2.7. 
 
 ## Usage
 
