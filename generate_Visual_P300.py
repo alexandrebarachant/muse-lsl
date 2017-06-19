@@ -4,6 +4,8 @@ from psychopy import visual, core, event
 from time import time, strftime, gmtime
 from optparse import OptionParser
 from pylsl import StreamInfo, StreamOutlet, local_clock
+from glob import glob
+from random import choice
 
 parser = OptionParser()
 parser.add_option("-d", "--duration",
@@ -35,29 +37,28 @@ trials = DataFrame(dict(position=position,
                         timestamp=np.zeros(n_trials)))
 
 # graphics
+def loadImage(filename):
+    return visual.ImageStim(win=mywin, image=filename)
+
 mywin = visual.Window([1920, 1080], monitor="testMonitor", units="deg",
                       fullscr=True)
-grating = visual.GratingStim(win=mywin, mask='circle', size=20, sf=2)
-fixation = visual.GratingStim(win=mywin, size=0.2, pos=[0, 0], sf=0,
-                              rgb=[1, 0, 0])
+targets = map(loadImage, glob('stim/target-*.jpg'))
+nontargets = map(loadImage, glob('stim/nontarget-*.jpg'))
 
 for ii, trial in trials.iterrows():
     # inter trial interval
     core.wait(iti + np.random.rand() * jitter)
 
     # onset
-    grating.phase += np.random.rand()
     pos = trials['position'].iloc[ii]
-    grating.ori = 90 * pos
-    grating.draw()
-    fixation.draw()
+    image = choice(targets if pos == 1 else nontargets)
+    image.draw()
     timestamp = local_clock()
     outlet.push_sample([markernames[pos]], timestamp)
     mywin.flip()
 
     # offset
     core.wait(soa)
-    fixation.draw()
     mywin.flip()
     if len(event.getKeys()) > 0 or (time() - start) > record_duration:
         break

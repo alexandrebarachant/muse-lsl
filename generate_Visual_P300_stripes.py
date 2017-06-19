@@ -22,21 +22,22 @@ markernames = [1, 2]
 
 start = time()
 
-n_trials = 2000
-iti = .2
-jitter = .1
+n_trials = 2010
+iti = .3
 soa = 0.2
+jitter = 0.2
 record_duration = np.float32(options.duration)
 
 # Setup log
-position = np.random.randint(0, 2, n_trials)
+position = np.random.binomial(1, 0.15, n_trials)
+
 trials = DataFrame(dict(position=position,
                         timestamp=np.zeros(n_trials)))
 
 # graphics
 mywin = visual.Window([1920, 1080], monitor="testMonitor", units="deg",
                       fullscr=True)
-grating = visual.GratingStim(win=mywin, mask='circle', size=20, sf=4)
+grating = visual.GratingStim(win=mywin, mask='circle', size=20, sf=2)
 fixation = visual.GratingStim(win=mywin, size=0.2, pos=[0, 0], sf=0,
                               rgb=[1, 0, 0])
 
@@ -47,10 +48,11 @@ for ii, trial in trials.iterrows():
     # onset
     grating.phase += np.random.rand()
     pos = trials['position'].iloc[ii]
-    grating.pos = [25*(pos-0.5), 0]
+    grating.ori = 90 * pos
     grating.draw()
     fixation.draw()
-    outlet.push_sample([markernames[pos]], local_clock())
+    timestamp = local_clock()
+    outlet.push_sample([markernames[pos]], timestamp)
     mywin.flip()
 
     # offset
