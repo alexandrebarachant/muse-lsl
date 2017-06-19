@@ -32,7 +32,7 @@ inlet = StreamInlet(streams[0], max_chunklen=12)
 eeg_time_correction = inlet.time_correction()
 
 print("looking for a Markers stream...")
-marker_streams = resolve_byprop('type', 'Markers', timeout=2)
+marker_streams = resolve_byprop('name', 'Markers', timeout=2)
 
 if marker_streams:
     inlet_marker = StreamInlet(marker_streams[0])
@@ -57,6 +57,8 @@ res = []
 timestamps = []
 markers = []
 t_init = time()
+time_correction = inlet.time_correction()
+print(time_correction)
 print('Start recording at time t=%.3f' % t_init)
 while (time() - t_init) < options.duration:
     try:
@@ -72,8 +74,11 @@ while (time() - t_init) < options.duration:
     except KeyboardInterrupt:
         break
 
+time_correction = inlet.time_correction()
+print(time_correction)
+
 res = np.concatenate(res, axis=0)
-timestamps = np.array(timestamps)
+timestamps = np.array(timestamps) + time_correction
 
 if dejitter:
     y = timestamps
@@ -85,13 +90,16 @@ if dejitter:
 res = np.c_[timestamps, res]
 data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
 
-data['Marker'] = 0
+n_markers = len(markers[0][0])
+for ii in range(n_markers):
+    data['Marker%d' % ii] = 0
 # process markers:
 for marker in markers:
     # find index of margers
     ix = np.argmin(np.abs(marker[1] - timestamps))
     val = timestamps[ix]
-    data.loc[ix, 'Marker'] = marker[0][0]
+    for ii in range(n_markers):
+        data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
 
 
 data.to_csv(options.filename, float_format='%.3f', index=False)
