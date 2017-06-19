@@ -39,6 +39,6 @@ In another terminal, run
 
 this will launch the P300 paradigm and record data for 2 minutes.
 
-The task is to count the amount of time you see an stimulus with horizontal stripes.
+The task is to count the number of cat images that you see. You can add new jpg images inside the [stim](stim/) directory: use the `target-` prefix for cat images, and `nontarget-` for dog images.
 
 For the data analysis, check [this notebook](notebooks/P300 with Muse.ipynb)
