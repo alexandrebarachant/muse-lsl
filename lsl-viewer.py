@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import butter, filtfilt
-from time import time, sleep
+from scipy.signal import butter, lfilter, lfilter_zi
+from time import sleep
 from pylsl import StreamInlet, resolve_byprop
+from optparse import OptionParser
 import seaborn as sns
 from threading import Thread
 
 sns.set(style="whitegrid")
-
-from optparse import OptionParser
 
 parser = OptionParser()
 
@@ -104,6 +103,8 @@ class LSLViewer():
 
         self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
                                   'bandpass')
+        zi = lfilter_zi(self.bf, self.af)
+        self.filt_state = np.tile(zi, (self.n_chan, 1)).transpose()
 
     def update_plot(self):
         k = 0
@@ -124,7 +125,9 @@ class LSLViewer():
                 k += 1
                 if k == self.display_every:
                     if self.filt:
-                        data_f = filtfilt(self.bf, self.af, self.data, axis=0)
+                        data_f, self.filt_state = lfilter(self.bf, self.af,
+                                                          self.data, axis=0,
+                                                          zi=self.filt_state)
                     else:
                         data_f = self.data
                         data_f -= data_f.mean(axis=0)
