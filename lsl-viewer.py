@@ -105,6 +105,7 @@ class LSLViewer():
                                   'bandpass')
         zi = lfilter_zi(self.bf, self.af)
         self.filt_state = np.tile(zi, (self.n_chan, 1)).transpose()
+        self.filt_buffer = []
 
     def update_plot(self):
         k = 0
@@ -112,22 +113,22 @@ class LSLViewer():
             samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
                                                         max_samples=12)
             if timestamps:
-                self.data = np.vstack([self.data, samples])
                 if self.dejitter:
                     timestamps = np.float64(np.arange(len(timestamps)))
                     timestamps /= self.sfreq
                     timestamps += self.times[-1] + 1./self.sfreq
                 self.times = np.concatenate([self.times, timestamps])
-
                 self.n_samples = int(self.sfreq * self.window)
-                self.data = self.data[-self.n_samples:]
                 self.times = self.times[-self.n_samples:]
+                self.data = np.vstack([self.data, samples])
+                self.data = self.data[-self.n_samples:]
                 k += 1
                 if k == self.display_every:
                     if self.filt:
-                        data_f, self.filt_state = lfilter(self.bf, self.af,
-                                                          self.data, axis=0,
-                                                          zi=self.filt_state)
+                        filt_samples, self.filt_state = lfilter(self.bf, self.af,
+                                                                    samples, axis=0,
+                                                                    zi=self.filt_state)
+                        data_f = np.vstack([self.data[:-len(samples)], filt_samples])
                     else:
                         data_f = self.data
                         data_f -= data_f.mean(axis=0)
