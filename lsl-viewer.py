@@ -123,7 +123,9 @@ class LSLViewer():
                 self.times = self.times[-self.n_samples:]
                 self.data = np.vstack([self.data, samples])
                 self.data = self.data[-self.n_samples:]
-                self.filt_buffer = np.vstack([self.filt_buffer, samples])
+
+                if self.filt:
+                    self.filt_buffer = np.vstack([self.filt_buffer, samples])
                 k += 1
                 if k == self.display_every:
                     if self.filt:
@@ -131,8 +133,8 @@ class LSLViewer():
                                                                     self.filt_buffer, axis=0,
                                                                     zi=self.filt_state)
                         data_f = np.vstack([self.data[:-len(self.filt_buffer)], filt_samples])
-                        self.data = data_f
                         self.filt_buffer = np.zeros((0, self.n_chan))
+                        self.data = data_f
 
                     else:
                         data_f = self.data
@@ -168,7 +170,6 @@ class LSLViewer():
             if self.window > 1:
                 self.window -= 1
         elif event.key == 'd':
-            self.filter_buffer = np.zeros((0, self.n_chan))
             self.filt = not(self.filt)
 
     def start(self):
