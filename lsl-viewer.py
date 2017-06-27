@@ -106,7 +106,7 @@ class LSLViewer():
                                   'bandpass')
         zi = lfilter_zi(self.bf, self.af)
         self.filt_state = np.tile(zi, (self.n_chan, 1)).transpose()
-        self.filt_buffer = np.zeros((0, self.n_chan))
+        self.data_f = np.zeros((self.n_samples, self.n_chan))
 
     def update_plot(self):
         k = 0
@@ -123,31 +123,28 @@ class LSLViewer():
                 self.times = self.times[-self.n_samples:]
                 self.data = np.vstack([self.data, samples])
                 self.data = self.data[-self.n_samples:]
-
-                if self.filt:
-                    self.filt_buffer = np.vstack([self.filt_buffer, samples])
+                filt_samples, self.filt_state = lfilter(
+                    self.bf, self.af,
+                    samples,
+                    axis=0, zi=self.filt_state)
+                self.data_f = np.vstack([self.data_f, filt_samples])
+                self.data_f = self.data_f[-self.n_samples:]
                 k += 1
                 if k == self.display_every:
+
                     if self.filt:
-                        filt_samples, self.filt_state = lfilter(self.bf, self.af,
-                                                                    self.filt_buffer, axis=0,
-                                                                    zi=self.filt_state)
-                        data_f = np.vstack([self.data[:-len(self.filt_buffer)], filt_samples])
-                        self.filt_buffer = np.zeros((0, self.n_chan))
-                        self.data = data_f
-
-                    else:
-                        data_f = self.data
-                        data_f -= data_f.mean(axis=0)
-
+                        plot_data = self.data_f
+                    elif not self.filt:
+                        plot_data = self.data - self.data.mean(axis=0)
                     for ii in range(self.n_chan):
                         self.lines[ii].set_xdata(self.times[::subsample] -
                                                  self.times[-1])
-                        self.lines[ii].set_ydata(data_f[::subsample, ii] /
+                        self.lines[ii].set_ydata(plot_data[::subsample, ii] /
                                                  self.scale - ii)
+                        impedances = np.std(plot_data, axis=0)
 
-                    impedances = np.std(data_f, axis=0)
-                    ticks_labels = ['%s - %.2f' % (self.ch_names[ii], impedances[ii])
+                    ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
+                                                   impedances[ii])
                                     for ii in range(self.n_chan)]
                     self.axes.set_yticklabels(ticks_labels)
                     self.axes.set_xlim(-self.window, 0)
