@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import butter, filtfilt
-from time import time, sleep
+from scipy.signal import butter, lfilter, lfilter_zi
+from time import sleep
 from pylsl import StreamInlet, resolve_byprop
+from optparse import OptionParser
 import seaborn as sns
 from threading import Thread
 
 sns.set(style="whitegrid")
-
-from optparse import OptionParser
 
 parser = OptionParser()
 
@@ -54,6 +53,7 @@ class LSLViewer():
         self.dejitter = dejitter
         self.inlet = StreamInlet(stream, max_chunklen=buf)
         self.filt = True
+
         info = self.inlet.info()
         description = info.desc()
 
@@ -104,6 +104,9 @@ class LSLViewer():
 
         self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
                                   'bandpass')
+        zi = lfilter_zi(self.bf, self.af)
+        self.filt_state = np.tile(zi, (self.n_chan, 1)).transpose()
+        self.data_f = np.zeros((self.n_samples, self.n_chan))
 
     def update_plot(self):
         k = 0
@@ -111,32 +114,37 @@ class LSLViewer():
             samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
                                                         max_samples=12)
             if timestamps:
-                self.data = np.vstack([self.data, samples])
                 if self.dejitter:
                     timestamps = np.float64(np.arange(len(timestamps)))
                     timestamps /= self.sfreq
                     timestamps += self.times[-1] + 1./self.sfreq
                 self.times = np.concatenate([self.times, timestamps])
-
                 self.n_samples = int(self.sfreq * self.window)
-                self.data = self.data[-self.n_samples:]
                 self.times = self.times[-self.n_samples:]
+                self.data = np.vstack([self.data, samples])
+                self.data = self.data[-self.n_samples:]
+                filt_samples, self.filt_state = lfilter(
+                    self.bf, self.af,
+                    samples,
+                    axis=0, zi=self.filt_state)
+                self.data_f = np.vstack([self.data_f, filt_samples])
+                self.data_f = self.data_f[-self.n_samples:]
                 k += 1
                 if k == self.display_every:
-                    if self.filt:
-                        data_f = filtfilt(self.bf, self.af, self.data, axis=0)
-                    else:
-                        data_f = self.data
-                        data_f -= data_f.mean(axis=0)
 
+                    if self.filt:
+                        plot_data = self.data_f
+                    elif not self.filt:
+                        plot_data = self.data - self.data.mean(axis=0)
                     for ii in range(self.n_chan):
                         self.lines[ii].set_xdata(self.times[::subsample] -
                                                  self.times[-1])
-                        self.lines[ii].set_ydata(data_f[::subsample, ii] /
+                        self.lines[ii].set_ydata(plot_data[::subsample, ii] /
                                                  self.scale - ii)
+                        impedances = np.std(plot_data, axis=0)
 
-                    impedances = np.std(data_f, axis=0)
-                    ticks_labels = ['%s - %.2f' % (self.ch_names[ii], impedances[ii])
+                    ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
+                                                   impedances[ii])
                                     for ii in range(self.n_chan)]
                     self.axes.set_yticklabels(ticks_labels)
                     self.axes.set_xlim(-self.window, 0)
