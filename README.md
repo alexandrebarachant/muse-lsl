@@ -41,4 +41,4 @@ this will launch the P300 paradigm and record data for 2 minutes.
 
 The task is to count the number of cat images that you see. You can add new jpg images inside the [stim](stim/) directory: use the `target-` prefix for cat images, and `nontarget-` for dog images.
 
-For the data analysis, check [this notebook](notebooks/P300 with Muse.ipynb)
+For the data analysis, check [this notebook](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/P300%20with%20Muse.ipynb)
