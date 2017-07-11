@@ -8,7 +8,7 @@ from sys import platform
 class Muse():
     """Muse 2016 headband"""
 
-    def __init__(self, address, callback, eeg=True, accelero=False,
+    def __init__(self, address=None, callback=None, eeg=True, accelero=False,
                  giro=False, backend='auto', interface=None, time_func=time):
         """Initialize"""
         self.address = address
@@ -40,6 +40,13 @@ class Muse():
             self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
 
         self.adapter.start()
+
+        if self.address is None:
+            address = self.find_muse_address()
+            if address is None:
+                raise(ValueError("Can't find Muse Device"))
+            else:
+                self.address = address
         self.device = self.adapter.connect(self.address)
 
         # subscribes to EEG stream
@@ -53,6 +60,15 @@ class Muse():
         # subscribes to Giroscope
         if self.giro:
             raise(NotImplementedError('Giroscope not implemented'))
+
+    def find_muse_address(self):
+        """look for ble device with a muse in the name"""
+        devices = []
+        list_devices = self.adapter.scan(timeout=10.5)
+        for device in list_devices:
+            if 'Muse' in device['name']:
+                return device['address']
+        return None
 
     def start(self):
         """Start streaming."""

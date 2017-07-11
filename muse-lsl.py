@@ -5,7 +5,7 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-a", "--address",
-                  dest="address", type='string', default="00:55:DA:B0:06:D6",
+                  dest="address", type='string', default=None,
                   help="device mac adress.")
 parser.add_option("-b", "--backend",
                   dest="backend", type='string', default="auto",
