@@ -17,11 +17,17 @@ only compatible with the 2016 version of the muse headset**
 
 Finally, the code is for streaming and recording data is compatible with python
 2.7 and python 3.x. However, the code for generating P300 stimulus rely on
-psychopy and is only working with python 2.7. 
+psychopy and is only working with python 2.7.
 
 ## Usage
 
 to stream data with lsl
+
+`python muse-lsl.py`
+
+the script will auto detect and connect the first muse device. In case you want
+a specific device or if the detection fail, find the address of the muse and
+pass it to the script (this option is also faster at startup):
 
 `python muse-lsl.py --address YOUR_DEVICE_ADDRESS`
 
