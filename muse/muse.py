@@ -137,6 +137,6 @@ class Muse():
         if handle == 35:
             # affect as timestamps the first timestamps - 12 sample
             timestamps = np.arange(-12, 0) / 256.
-            timestamps += np.min(self.timestamps)
+            timestamps += np.min(self.timestamps[self.timestamps != 0])
             self.callback(self.data, timestamps)
             self._init_sample()
