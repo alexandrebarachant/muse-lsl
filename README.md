@@ -26,8 +26,11 @@ to stream data with lsl
 `python muse-lsl.py`
 
 the script will auto detect and connect the first muse device. In case you want
-a specific device or if the detection fail, find the address of the muse and
-pass it to the script (this option is also faster at startup):
+a specific device or if the detection fail, find the name of the device and pass it to the script :
+
+`python muse-lsl.py --name YOUR_DEVICE_NAME`
+
+You can also directly pass the mac address (this option is also faster at startup):
 
 `python muse-lsl.py --address YOUR_DEVICE_ADDRESS`
 
