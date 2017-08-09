@@ -9,9 +9,11 @@ class Muse():
     """Muse 2016 headband"""
 
     def __init__(self, address=None, callback=None, eeg=True, accelero=False,
-                 giro=False, backend='auto', interface=None, time_func=time):
+                 giro=False, backend='auto', interface=None, time_func=time,
+                 name=None):
         """Initialize"""
         self.address = address
+        self.name = name
         self.callback = callback
         self.eeg = eeg
         self.accelero = accelero
@@ -42,7 +44,7 @@ class Muse():
         self.adapter.start()
 
         if self.address is None:
-            address = self.find_muse_address()
+            address = self.find_muse_address(self.name)
             if address is None:
                 raise(ValueError("Can't find Muse Device"))
             else:
@@ -61,13 +63,15 @@ class Muse():
         if self.giro:
             raise(NotImplementedError('Giroscope not implemented'))
 
-    def find_muse_address(self):
+    def find_muse_address(self, name=None):
         """look for ble device with a muse in the name"""
-        devices = []
         list_devices = self.adapter.scan(timeout=10.5)
         for device in list_devices:
-            if 'Muse' in device['name']:
-                return device['address']
+            if name:
+                if device['name'] == name:
+                    return device['address']
+            elif 'Muse' in device['name']:
+                    return device['address']
         return None
 
     def start(self):
