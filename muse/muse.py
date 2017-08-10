@@ -69,14 +69,21 @@ class Muse():
         for device in list_devices:
             if name:
                 if device['name'] == name:
+                    print('Found device %s : %s' % (device['name'],
+                                                    device['address']))
                     return device['address']
+
             elif 'Muse' in device['name']:
+                    print('Found device %s : %s' % (device['name'],
+                                                    device['address']))
                     return device['address']
+
         return None
 
     def start(self):
         """Start streaming."""
         self._init_sample()
+        self.last_tm = 0
         self.device.char_write_handle(0x000e, [0x02, 0x64, 0x0a], False)
 
     def stop(self):
@@ -126,15 +133,22 @@ class Muse():
         """Calback for receiving a sample.
 
         sample are received in this oder : 44, 41, 38, 32, 35
-        wait until we get 35 and call the data
+        wait until we get 35 and call the data callback
         """
         timestamp = self.time_func()
         index = int((handle - 32) / 3)
         tm, d = self._unpack_eeg_channel(data)
+
+        if self.last_tm == 0:
+            self.last_tm = tm - 1
+
         self.data[index] = d
         self.timestamps[index] = timestamp
         # last data received
         if handle == 35:
+            if tm != self.last_tm + 1:
+                print("missing sample %d : %d" % (tm, self.last_tm))
+            self.last_tm = tm
             # affect as timestamps the first timestamps - 12 sample
             timestamps = np.arange(-12, 0) / 256.
             timestamps += np.min(self.timestamps[self.timestamps != 0])

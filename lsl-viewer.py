@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import butter, lfilter, lfilter_zi
+from scipy.signal import butter, lfilter, lfilter_zi, firwin
 from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 from optparse import OptionParser
@@ -102,8 +102,13 @@ class LSLViewer():
 
         self.display_every = int(0.2 / (12/self.sfreq))
 
-        self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
-                                  'bandpass')
+        # self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
+        #                          'bandpass')
+
+        self.bf = firwin(32, np.array([1, 40])/(self.sfreq/2.), width=0.05,
+                         pass_zero=False)
+        self.af = [1.0]
+
         zi = lfilter_zi(self.bf, self.af)
         self.filt_state = np.tile(zi, (self.n_chan, 1)).transpose()
         self.data_f = np.zeros((self.n_samples, self.n_chan))
