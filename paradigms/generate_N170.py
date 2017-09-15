@@ -1,11 +1,20 @@
+"""
+Generate N170
+=============
+
+Face vs. house paradigm stimulus presentation for evoking N170.
+
+"""
+
+from time import time
+from optparse import OptionParser
+from glob import glob
+from random import choice
+
 import numpy as np
 from pandas import DataFrame
 from psychopy import visual, core, event
-from time import time, strftime, gmtime
-from optparse import OptionParser
 from pylsl import StreamInfo, StreamOutlet, local_clock
-from glob import glob
-from random import choice
 
 parser = OptionParser()
 parser.add_option("-d", "--duration",
@@ -14,47 +23,48 @@ parser.add_option("-d", "--duration",
 
 (options, args) = parser.parse_args()
 
-# create
+# Create markers stream outlet
 info = StreamInfo('Markers', 'Markers', 1, 0, 'int32', 'myuidw43536')
-
-# next make an outlet
 outlet = StreamOutlet(info)
 
 markernames = [1, 2]
-
 start = time()
 
+# Set up trial parameters
 n_trials = 2010
-iti = .3
+iti = 0.3
 soa = 0.2
 jitter = 0.2
 record_duration = np.float32(options.duration)
 
-# Setup log
-position = np.random.binomial(1, 0.15, n_trials)
-
-trials = DataFrame(dict(position=position,
+# Setup trial list
+image_type = np.random.binomial(1, 0.5, n_trials)
+trials = DataFrame(dict(image_type=image_type,
                         timestamp=np.zeros(n_trials)))
 
-# graphics
-def loadImage(filename):
+
+# Setup graphics
+def load_image(filename):
     return visual.ImageStim(win=mywin, image=filename)
 
-mywin = visual.Window([1920, 1080], monitor="testMonitor", units="deg",
+
+mywin = visual.Window([1920, 1080], monitor='testMonitor', units='deg',
                       fullscr=True)
-targets = map(loadImage, glob('stim/target-*.jpg'))
-nontargets = map(loadImage, glob('stim/nontarget-*.jpg'))
+faces = map(load_image, glob('stim/face_house/faces/*_3.jpg'))
+houses = map(load_image, glob('stim/face_house/houses/*.3.jpg'))
 
 for ii, trial in trials.iterrows():
-    # inter trial interval
+    # Intertrial interval
     core.wait(iti + np.random.rand() * jitter)
 
-    # onset
-    pos = trials['position'].iloc[ii]
-    image = choice(targets if pos == 1 else nontargets)
+    # Select and display image
+    label = trials['image_type'].iloc[ii]
+    image = choice(faces if label == 1 else houses)
     image.draw()
+
+    # Send marker
     timestamp = local_clock()
-    outlet.push_sample([markernames[pos]], timestamp)
+    outlet.push_sample([markernames[label]], timestamp)
     mywin.flip()
 
     # offset
@@ -63,5 +73,6 @@ for ii, trial in trials.iterrows():
     if len(event.getKeys()) > 0 or (time() - start) > record_duration:
         break
     event.clearEvents()
+
 # Cleanup
 mywin.close()

@@ -1,0 +1,10 @@
+Stimuli used in:
+
+Haxby, J., Gobbini, M., Furey, M., Ishai, A., Schouten, J., and Pietrini, P. (2001). 
+Distributed and overlapping representations of faces and objects in ventral temporal 
+cortex. Science 293, 2425–2430.
+
+See: http://www.pymvpa.org/datadb/haxby2001.html
+
+The original authors of Haxby et al. (2001) hold the copyright of this dataset and 
+made it available under the terms of the Creative Commons Attribution-Share Alike 3.0 license.
