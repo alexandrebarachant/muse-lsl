@@ -17,14 +17,12 @@ sns.set_context('talk')
 sns.set_style('white')
 
 
-def load_muse_csv_as_raw(data_dir, subject_nb=1, session_nb=1, sfreq=256.,
-                         ch_ind=[0, 1, 2, 3], stim_ind=5,
-                         replace_ch_names=None):
-    """Load a CSV file into a Raw object.
+def load_muse_csv_as_raw(filename, sfreq=256., ch_ind=[0, 1, 2, 3],
+                         stim_ind=5, replace_ch_names=None):
+    """Load CSV files into a Raw object.
 
     Args:
-        data_dir (str): directory inside /data that contains the
-            CSV files to load, e.g., 'auditory/P300'
+        filename (str or list): path or paths to CSV files to load
 
     Keyword Args:
         subject_nb (int or str): subject number. If 'all', load all
@@ -32,24 +30,18 @@ def load_muse_csv_as_raw(data_dir, subject_nb=1, session_nb=1, sfreq=256.,
         session_nb (int or str): session number. If 'all', load all
             sessions.
         sfreq (float): EEG sampling frequency
+        ch_ind (list): indices of the EEG channels to keep
+        stim_ind (int): index of the stim channel
+        replace_ch_names (dict or None): dictionary containing a mapping to
+            rename channels. Useful when an external electrode was used.
 
     Returns:
         (mne.io.array.array.RawArray): loaded EEG
     """
-    if subject_nb == 'all':
-        subject_nb = '*'
-    if session_nb == 'all':
-        session_nb = '*'
-
     n_channel = len(ch_ind)
 
-    data_path = os.path.join(
-            '../data', data_dir,
-            'subject{}/session{}/data_*.csv'.format(subject_nb, session_nb))
-    fnames = glob(data_path)
-
     raw = []
-    for fname in fnames:
+    for fname in filename:
         # read the file
         data = pd.read_csv(fname, index_col=0)
 
@@ -79,6 +71,43 @@ def load_muse_csv_as_raw(data_dir, subject_nb=1, session_nb=1, sfreq=256.,
     raws = concatenate_raws(raw)
 
     return raws
+
+
+def load_data(data_dir, subject_nb=1, session_nb=1, sfreq=256.,
+              ch_ind=[0, 1, 2, 3], stim_ind=5, replace_ch_names=None):
+    """Load CSV files from the /data directory into a Raw object.
+
+    Args:
+        data_dir (str): directory inside /data that contains the
+            CSV files to load, e.g., 'auditory/P300'
+
+    Keyword Args:
+        subject_nb (int or str): subject number. If 'all', load all
+            subjects.
+        session_nb (int or str): session number. If 'all', load all
+            sessions.
+        sfreq (float): EEG sampling frequency
+        ch_ind (list): indices of the EEG channels to keep
+        stim_ind (int): index of the stim channel
+        replace_ch_names (dict or None): dictionary containing a mapping to
+            rename channels. Useful when an external electrode was used.
+
+    Returns:
+        (mne.io.array.array.RawArray): loaded EEG
+    """
+    if subject_nb == 'all':
+        subject_nb = '*'
+    if session_nb == 'all':
+        session_nb = '*'
+
+    data_path = os.path.join(
+            '../data', data_dir,
+            'subject{}/session{}/data_*.csv'.format(subject_nb, session_nb))
+    fnames = glob(data_path)
+
+    return load_muse_csv_as_raw(fnames, sfreq=sfreq, ch_ind=ch_ind,
+                                stim_ind=stim_ind,
+                                replace_ch_names=replace_ch_names)
 
 
 def plot_conditions(epochs, conditions=OrderedDict(), ci=97.5, n_boot=1000,
