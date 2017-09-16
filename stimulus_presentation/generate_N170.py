@@ -50,8 +50,8 @@ def load_image(filename):
 
 mywin = visual.Window([1920, 1080], monitor='testMonitor', units='deg',
                       fullscr=True)
-faces = map(load_image, glob('stim/face_house/faces/*_3.jpg'))
-houses = map(load_image, glob('stim/face_house/houses/*.3.jpg'))
+faces = map(load_image, glob('stimulus_presentation/stim/face_house/faces/*_3.jpg'))
+houses = map(load_image, glob('stimulus_presentation/stim/face_house/houses/*.3.jpg'))
 
 for ii, trial in trials.iterrows():
     # Intertrial interval

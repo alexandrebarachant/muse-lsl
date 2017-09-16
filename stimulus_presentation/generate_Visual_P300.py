@@ -36,14 +36,16 @@ position = np.random.binomial(1, 0.15, n_trials)
 trials = DataFrame(dict(position=position,
                         timestamp=np.zeros(n_trials)))
 
+
 # graphics
 def loadImage(filename):
     return visual.ImageStim(win=mywin, image=filename)
 
+
 mywin = visual.Window([1920, 1080], monitor="testMonitor", units="deg",
                       fullscr=True)
-targets = map(loadImage, glob('../stim/target-*.jpg'))
-nontargets = map(loadImage, glob('../stim/nontarget-*.jpg'))
+targets = map(loadImage, glob('stimulus_presentation/stim/cats_dogs/target-*.jpg'))
+nontargets = map(loadImage, glob('stimulus_presentation/stim/cats_dogs/nontarget-*.jpg'))
 
 for ii, trial in trials.iterrows():
     # inter trial interval
