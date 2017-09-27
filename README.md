@@ -48,6 +48,7 @@ Visual P300 | `stimulus_presentation/generate_Visual_P300.py` `stimulus_presenta
 Auditory P300 | `stimulus_presentation/generate_Auditory_P300.py` | `data/auditory/P300` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/Auditory%20P300%20with%20Muse.ipynb)
 N170 | `stimulus_presentation/generate_N170.py` | `data/visual/N170` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/N170%20with%20Muse.ipynb)
 SSVEP | `stimulus_presentation/generate_SSVEP.py` | `data/visual/SSVEP` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/SSVEP%20with%20Muse.ipynb)
+SSAEP | `stimulus_presentation/generate_SSAEP.py` | `data/auditory/SSAEP` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/SSAEP%20with%20Muse.ipynb)
 
 The stimulus presentation scripts can be found under `stimulus_presentation/`.
 Some pre-recorded data is provided under `data/`, alongside analysis notebooks under `notebooks`.
@@ -68,15 +69,19 @@ The task is to mentally note whether a "face" or a "house" was just presented.
 
 The task is to passively fixate the center of the screen.
 
+### SSAEP
+
+The task is to passively fixate the center of the screen while listening to the sounds you hear.
+
 ## Running an experiment
 
 First, you have to run the muse-lsl script as described above.
 
 In another terminal, run
 
-`python stimulus_presentation/<PARADIGM>.py -d 120 & python lsl-record.py -d 120`
+`python stimulus_presentation/PARADIGM.py -d 120 & python lsl-record.py -d 120`
 
-where `<PARADIGM>` is one of the stimulus presentation scripts described above (e.g., `generate_Visual_P300.py`).
+where `PARADIGM.py` is one of the stimulus presentation scripts described above (e.g., `generate_Visual_P300.py`).
 
 This will launch the selected paradigm and record data for 2 minutes.
 
