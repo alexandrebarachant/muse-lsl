@@ -52,8 +52,7 @@ mywin = visual.Window([1920, 1080], monitor='testMonitor', units='deg',
                       fullscr=True)
 fixation = visual.GratingStim(win=mywin, size=0.2, pos=[0, 0], sf=0,
                               rgb=[1, 0, 0])
-
-fixation.draw()
+fixation.setAutoDraw(True)
 mywin.flip()
 
 for ii, trial in trials.iterrows():
