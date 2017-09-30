@@ -53,7 +53,7 @@ n = n_samples
 
 # Various signal amplitudes.
 amplitudes = np.zeros((m, n)).astype(np.float32)
-
+gamma = np.ones((m, n)).astype(np.float32)
 # Generate the signals as a (m, n) array.
 y = amplitudes
 
@@ -222,6 +222,9 @@ class Canvas(app.Canvas):
             for ii in range(n_chan):
                 self.quality[ii].text = '%.2f' % (sd[ii])
                 self.quality[ii].color = self.quality_colors[co[ii]]
+                self.quality[ii].font_size = 12 + co[ii]
+
+                self.names[ii].font_size = 12 + co[ii]
                 self.names[ii].color = self.quality_colors[co[ii]]
 
             self.program['a_position'].set_data(plot_data.T.ravel().astype(np.float32))
