@@ -82,6 +82,7 @@ class Muse():
 
     def start(self):
         """Start streaming."""
+        self._init_timestamp_correction()
         self._init_sample()
         self.last_tm = 0
         self.device.char_write_handle(0x000e, [0x02, 0x64, 0x0a], False)
@@ -118,16 +119,30 @@ class Muse():
         pattern = "uint:16,uint:12,uint:12,uint:12,uint:12,uint:12,uint:12, \
                    uint:12,uint:12,uint:12,uint:12,uint:12,uint:12"
         res = aa.unpack(pattern)
-        timestamp = res[0]
+        packetIndex = res[0]
         data = res[1:]
         # 12 bits on a 2 mVpp range
         data = 0.48828125 * (np.array(data) - 2048)
-        return timestamp, data
+        return packetIndex, data
 
     def _init_sample(self):
         """initialize array to store the samples"""
         self.timestamps = np.zeros(5)
         self.data = np.zeros((5, 12))
+
+    def _init_timestamp_correction(self):
+        """Init IRLS params"""
+        # initial params for the timestamp correction
+        # the time it started + the inverse of sampling rate
+        self.sample_index = 0
+        self.reg_params = np.array([self.time_func(), 1./256])
+
+    def _update_timestamp_correction(self, x, y):
+        """Update regression for dejittering
+
+        use stochastic gradient descent
+        """
+        pass
 
     def _handle_eeg(self, handle, data):
         """Calback for receiving a sample.
@@ -149,8 +164,14 @@ class Muse():
             if tm != self.last_tm + 1:
                 print("missing sample %d : %d" % (tm, self.last_tm))
             self.last_tm = tm
-            # affect as timestamps the first timestamps - 12 sample
-            timestamps = np.arange(-12, 0) / 256.
-            timestamps += np.min(self.timestamps[self.timestamps != 0])
+
+            # calcultate index of time samples
+            idxs = np.arange(0, 12) + self.sample_index
+            self.sample_index += 12
+
+            # affect as timestamps
+            timestamps = self.reg_params[1] * idxs + self.reg_params[0]
+
+            # push data
             self.callback(self.data, timestamps)
             self._init_sample()

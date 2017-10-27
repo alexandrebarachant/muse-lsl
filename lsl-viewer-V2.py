@@ -232,7 +232,7 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         # Set canvas viewport and reconfigure visual transforms to match.
-        vp = (0, 0, *self.physical_size)
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
 
         for ii, t in enumerate(self.names):
