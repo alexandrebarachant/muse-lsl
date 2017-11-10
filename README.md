@@ -49,6 +49,7 @@ Auditory P300 | `stimulus_presentation/generate_Auditory_P300.py` | `data/audito
 N170 | `stimulus_presentation/generate_N170.py` | `data/visual/N170` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/N170%20with%20Muse.ipynb)
 SSVEP | `stimulus_presentation/generate_SSVEP.py` | `data/visual/SSVEP` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/SSVEP%20with%20Muse.ipynb)
 SSAEP | `stimulus_presentation/generate_SSAEP.py` | `data/auditory/SSAEP` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/SSAEP%20with%20Muse.ipynb)
+Spatial frequency | `stimulus_presentation/generate_spatial_gratings.py` | `data/visual/spatial_freq` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/Spatial%20Frequency%20Task%20with%20Muse.ipynb)
 
 The stimulus presentation scripts can be found under `stimulus_presentation/`.
 Some pre-recorded data is provided under `data/`, alongside analysis notebooks under `notebooks`.
@@ -72,6 +73,10 @@ The task is to passively fixate the center of the screen.
 ### SSAEP
 
 The task is to passively fixate the center of the screen while listening to the sounds you hear.
+
+### Spatial frequency gratings
+
+The task is to passively fixate the center of the screen.
 
 ## Running an experiment
 

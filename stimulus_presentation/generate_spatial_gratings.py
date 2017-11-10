@@ -5,11 +5,11 @@ Generate spatial gratings
 Stimulus presentation based on gratings of different spatial frequencies
 for generating ERPs, high frequency oscillations, and alpha reset.
 
-Inspired by ??? (iEEG paper)
+Inspired from:
 
-TODO:
-    - Add reference
-    - Add CSV file inside final directory
+> Hermes, Dora, K. J. Miller, B. A. Wandell, and Jonathan Winawer. "Stimulus
+dependence of gamma oscillations in human visual cortex." Cerebral Cortex 25,
+no. 9 (2015): 2951-2959.
 
 """
 
@@ -29,7 +29,7 @@ parser.add_option("-d", "--duration",
 
 (options, args) = parser.parse_args()
 
-# create
+# Create markers stream outlet
 info = StreamInfo('Markers', 'Markers', 3, 0, 'float32', 'myuidw43536')
 channels = info.desc().append_child("channels")
 
@@ -37,17 +37,25 @@ for c in ['Frequency', 'Contrast', 'Orientation']:
     channels.append_child("channel") \
         .append_child_value("label", c)
 
-# next make an outlet
 outlet = StreamOutlet(info)
-
-trials = pd.read_csv('/home/hubert/Downloads/electrode-benchmark 2/stimulus.csv',
-                     index_col=0)
 
 start = time()
 
-n_trials = len(trials)
+# Set up trial parameters
+n_trials = 2010
+iti = 1.0
+soa = 1.5
+jitter = 0.5
 record_duration = np.float32(options.duration)
 
+# Setup trial list
+frequency = np.random.binomial(1, 0.5, n_trials)
+contrast = np.ones(n_trials, dtype=int)
+orientation = np.random.randint(0, 4, n_trials) * 45
+
+trials = pd.DataFrame(dict(frequency=frequency,
+                           contrast=contrast,
+                           orientation=orientation))
 
 # graphics
 mywin = visual.Window([1920, 1080], monitor="testMonitor", units="deg",
@@ -63,9 +71,9 @@ core.wait(2)
 for ii, trial in trials.iterrows():
 
     # onset
-    fre = trials['Frequency'].iloc[ii]
-    contrast = trials['Contrast'].iloc[ii]
-    ori = trials['Orientation'].iloc[ii]
+    fre = trials['frequency'].iloc[ii]
+    contrast = trials['contrast'].iloc[ii]
+    ori = trials['orientation'].iloc[ii]
     grating.sf = 4 * fre + 0.1
     grating.ori = ori
     grating.contrast = contrast
@@ -77,7 +85,7 @@ for ii, trial in trials.iterrows():
     mywin.flip()
 
     # offset
-    core.wait(trials['Duration'].iloc[ii])
+    core.wait(soa)
     fixation.draw()
     outlet.push_sample([fre + 3, contrast, ori], local_clock())
     mywin.flip()
@@ -86,9 +94,8 @@ for ii, trial in trials.iterrows():
         break
     event.clearEvents()
 
-    # inter-trial interval
-    w = trials['Duration'].iloc[ii] + trials['Interval'].iloc[ii]
-    core.wait(w)
+    # Intertrial interval
+    core.wait(iti + np.random.rand() * jitter)
 
 # Cleanup
 mywin.close()
