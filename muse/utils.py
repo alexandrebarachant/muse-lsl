@@ -186,3 +186,58 @@ def plot_conditions(epochs, conditions=OrderedDict(), ci=97.5, n_boot=1000,
         fig.suptitle(title, fontsize=20)
 
     return fig, axes
+
+
+def plot_highlight_regions(x, y, hue, hue_thresh=0, xlabel='', ylabel='',
+                           legend_str=()):
+    """Plot a line with highlighted regions based on additional value.
+
+    Plot a line and highlight ranges of x for which an additional value
+    is lower than a threshold. For example, the additional value might be
+    pvalues, and the threshold might be 0.05.
+
+    Args:
+        x (array_like): x coordinates
+        y (array_like): y values of same shape as `x`
+
+    Keyword Args:
+        hue (array_like): values to be plotted as hue based on `hue_thresh`.
+            Must be of the same shape as `x` and `y`.
+        hue_thresh (float): threshold to be applied to `hue`. Regions for which
+            `hue` is lower than `hue_thresh` will be highlighted.
+        xlabel (str): x-axis label
+        ylabel (str): y-axis label
+        legend_str (tuple): legend for the line and the highlighted regions
+
+    Returns:
+        (matplotlib.figure.Figure): figure object
+        (list of matplotlib.axes._subplots.AxesSubplot): list of axes
+    """
+    fig, axes = plt.subplots(1, 1, figsize=(10, 5), sharey=True)
+
+    axes.plot(x, y, lw=2, c='k')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    kk = 0
+    a = []
+    while kk < len(hue):
+        if hue[kk] < hue_thresh:
+            b = kk
+            kk += 1
+            while kk < len(hue):
+                if hue[kk] > hue_thresh:
+                    break
+                else:
+                    kk += 1
+            a.append([b, kk - 1])
+        else:
+            kk += 1
+
+    st = (x[1] - x[0]) / 2.0
+    for p in a:
+        axes.axvspan(x[p[0]]-st, x[p[1]]+st, facecolor='g', alpha=0.5)
+    plt.legend(legend_str)
+    sns.despine()
+
+    return fig, axes
