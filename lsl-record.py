@@ -25,9 +25,9 @@ print("looking for an EEG stream...")
 streams = resolve_byprop('type', 'EEG', timeout=2)
 
 if len(streams) == 0:
-    raise(RuntimeError, "Cant find EEG stream")
+    raise(RuntimeError, "Can't find EEG stream")
 
-print("Start aquiring data")
+print("Start acquiring data")
 inlet = StreamInlet(streams[0], max_chunklen=12)
 eeg_time_correction = inlet.time_correction()
 
@@ -39,7 +39,7 @@ if marker_streams:
     marker_time_correction = inlet_marker.time_correction()
 else:
     inlet_marker = False
-    print("Cant find Markers stream")
+    print("Can't find Markers stream")
 
 info = inlet.info()
 description = info.desc()
@@ -95,7 +95,7 @@ for ii in range(n_markers):
     data['Marker%d' % ii] = 0
 # process markers:
 for marker in markers:
-    # find index of margers
+    # find index of markers
     ix = np.argmin(np.abs(marker[1] - timestamps))
     val = timestamps[ix]
     for ii in range(n_markers):

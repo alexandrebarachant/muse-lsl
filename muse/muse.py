@@ -110,7 +110,7 @@ class Muse():
                               callback=self._handle_eeg)
 
     def _unpack_eeg_channel(self, packet):
-        """Decode data packet of one eeg channel.
+        """Decode data packet of one EEG channel.
 
         Each packet is encoded with a 16bit timestamp followed by 12 time
         samples with a 12 bit resolution.
@@ -145,7 +145,7 @@ class Muse():
         pass
 
     def _handle_eeg(self, handle, data):
-        """Calback for receiving a sample.
+        """Callback for receiving a sample.
 
         sample are received in this oder : 44, 41, 38, 32, 35
         wait until we get 35 and call the data callback
@@ -165,7 +165,7 @@ class Muse():
                 print("missing sample %d : %d" % (tm, self.last_tm))
             self.last_tm = tm
 
-            # calcultate index of time samples
+            # calculate index of time samples
             idxs = np.arange(0, 12) + self.sample_index
             self.sample_index += 12
 

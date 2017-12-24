@@ -21,8 +21,8 @@ print("looking for an EEG stream...")
 streams = resolve_byprop('type', 'EEG', timeout=2)
 
 if len(streams) == 0:
-    raise(RuntimeError("Cant find EEG stream"))
-print("Start aquiring data")
+    raise(RuntimeError("Can't find EEG stream"))
+print("Start acquiring data")
 
 inlet = StreamInlet(streams[0], max_chunklen=12)
 
