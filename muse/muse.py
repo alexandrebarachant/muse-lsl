@@ -49,7 +49,15 @@ class Muse():
                 raise(ValueError("Can't find Muse Device"))
             else:
                 self.address = address
-        self.device = self.adapter.connect(self.address)
+
+        # sometimes will exit prematurely if unable to
+        # connect to device avoid this by retrying
+        while True:
+            try:
+                self.device = self.adapter.connect(self.address)
+                break
+            except:
+                pass
 
         # subscribes to EEG stream
         if self.eeg:
