@@ -17,4 +17,4 @@ else:
 list_devices = adapter.scan(timeout=10.5)
 
 for device in list_devices:
-    print('Find device %s, MAC Adress %s' % (device['name'], device['address']))
+    print('Find device %s, MAC Address %s' % (device['name'], device['address']))

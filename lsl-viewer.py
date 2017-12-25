@@ -14,7 +14,7 @@ parser = OptionParser()
 
 parser.add_option("-w", "--window",
                   dest="window", type='float', default=5.,
-                  help="window lenght to display in seconds.")
+                  help="window length to display in seconds.")
 parser.add_option("-s", "--scale",
                   dest="scale", type='float', default=100,
                   help="scale in uV")
@@ -39,8 +39,8 @@ print("looking for an EEG stream...")
 streams = resolve_byprop('type', 'EEG', timeout=2)
 
 if len(streams) == 0:
-    raise(RuntimeError("Cant find EEG stream"))
-print("Start aquiring data")
+    raise(RuntimeError("Can't find EEG stream"))
+print("Start acquiring data")
 
 
 class LSLViewer():

@@ -6,7 +6,7 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-a", "--address",
                   dest="address", type='string', default=None,
-                  help="device mac adress.")
+                  help="device mac address.")
 parser.add_option("-n", "--name",
                   dest="name", type='string', default=None,
                   help="name of the device.")
