@@ -147,7 +147,7 @@ class Muse():
     def _handle_eeg(self, handle, data):
         """Callback for receiving a sample.
 
-        sample are received in this oder : 44, 41, 38, 32, 35
+        samples are received in this order : 44, 41, 38, 32, 35
         wait until we get 35 and call the data callback
         """
         timestamp = self.time_func()
