@@ -151,8 +151,6 @@ class Muse():
 
         self._init_control()
 
-        self._init_control()
-
     def stop(self):
         """Stop streaming."""
         self._write_cmd([0x02, 0x68, 0x0a])
@@ -161,7 +159,6 @@ class Muse():
         """disconnect."""
         self.device.disconnect()
         self.adapter.stop()
-
 
     def _subscribe_eeg(self):
         """subscribe to eeg stream."""
