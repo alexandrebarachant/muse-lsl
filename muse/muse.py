@@ -101,18 +101,24 @@ class Muse():
 
         return None
 
+    def _write_cmd(self, cmd):
+        """Wrapper to write a command to the Muse device.
+
+        cmd -- list of bytes"""
+        self.device.char_write_handle(0x000e, cmd, False)
+
     def start(self):
         """Start streaming."""
         self._init_timestamp_correction()
         self._init_sample()
         self.last_tm = 0
-        self.device.char_write_handle(0x000e, [0x02, 0x64, 0x0a], False)
+        self._write_cmd([0x02, 0x64, 0x0a])
 
         self._init_control()
 
     def stop(self):
         """Stop streaming."""
-        self.device.char_write_handle(0x000e, [0x02, 0x68, 0x0a], False)
+        self._write_cmd([0x02, 0x68, 0x0a])
 
     def disconnect(self):
         """disconnect."""
