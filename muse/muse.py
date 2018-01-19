@@ -8,14 +8,31 @@ from sys import platform
 class Muse():
     """Muse 2016 headband"""
 
-    def __init__(self, address=None, callback=None, eeg=True, accelero=False,
+    def __init__(self, address=None, callback=None, callback_control=None, callback_telemetry=None, callback_acc=None, callback_giro=None, eeg=True, control=False, telemetry=False, accelero=False,
                  giro=False, backend='auto', interface=None, time_func=time,
                  name=None):
-        """Initialize"""
+        """Initialize
+
+        callback -- callback for eeg data, function(data, timestamps)
+        callback_control -- function(codes, message)
+        callback_telemetry -- function(timestamp, battery, fuel_gauge, adc_volt, temperature)
+
+        callback_acc -- function(timestamp, samples)
+        callback_giro -- function(timestamp, samples)
+        - samples is a list of 3 samples, where each sample is [x, y, z]
+        """
+
         self.address = address
         self.name = name
         self.callback = callback
+        self.callback_telemetry = callback_telemetry
+        self.callback_control = callback_control
+        self.callback_acc = callback_acc
+        self.callback_giro = callback_giro
+
         self.eeg = eeg
+        self.control = control
+        self.telemetry = telemetry
         self.accelero = accelero
         self.giro = giro
         self.interface = interface
@@ -55,13 +72,17 @@ class Muse():
         if self.eeg:
             self._subscribe_eeg()
 
-        # subscribes to Accelerometer
-        if self.accelero:
-            raise(NotImplementedError('Accelerometer not implemented'))
+        if self.control:
+            self._subscribe_control()
 
-        # subscribes to Giroscope
+        if self.telemetry:
+            self._subscribe_telemetry()
+
+        if self.accelero:
+            self._subscribe_acc()
+
         if self.giro:
-            raise(NotImplementedError('Giroscope not implemented'))
+            self._subscribe_giro()
 
     def find_muse_address(self, name=None):
         """look for ble device with a muse in the name"""
@@ -87,6 +108,8 @@ class Muse():
         self.last_tm = 0
         self.device.char_write_handle(0x000e, [0x02, 0x64, 0x0a], False)
 
+        self._init_control()
+
     def stop(self):
         """Stop streaming."""
         self.device.char_write_handle(0x000e, [0x02, 0x68, 0x0a], False)
@@ -95,6 +118,7 @@ class Muse():
         """disconnect."""
         self.device.disconnect()
         self.adapter.stop()
+
 
     def _subscribe_eeg(self):
         """subscribe to eeg stream."""
@@ -175,3 +199,138 @@ class Muse():
             # push data
             self.callback(self.data, timestamps)
             self._init_sample()
+
+
+    def _init_control(self):
+        """Variables to store the chunks of the current messages."""
+        self._current_msg = ""
+        self._current_codes = []
+
+    def _subscribe_control(self):
+        self.device.subscribe('273e0001-4c4d-454d-96be-f03bac821358', callback=self._handle_control)
+
+    def _handle_control(self, handle, packet):
+        """Handle the incoming messages from the 0x000e handle (control handle).
+
+        Each incoming message is 20 chars
+        The first is a code (don't know what it means), the rest of them are in ASCII
+
+        Multiple messages together are a json object (or dictionary in python)
+        If a message has a ',' then that line is finished
+        If a message has a '}' then the whole dict is finished
+
+        Example (without codes at the beginning):
+        {'key': 'value',
+        'key2': 'value2',
+        'key3': 'value3'}
+
+        each line is a message, the 3 messages are a json object.
+        """
+        if handle != 14:
+            return
+
+        # Decode data
+        bit_decoder = bitstring.Bits(bytes=packet)
+        pattern = "uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8, \
+                    uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8"
+        chars = bit_decoder.unpack(pattern)
+
+        # Save code
+        self._current_codes.append(chars[0])
+
+        # Iterate over next chars
+        for char in chars[1:]:
+            char = chr(char)
+
+            self._current_msg += char
+
+            if char == ',': # This incoming message ended, but not the whole dict
+                break
+
+            if char == '}': # Message ended completely
+                self.callback_control(self._current_codes, self._current_msg)
+
+                self._init_control()
+                break
+
+
+    def _subscribe_telemetry(self):
+        self.device.subscribe('273e000b-4c4d-454d-96be-f03bac821358',
+                            callback=self._handle_telemetry)
+
+    def _handle_telemetry(self, handle, packet):
+        """Handle the telemetry (battery, temperature and stuff) incoming data"""
+
+        if handle != 26: # handle 0x1a
+            return
+        timestamp = self.time_func()
+
+        bit_decoder = bitstring.Bits(bytes=packet)
+        pattern = "uint:16,uint:16,uint:16,uint:16,uint:16" # The rest is 0 padding
+        data = bit_decoder.unpack(pattern)
+
+        packet_index = data[0]
+        battery = data[1] / 512
+        fuel_gauge = data[2] * 2.2
+        adc_volt = data[3]
+        temperature = data[4]
+
+        self.callback_telemetry(timestamp, battery, fuel_gauge, adc_volt, temperature)
+
+
+    def _unpack_imu_channel(self, packet, scale=1):
+        """Decode data packet of the accelerometer and giro (imu) channels.
+
+        Each packet is encoded with a 16bit timestamp followed by 9 samples
+        with a 16 bit resolution.
+        """
+        bit_decoder = bitstring.Bits(bytes=packet)
+        pattern = "uint:16,int:16,int:16,int:16,int:16, \
+                   int:16,int:16,int:16,int:16,int:16"
+        data = bit_decoder.unpack(pattern)
+
+        packet_index = data[0]
+
+        samples = [[
+            scale * data[index],        # x
+            scale * data[index + 1],    # y
+            scale * data[index + 2]     # z
+        ] for index in [1, 4, 7]]
+
+        ## samples is a list with 3 samples
+        ## each sample is a list with [x, y, z]
+
+        return packet_index, samples
+
+    def _subscribe_acc(self):
+        self.device.subscribe('273e000a-4c4d-454d-96be-f03bac821358',
+                            callback=self._handle_acc)
+
+    def _handle_acc(self, handle, packet):
+        """Handle incoming accelerometer data.
+
+        sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
+        if handle != 23: # handle 0x17
+            return
+        timestamp = self.time_func()
+
+        packet_index, samples = self._unpack_imu_channel(packet, scale=0.0000610352)
+
+        self.callback_acc(timestamp, samples)
+
+    def _subscribe_giro(self):
+        self.device.subscribe('273e0009-4c4d-454d-96be-f03bac821358',
+                            callback=self._handle_giro)
+
+    def _handle_giro(self, handle, packet):
+        """Handle incoming giroscope data.
+
+        sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
+        if handle != 20: # handle 0x14
+            return
+
+        timestamp = self.time_func()
+
+        packet_index, samples = self._unpack_imu_channel(packet, scale=0.0074768)
+
+        self.callback_giro(timestamp, samples)
