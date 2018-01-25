@@ -14,7 +14,7 @@ class Muse():
         """Initialize
 
         callback -- callback for eeg data, function(data, timestamps)
-        callback_control -- function(codes, message)
+        callback_control -- function(message)
         callback_telemetry -- function(timestamp, battery, fuel_gauge, adc_volt, temperature)
 
         callback_acc -- function(timestamp, samples)
@@ -208,29 +208,29 @@ class Muse():
 
 
     def _init_control(self):
-        """Variables to store the chunks of the current messages."""
+        """Variable to store the current incoming message."""
         self._current_msg = ""
-        self._current_codes = []
 
     def _subscribe_control(self):
         self.device.subscribe('273e0001-4c4d-454d-96be-f03bac821358', callback=self._handle_control)
 
     def _handle_control(self, handle, packet):
-        """Handle the incoming messages from the 0x000e handle (control handle).
+        """Handle the incoming messages from the 0x000e handle.
 
-        Each incoming message is 20 chars
-        The first is a code (don't know what it means), the rest of them are in ASCII
+        Each message is 20 bytes
+        The first byte, call it n, is the length of the incoming string.
+        The rest of the bytes are in ASCII, and only n chars are useful
 
         Multiple messages together are a json object (or dictionary in python)
-        If a message has a ',' then that line is finished
-        If a message has a '}' then the whole dict is finished
+        If a message has a '}' then the whole dict is finished.
 
-        Example (without codes at the beginning):
+        Example:
         {'key': 'value',
-        'key2': 'value2',
+        'key2': 'really-long
+        -value',
         'key3': 'value3'}
 
-        each line is a message, the 3 messages are a json object.
+        each line is a message, the 4 messages are a json object.
         """
         if handle != 14:
             return
@@ -241,24 +241,19 @@ class Muse():
                     uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8"
         chars = bit_decoder.unpack(pattern)
 
-        # Save code
-        self._current_codes.append(chars[0])
+        # Length of the string
+        n_incoming = chars[0]
 
-        # Iterate over next chars
-        for char in chars[1:]:
-            char = chr(char)
+        # Parse as chars, only useful bytes
+        incoming_message = "".join(map(chr, chars[1:]))[:n_incoming]
 
-            self._current_msg += char
+        # Add to current message
+        self._current_msg += incoming_message
 
-            if char == ',': # This incoming message ended, but not the whole dict
-                break
+        if incoming_message[-1] == '}': # Message ended completely
+            self.callback_control(self._current_msg)
 
-            if char == '}': # Message ended completely
-                self.callback_control(self._current_codes, self._current_msg)
-
-                self._init_control()
-                break
-
+            self._init_control()
 
     def _subscribe_telemetry(self):
         self.device.subscribe('273e000b-4c4d-454d-96be-f03bac821358',
