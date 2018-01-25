@@ -108,7 +108,9 @@ class Muse():
         self.device.char_write_handle(0x000e, cmd, False)
 
     def ask_control(self):
-        """Send a message to Muse to ask for the control.
+        """Send a message to Muse to ask for the control status.
+
+        The device will answer with battery status, device name, preset selected, and other control information.
 
         Only useful if control is enabled (to receive the answer!)"""
         self._write_cmd([0x02, 0x73, 0x0a])
