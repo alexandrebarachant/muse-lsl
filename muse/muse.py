@@ -107,6 +107,12 @@ class Muse():
         cmd -- list of bytes"""
         self.device.char_write_handle(0x000e, cmd, False)
 
+    def ask_control(self):
+        """Send a message to Muse to ask for the control.
+
+        Only useful if control is enabled (to receive the answer!)"""
+        self._write_cmd([0x02, 0x73, 0x0a])
+
     def start(self):
         """Start streaming."""
         self._init_timestamp_correction()
