@@ -124,6 +124,7 @@ class Muse():
         "ps": preset selected
         "rc": return status, if 0 is OK
         """
+
         self._write_cmd([0x02, 0x73, 0x0a])
 
     def ask_device_info(self):
