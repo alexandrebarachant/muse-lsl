@@ -112,10 +112,35 @@ class Muse():
     def ask_control(self):
         """Send a message to Muse to ask for the control status.
 
-        The device will answer with battery status, device name, preset selected, and other control information.
+        Only useful if control is enabled (to receive the answer!)
 
-        Only useful if control is enabled (to receive the answer!)"""
+        The message received is a dict with the following keys:
+        "hn": device name
+        "sn": serial number
+        "ma": MAC address
+        "id":
+        "bp": battery percentage
+        "ts":
+        "ps": preset selected
+        "rc": return status, if 0 is OK
+        """
         self._write_cmd([0x02, 0x73, 0x0a])
+
+    def ask_device_info(self):
+        """Send a message to Muse to ask for the device info.
+
+        The message received is a dict with the following keys:
+        "ap":
+        "sp":
+        "tp": firmware type, e.g: "consumer"
+        "hw": hardware version?
+        "bn": build number?
+        "fw": firmware version?
+        "bl":
+        "pv": protocol version?
+        "rc": return status, if 0 is OK
+        """
+        self._write_cmd([0x03, 0x76, 0x31, 0x0a])
 
     def start(self):
         """Start streaming."""
