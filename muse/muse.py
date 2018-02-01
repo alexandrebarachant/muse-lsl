@@ -8,33 +8,35 @@ from sys import platform
 class Muse():
     """Muse 2016 headband"""
 
-    def __init__(self, address=None, callback=None, callback_control=None, callback_telemetry=None, callback_acc=None, callback_giro=None, eeg=True, control=False, telemetry=False, accelero=False,
-                 giro=False, backend='auto', interface=None, time_func=time,
-                 name=None):
+    def __init__(self, address=None, callback_eeg=None, callback_control=None,
+                callback_telemetry=None, callback_acc=None, callback_gyro=None,
+                backend='auto', interface=None, time_func=time, name=None):
         """Initialize
 
-        callback -- callback for eeg data, function(data, timestamps)
+        callback_eeg -- callback for eeg data, function(data, timestamps)
         callback_control -- function(message)
         callback_telemetry -- function(timestamp, battery, fuel_gauge, adc_volt, temperature)
 
         callback_acc -- function(timestamp, samples)
-        callback_giro -- function(timestamp, samples)
+        callback_gyro -- function(timestamp, samples)
         - samples is a list of 3 samples, where each sample is [x, y, z]
         """
 
         self.address = address
         self.name = name
-        self.callback = callback
+
+        self.callback_eeg = callback_eeg
         self.callback_telemetry = callback_telemetry
         self.callback_control = callback_control
         self.callback_acc = callback_acc
-        self.callback_giro = callback_giro
+        self.callback_gyro = callback_gyro
 
-        self.eeg = eeg
-        self.control = control
-        self.telemetry = telemetry
-        self.accelero = accelero
-        self.giro = giro
+        self.enable_eeg = not callback_eeg is None
+        self.enable_control = not callback_control is None
+        self.enable_telemetry = not callback_telemetry is None
+        self.enable_acc = not callback_acc is None
+        self.enable_gyro = not callback_gyro is None
+
         self.interface = interface
         self.time_func = time_func
 
@@ -69,20 +71,20 @@ class Muse():
         self.device = self.adapter.connect(self.address)
 
         # subscribes to EEG stream
-        if self.eeg:
+        if self.enable_eeg:
             self._subscribe_eeg()
 
-        if self.control:
+        if self.enable_control:
             self._subscribe_control()
 
-        if self.telemetry:
+        if self.enable_telemetry:
             self._subscribe_telemetry()
 
-        if self.accelero:
+        if self.enable_acc:
             self._subscribe_acc()
 
-        if self.giro:
-            self._subscribe_giro()
+        if self.enable_gyro:
+            self._subscribe_gyro()
 
     def find_muse_address(self, name=None):
         """look for ble device with a muse in the name"""
@@ -211,7 +213,7 @@ class Muse():
             timestamps = self.reg_params[1] * idxs + self.reg_params[0]
 
             # push data
-            self.callback(self.data, timestamps)
+            self.callback_eeg(self.data, timestamps)
             self._init_sample()
 
 
@@ -288,7 +290,7 @@ class Muse():
 
 
     def _unpack_imu_channel(self, packet, scale=1):
-        """Decode data packet of the accelerometer and giro (imu) channels.
+        """Decode data packet of the accelerometer and gyro (imu) channels.
 
         Each packet is encoded with a 16bit timestamp followed by 9 samples
         with a 16 bit resolution.
@@ -327,12 +329,12 @@ class Muse():
 
         self.callback_acc(timestamp, samples)
 
-    def _subscribe_giro(self):
+    def _subscribe_gyro(self):
         self.device.subscribe('273e0009-4c4d-454d-96be-f03bac821358',
-                            callback=self._handle_giro)
+                            callback=self._handle_gyro)
 
-    def _handle_giro(self, handle, packet):
-        """Handle incoming giroscope data.
+    def _handle_gyro(self, handle, packet):
+        """Handle incoming gyroscope data.
 
         sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
         if handle != 20: # handle 0x14
@@ -342,4 +344,4 @@ class Muse():
 
         packet_index, samples = self._unpack_imu_channel(packet, scale=0.0074768)
 
-        self.callback_giro(timestamp, samples)
+        self.callback_gyro(timestamp, samples)

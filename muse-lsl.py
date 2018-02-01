@@ -37,7 +37,7 @@ def process(data, timestamps):
     for ii in range(12):
         outlet.push_sample(data[:, ii], timestamps[ii])
 
-muse = Muse(address=options.address, callback=process,
+muse = Muse(address=options.address, callback_eeg=process,
             backend=options.backend, time_func=local_clock,
             interface=options.interface, name=options.name)
 
