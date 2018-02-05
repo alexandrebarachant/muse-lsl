@@ -81,7 +81,7 @@ process_acc = partial(process, outlet=outlet_acc)
 process_gyro = partial(process, outlet=outlet_gyro)
 
 muse = Muse(address=options.address, callback_eeg=process_eeg,
-            callback_control=print, callback_telemetry=print,
+            callback_control=None, callback_telemetry=None,
             callback_acc=process_acc, callback_gyro=process_gyro,
             backend=options.backend, interface=options.interface,
             name=options.name)
