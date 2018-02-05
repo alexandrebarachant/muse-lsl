@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+from time import sleep
+from optparse import OptionParser
+from threading import Thread
+
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import butter, lfilter, lfilter_zi, firwin
-from time import sleep
+from scipy.signal import lfilter, lfilter_zi, firwin
 from pylsl import StreamInlet, resolve_byprop
-from optparse import OptionParser
 import seaborn as sns
-from threading import Thread
+
 
 sns.set(style="whitegrid")
 
@@ -24,6 +26,9 @@ parser.add_option("-r", "--refresh",
 parser.add_option("-f", "--figure",
                   dest="figure", type='string', default="15x6",
                   help="window size.")
+parser.add_option("-d", "--data",
+                  dest="data_stream", type='string', default="EEG",
+                  help="data stream to plot.")
 
 filt = True
 subsample = 2
@@ -34,25 +39,28 @@ buf = 12
 window = options.window
 scale = options.scale
 figsize = np.int16(options.figure.split('x'))
+data_stream = options.data_stream
+if data_stream not in {'EEG', 'ACC', 'GYRO'}:
+    raise ValueError('Data stream {} not supported.'.format(data_stream))
 
-print("looking for an EEG stream...")
-streams = resolve_byprop('type', 'EEG', timeout=2)
+print('Looking for an {} stream...'.format(data_stream))
+streams = resolve_byprop('type', data_stream, timeout=2)
 
 if len(streams) == 0:
-    raise(RuntimeError("Can't find EEG stream"))
-print("Start acquiring data")
+    raise(RuntimeError('Can\'t find {} stream.'.format(data_stream)))
+print('Start acquiring data.')
 
 
 class LSLViewer():
 
-    def __init__(self, stream, fig, axes,  window, scale, dejitter=True):
+    def __init__(self, stream, fig, axes, window, scale, dejitter=True):
         """Init"""
         self.stream = stream
         self.window = window
         self.scale = scale
         self.dejitter = dejitter
         self.inlet = StreamInlet(stream, max_chunklen=buf)
-        self.filt = True
+        self.filt = False
 
         info = self.inlet.info()
         description = info.desc()
@@ -60,6 +68,9 @@ class LSLViewer():
         self.sfreq = info.nominal_srate()
         self.n_samples = int(self.sfreq * self.window)
         self.n_chan = info.channel_count()
+
+        if self.sfreq > 200:
+            self.filt = True
 
         ch = description.child('channels').first_child()
         ch_names = [ch.child_value('label')]
@@ -100,24 +111,26 @@ class LSLViewer():
                         for ii in range(self.n_chan)]
         axes.set_yticklabels(ticks_labels)
 
-        self.display_every = int(0.2 / (12/self.sfreq))
+        self.display_every = max([1, int(0.2 / (12/self.sfreq))])
 
-        # self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
-        #                          'bandpass')
+        if self.filt:
+            # self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
+            #                          'bandpass')
 
-        self.bf = firwin(32, np.array([1, 40])/(self.sfreq/2.), width=0.05,
-                         pass_zero=False)
-        self.af = [1.0]
+            self.bf = firwin(32, np.array([1, 40])/(self.sfreq/2.),
+                             width=0.05, pass_zero=False)
+            self.af = [1.0]
 
-        zi = lfilter_zi(self.bf, self.af)
-        self.filt_state = np.tile(zi, (self.n_chan, 1)).transpose()
-        self.data_f = np.zeros((self.n_samples, self.n_chan))
+            zi = lfilter_zi(self.bf, self.af)
+            self.filt_state = np.tile(zi, (self.n_chan, 1)).transpose()
+            self.data_f = np.zeros((self.n_samples, self.n_chan))
 
     def update_plot(self):
         k = 0
         while self.started:
             samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
                                                         max_samples=12)
+
             if timestamps:
                 if self.dejitter:
                     timestamps = np.float64(np.arange(len(timestamps)))
@@ -128,24 +141,25 @@ class LSLViewer():
                 self.times = self.times[-self.n_samples:]
                 self.data = np.vstack([self.data, samples])
                 self.data = self.data[-self.n_samples:]
-                filt_samples, self.filt_state = lfilter(
-                    self.bf, self.af,
-                    samples,
-                    axis=0, zi=self.filt_state)
-                self.data_f = np.vstack([self.data_f, filt_samples])
-                self.data_f = self.data_f[-self.n_samples:]
+
+                if self.filt:
+                    filt_samples, self.filt_state = lfilter(
+                        self.bf, self.af, samples, axis=0, zi=self.filt_state)
+                    self.data_f = np.vstack([self.data_f, filt_samples])
+                    self.data_f = self.data_f[-self.n_samples:]
+
                 k += 1
                 if k == self.display_every:
-
                     if self.filt:
                         plot_data = self.data_f
-                    elif not self.filt:
+                    else:
                         plot_data = self.data - self.data.mean(axis=0)
+
                     for ii in range(self.n_chan):
-                        self.lines[ii].set_xdata(self.times[::subsample] -
-                                                 self.times[-1])
-                        self.lines[ii].set_ydata(plot_data[::subsample, ii] /
-                                                 self.scale - ii)
+                        self.lines[ii].set_xdata(
+                                self.times[::subsample] - self.times[-1])
+                        self.lines[ii].set_ydata(
+                                plot_data[::subsample, ii] / self.scale - ii)
                         impedances = np.std(plot_data, axis=0)
 
                     ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
@@ -188,7 +202,7 @@ fig, axes = plt.subplots(1, 1, figsize=figsize, sharex=True)
 lslv = LSLViewer(streams[0], fig, axes, window, scale)
 
 help_str = """
-            toggle filter : d
+            toggle filter : d (if stream is > 200 Hz)
             toogle full screen : f
             zoom out : /
             zoom in : *
