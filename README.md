@@ -91,3 +91,12 @@ where `PARADIGM.py` is one of the stimulus presentation scripts described above 
 This will launch the selected paradigm and record data for 2 minutes.
 
 For data analysis, check out [these notebooks](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/).
+
+## Common issues
+
+1. `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Operation not permitted` (Linux)
+ - This is an issue with pygatt requiring root privileges to run a scan. Make sure you have `libcap` installed and run ```sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcitool` ```
+
+
+2. `pygatt.exceptions.BLEError: No characteristic found matching 273e0003-4c4d-454d-96be-f03bac821358` (Linux)
+ - There is a problem with the most recent version of pygatt. Work around this by downgrading to 3.1.1: `pip install pygatt==3.1.1`
