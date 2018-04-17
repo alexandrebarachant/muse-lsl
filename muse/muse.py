@@ -147,13 +147,24 @@ class Muse():
         self._init_timestamp_correction()
         self._init_sample()
         self.last_tm = 0
-        self._write_cmd([0x02, 0x64, 0x0a])
+        # setting preset 20 : http://developer.choosemuse.com/hardware-firmware/headband-configuration-presets
+        self._write_cmd([0x04, 0x70, 0x32, 0x30, 0x0a]) # 0x733230 = 'p20' for preset 20
+        self._write_cmd([0x02, 0x73, 0x0a]) # 0x73 = 's' for start
+        self._write_cmd([0x02, 0x64, 0x0a]) # 0x64 = 'd' for resume (??)
 
         self._init_control()
 
+    def resume(self):
+        """Resume streaming."""
+        self._write_cmd([0x02, 0x64, 0x0a])
+        
     def stop(self):
         """Stop streaming."""
         self._write_cmd([0x02, 0x68, 0x0a])
+
+    def keep_alive(self):
+        """Keep streaming."""
+        self._write_cmd([0x02, 0x6b, 0x0a])
 
     def disconnect(self):
         """disconnect."""
