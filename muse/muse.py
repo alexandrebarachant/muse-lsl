@@ -4,7 +4,6 @@ import numpy as np
 from time import time, sleep
 from sys import platform
 
-
 class Muse():
     """Muse 2016 headband"""
 
@@ -61,7 +60,7 @@ class Muse():
             self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
 
         self.adapter.start()
-
+        
         if self.address is None:
             address = self.find_muse_address(self.name)
             if address is None:
@@ -70,6 +69,11 @@ class Muse():
                 self.address = address
         self.device = self.adapter.connect(self.address)
 
+        self.ask_reset()
+        sleep(2)
+        self.device = self.adapter.connect(self.address)
+        self.select_preset(preset=21)
+        
         # subscribes to EEG stream
         if self.enable_eeg:
             self._subscribe_eeg()
@@ -142,37 +146,53 @@ class Muse():
         """
         self._write_cmd([0x03, 0x76, 0x31, 0x0a])
 
+    def ask_reset(self):
+        """Undocumented command reset for '*1'
+        The message received is a singleton with:
+        "rc": return status, if 0 is OK
+        """
+        self._write_cmd([0x03, 0x2a, 0x31, 0x0a])
+
     def start(self):
-        """Start streaming."""
+        """connect"""
         self._init_timestamp_correction()
         self._init_sample()
         self.last_tm = 0
-        # setting preset 20 : http://developer.choosemuse.com/hardware-firmware/headband-configuration-presets
-        self._write_cmd([0x03, 0x76, 0x31, 0x0a]) # 'v1' snooped from Muse App
-        self._write_cmd([0x02, 0x73, 0x0a]) # 's', snooped from Muse App
-        self._write_cmd([0x02, 0x68, 0x0a]) # 'h', snooped from Muse App
-        self._write_cmd([0x04, 0x70, 0x32, 0x31, 0x0a]) # 'p21' for preset 21
-        self._write_cmd([0x02, 0x73, 0x0a]) # 's' for start
-        self._write_cmd([0x02, 0x64, 0x0a]) # 'd' for resume (??)
         self._init_control()
-
+        self.resume()
+        
     def resume(self):
-        """Resume streaming."""
+        """Resume streaming, sending 'd' command"""
         self._write_cmd([0x02, 0x64, 0x0a])
         
     def stop(self):
-        """Stop streaming."""
+        """Stop streaming, sending 'h' command"""
         self._write_cmd([0x02, 0x68, 0x0a])
 
     def keep_alive(self):
-        """Keep streaming."""
+        """Keep streaming, sending 'k' command"""
         self._write_cmd([0x02, 0x6b, 0x0a])
 
+    def select_preset(self, preset=21):
+        """Setting preset for headband configuration
+
+        See details on https://goo.gl/FPN1ib
+        For 2016 headband, possible choice are 'p20' and 'p21'. 
+        Untested but possible values are 'p22' and 'p23'
+        Default is 'p21'."""
+        if preset == 20:
+            self._write_cmd([0x04, 0x70, 0x32, 0x30, 0x0a])
+        elif preset == 22:
+            self._write_cmd([0x04, 0x70, 0x32, 0x32, 0x0a])
+        elif preset == 23:
+            self._write_cmd([0x04, 0x70, 0x32, 0x33, 0x0a])
+        else:
+            self._write_cmd([0x04, 0x70, 0x32, 0x31, 0x0a])
+        
     def disconnect(self):
         """disconnect."""
         self.device.disconnect()
         self.adapter.stop()
-
 
     def _subscribe_eeg(self):
         """subscribe to eeg stream."""
@@ -261,6 +281,7 @@ class Muse():
 
     def _subscribe_control(self):
         self.device.subscribe('273e0001-4c4d-454d-96be-f03bac821358', callback=self._handle_control)
+        self._init_control()
 
     def _handle_control(self, handle, packet):
         """Handle the incoming messages from the 0x000e handle.
