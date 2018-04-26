@@ -4,17 +4,19 @@ import numpy as np
 from time import time, sleep
 from sys import platform
 
+
 class Muse():
     """Muse 2016 headband"""
 
     def __init__(self, address=None, callback_eeg=None, callback_control=None,
-                callback_telemetry=None, callback_acc=None, callback_gyro=None,
-                backend='auto', interface=None, time_func=time, name=None):
+                 callback_telemetry=None, callback_acc=None, callback_gyro=None,
+                 backend='auto', interface=None, time_func=time, name=None):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
         callback_control -- function(message)
-        callback_telemetry -- function(timestamp, battery, fuel_gauge, adc_volt, temperature)
+        callback_telemetry -- function(timestamp, battery, fuel_gauge,
+                                       adc_volt, temperature)
 
         callback_acc -- function(timestamp, samples)
         callback_gyro -- function(timestamp, samples)
@@ -60,7 +62,7 @@ class Muse():
             self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
 
         self.adapter.start()
-        
+
         if self.address is None:
             address = self.find_muse_address(self.name)
             if address is None:
@@ -73,7 +75,7 @@ class Muse():
         sleep(2)
         self.device = self.adapter.connect(self.address)
         self.select_preset(preset=21)
-        
+
         # subscribes to EEG stream
         if self.enable_eeg:
             self._subscribe_eeg()
@@ -160,11 +162,11 @@ class Muse():
         self.last_tm = 0
         self._init_control()
         self.resume()
-        
+
     def resume(self):
         """Resume streaming, sending 'd' command"""
         self._write_cmd([0x02, 0x64, 0x0a])
-        
+
     def stop(self):
         """Stop streaming, sending 'h' command"""
         self._write_cmd([0x02, 0x68, 0x0a])
@@ -177,7 +179,7 @@ class Muse():
         """Setting preset for headband configuration
 
         See details on https://goo.gl/FPN1ib
-        For 2016 headband, possible choice are 'p20' and 'p21'. 
+        For 2016 headband, possible choice are 'p20' and 'p21'.
         Untested but possible values are 'p22' and 'p23'
         Default is 'p21'."""
         if preset == 20:
@@ -188,7 +190,7 @@ class Muse():
             self._write_cmd([0x04, 0x70, 0x32, 0x33, 0x0a])
         else:
             self._write_cmd([0x04, 0x70, 0x32, 0x31, 0x0a])
-        
+
     def disconnect(self):
         """disconnect."""
         self.device.disconnect()
@@ -274,13 +276,13 @@ class Muse():
             self.callback_eeg(self.data, timestamps)
             self._init_sample()
 
-
     def _init_control(self):
         """Variable to store the current incoming message."""
         self._current_msg = ""
 
     def _subscribe_control(self):
-        self.device.subscribe('273e0001-4c4d-454d-96be-f03bac821358', callback=self._handle_control)
+        self.device.subscribe('273e0001-4c4d-454d-96be-f03bac821358',
+                              callback=self._handle_control)
         self._init_control()
 
     def _handle_control(self, handle, packet):
@@ -319,24 +321,25 @@ class Muse():
         # Add to current message
         self._current_msg += incoming_message
 
-        if incoming_message[-1] == '}': # Message ended completely
+        if incoming_message[-1] == '}':  # Message ended completely
             self.callback_control(self._current_msg)
 
             self._init_control()
 
     def _subscribe_telemetry(self):
         self.device.subscribe('273e000b-4c4d-454d-96be-f03bac821358',
-                            callback=self._handle_telemetry)
+                              callback=self._handle_telemetry)
 
     def _handle_telemetry(self, handle, packet):
-        """Handle the telemetry (battery, temperature and stuff) incoming data"""
+        """Handle the telemetry (battery, temperature and stuff) incoming data
+        """
 
-        if handle != 26: # handle 0x1a
+        if handle != 26:  # handle 0x1a
             return
         timestamp = self.time_func()
 
         bit_decoder = bitstring.Bits(bytes=packet)
-        pattern = "uint:16,uint:16,uint:16,uint:16,uint:16" # The rest is 0 padding
+        pattern = "uint:16,uint:16,uint:16,uint:16,uint:16"  # Rest is 0 padding
         data = bit_decoder.unpack(pattern)
 
         packet_index = data[0]
@@ -345,8 +348,8 @@ class Muse():
         adc_volt = data[3]
         temperature = data[4]
 
-        self.callback_telemetry(timestamp, battery, fuel_gauge, adc_volt, temperature)
-
+        self.callback_telemetry(timestamp, battery, fuel_gauge,
+                                adc_volt, temperature)
 
     def _unpack_imu_channel(self, packet, scale=1):
         """Decode data packet of the accelerometer and gyro (imu) channels.
@@ -367,40 +370,44 @@ class Muse():
             scale * data[index + 2]     # z
         ] for index in [1, 4, 7]]
 
-        ## samples is a list with 3 samples
-        ## each sample is a list with [x, y, z]
+        # samples is a list with 3 samples
+        # each sample is a list with [x, y, z]
 
         return packet_index, samples
 
     def _subscribe_acc(self):
         self.device.subscribe('273e000a-4c4d-454d-96be-f03bac821358',
-                            callback=self._handle_acc)
+                              callback=self._handle_acc)
 
     def _handle_acc(self, handle, packet):
         """Handle incoming accelerometer data.
 
-        sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
-        if handle != 23: # handle 0x17
+        sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)
+        """
+        if handle != 23:  # handle 0x17
             return
         timestamp = self.time_func()
 
-        packet_index, samples = self._unpack_imu_channel(packet, scale=0.0000610352)
+        packet_index, samples = self._unpack_imu_channel(packet,
+                                                         scale=0.0000610352)
 
         self.callback_acc(timestamp, samples)
 
     def _subscribe_gyro(self):
         self.device.subscribe('273e0009-4c4d-454d-96be-f03bac821358',
-                            callback=self._handle_gyro)
+                              callback=self._handle_gyro)
 
     def _handle_gyro(self, handle, packet):
         """Handle incoming gyroscope data.
 
-        sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
-        if handle != 20: # handle 0x14
+        sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)
+        """
+        if handle != 20:  # handle 0x14
             return
 
         timestamp = self.time_func()
 
-        packet_index, samples = self._unpack_imu_channel(packet, scale=0.0074768)
+        packet_index, samples = self._unpack_imu_channel(packet,
+                                                         scale=0.0074768)
 
         self.callback_gyro(timestamp, samples)
