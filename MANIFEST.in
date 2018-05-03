@@ -1,0 +1,10 @@
+include *.md
+include *.png
+include *.py
+include *.txt
+include tox.ini
+recursive-include data *.csv
+recursive-include notebooks *.ipynb
+recursive-include stimulus_presentation *.jpg
+recursive-include stimulus_presentation *.py
+recursive-include stimulus_presentation *.txt
