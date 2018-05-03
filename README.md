@@ -12,6 +12,8 @@ You have to use the development version of pygatt, that can be installed with pi
 
 `pip install git+https://github.com/peplin/pygatt`
 
+Note: Another option for connecting to Muse on Windows is [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist)
+
 You will also need to find the MAC address of your Muse headset. **This code is
 only compatible with the 2016 version of the Muse headset.**
 
