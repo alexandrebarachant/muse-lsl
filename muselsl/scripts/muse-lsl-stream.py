@@ -1,56 +1,58 @@
-#!/usr/bin/python
-import sys
-import getopt
-import argparse
-import re
-import os
-import subprocess
-import configparser
+#!/usr/bin/env python
+from muse import Muse
+from time import sleep
+from pylsl import StreamInfo, StreamOutlet, local_clock
+from optparse import OptionParser
 
-class Program:
-    def __init__(self):
-        parser = argparse.ArgumentParser(
-            description='muse-lsl can be used to stream and visualize EEG data from the Muse 2016 headset.',
-            usage='''muse-lsl <command> [<args>]
-    These are the commands:
-    stream    Start an LSL stream from Muse headset.
-    view      Start viewing EEG data from LSL stream.
-    record    Record data from Muse.
-        ''')
+parser = OptionParser()
+parser.add_option("-a", "--address",
+                  dest="address", type='string', default=None,
+                  help="device mac address.")
+parser.add_option("-n", "--name",
+                  dest="name", type='string', default=None,
+                  help="name of the device.")
+parser.add_option("-b", "--backend",
+                  dest="backend", type='string', default="auto",
+                  help="pygatt backend to use. can be auto, gatt or bgapi")
+parser.add_option("-i", "--interface",
+                  dest="interface", type='string', default=None,
+                  help="The interface to use, 'hci0' for gatt or a com port for bgapi")
 
-        parser.add_argument('command', help='Command to run.')
+(options, args) = parser.parse_args()
 
-        # parse_args defaults to [1:] for args, but you need to
-        # exclude the rest of the args too, or validation will fail
-        args = parser.parse_args(sys.argv[1:2])
-        if not hasattr(self, args.command):
-            print('Incorrect usage. See help below.')
-            parser.print_help()
-            exit(1)
+info = info = StreamInfo('Muse', 'EEG', 5, 256, 'float32',
+                         'Muse%s' % options.address)
 
-        # use dispatch pattern to invoke method with same name
-        getattr(self, args.command)()
+info.desc().append_child_value("manufacturer", "Muse")
+channels = info.desc().append_child("channels")
 
-    def stream(self):
-        parser = argparse.ArgumentParser(description='Start an LSL stream from Muse headset.')
-        run('../muse-lsl.py', ' '.join(sys.argv[2:]))
+for c in ['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX']:
+    channels.append_child("channel") \
+        .append_child_value("label", c) \
+        .append_child_value("unit", "microvolts") \
+        .append_child_value("type", "EEG")
+outlet = StreamOutlet(info, 12, 360)
 
-    def view(self):
-        parser = argparse.ArgumentParser(description='Start viewing EEG data from LSL stream.')
-        run('../lsl-viewer.py', ' '.join(sys.argv[2:]))
 
-    def record(self):
-        parser = argparse.ArgumentParser(description='Record data from Muse.')
-        run('../lsl-record.py', ' '.join(sys.argv[2:]))
+def process(data, timestamps):
+    for ii in range(12):
+        outlet.push_sample(data[:, ii], timestamps[ii])
 
-def run(scriptPath, args):
-    cmd = 'python ' + scriptPath + ' ' + args
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-    out, err = p.communicate() 
-    result = out.split('\n')
-    for lin in result:
-        if not lin.startswith('#'):
-            print(lin)
+muse = Muse(address=options.address, callback_eeg=process,
+            backend=options.backend, time_func=local_clock,
+            interface=options.interface, name=options.name)
 
-if __name__ == '__main__':
-    Program()
+muse.connect()
+print('Connected')
+muse.start()
+print('Streaming')
+
+while 1:
+    try:
+        sleep(1)
+    except:
+        break
+
+muse.stop()
+muse.disconnect()
+print('Disonnected')
