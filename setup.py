@@ -9,6 +9,7 @@ setup(name='muse-lsl',
       author_email='alexandre.barachant@gmail.com',
       license='BSD (3-clause)',
       packages=find_packages(),
+      scripts=['scripts/muse-lsl'],
       install_requires=['bitstring', 'pylsl', 'pygatt', 'psychopy', 'scikit-learn', 'pandas', 'numpy', 'mne', 'seaborn', 'pexpect'],
       zip_safe=False,
       classifiers=[

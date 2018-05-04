@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from muse import Muse
 from time import sleep
 from pylsl import StreamInfo, StreamOutlet, local_clock
