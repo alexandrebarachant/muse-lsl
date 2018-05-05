@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(name='muse-lsl',
       version='1.0.0',
-      description='Stream and visualize EEG data from the Muse 2016 headset',
+      description='Stream and visualize EEG data from the Muse 2016 headset.',
       keywords='muse lsl eeg ble neuroscience',
       url='https://github.com/alexandrebarachant/muse-lsl/',
       author='Alexandre Barachant',
@@ -13,7 +13,8 @@ setup(name='muse-lsl',
       package_data={'muselsl': ['docs/*']},
       include_package_data=True,
       zip_safe=False,
-      install_requires=['bitstring', 'pylsl', 'pygatt', 'pandas', 'numpy', 'seaborn', 'pexpect'],
+      install_requires=['bitstring', 'pylsl', 'pygatt', 'pandas', 'scikit-learn', 'numpy', 'seaborn', 'pexpect'],
+      extra_requires=['mne'],
       classifiers=[
     # How mature is this project?  Common values are
     #   3 - Alpha
