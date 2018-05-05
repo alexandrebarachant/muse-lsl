@@ -8,12 +8,12 @@ setup(name='muse-lsl',
       author='Alexandre Barachant',
       author_email='alexandre.barachant@gmail.com',
       license='BSD (3-clause)',
-      scripts=['scripts/muse-lsl.py'],
-      packages=['muselsl'],
-      package_dir={'muselsl': 'src'},
-      package_data={'muselsl': ['../*']},
+      scripts=['muselsl/muse-lsl.py'],
+      packages=find_packages(),
+      package_data={'muselsl': ['docs/*']},
       include_package_data=True,
-      install_requires=['bitstring', 'pylsl', 'pygatt', 'psychopy', 'scikit-learn', 'pandas', 'numpy', 'mne', 'seaborn', 'pexpect'],
+      zip_safe=False,
+      install_requires=['bitstring', 'pylsl', 'pygatt', 'pandas', 'numpy', 'seaborn', 'pexpect'],
       classifiers=[
     # How mature is this project?  Common values are
     #   3 - Alpha
@@ -30,10 +30,10 @@ setup(name='muse-lsl',
 
     # Specify the Python versions you support here.  In particular, ensure
     # that you indicate whether you support Python 2, Python 3 or both.
-    'Programming Language :: Python :: 2.6',
-    'Programming Language :: Python :: 2.7',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.2',
-    'Programming Language :: Python :: 3.3',
-    'Programming Language :: Python :: 3.4',]
-    ,)
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX',
+    'Operating System :: Unix',
+    'Operating System :: MacOS'
+
+    'Programming Language :: Python']
+    )
