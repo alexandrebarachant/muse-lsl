@@ -8,17 +8,31 @@ import subprocess
 import configparser
 from time import time, strftime, gmtime
 
+
 class Program:
     def __init__(self):
         parser = argparse.ArgumentParser(
-            description='muse-lsl can be used to stream and visualize EEG data from the Muse 2016 headset.',
+            description='Python package for streaming, recording, and visualizing EEG data from the Muse 2016 headset.',
             usage='''muse-lsl <command> [<args>]
-    These are the commands:
+    Available commands:
     list        List available Muse devices. 
     stream      Start an LSL stream from Muse headset.
+        -a --address    device MAC address
+        -n --name       device name (e.g. Muse-41D2)
+        -b --backend    pygatt backend to use. can be auto, gatt or bgapi
+        -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi
+
     record      Start LSL stream and record data from Muse headset.
+        -a --address    device MAC address
     lslview     Visualize EEG data from an LSL stream.
+        -w --window     window length to display in seconds.
+        -s --scale      scale in uV.
+        -r --refresh    refresh rate in seconds.
+        -f --figure     window size.
+        -v --version    viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).
     lslrecord   Record EEG data from an LSL stream.
+        -d --duration   duration of the recording in seconds.
+        -f --filename   name of the recording file.
         ''')
 
         parser.add_argument('command', help='Command to run.')
@@ -35,54 +49,59 @@ class Program:
         getattr(self, args.command)()
 
     def list():
-        parser = argparse.ArgumentParser(description='List available Muse devices.')
+        parser = argparse.ArgumentParser(
+            description='List available Muse devices.')
         import muse_stream
         muse_stream.list_devices()
 
     def stream(self):
-        parser = argparse.ArgumentParser(description='Start an LSL stream from Muse headset.')
+        parser = argparse.ArgumentParser(
+            description='Start an LSL stream from Muse headset.')
         parser.add_argument("-a", "--address",
-                  dest="address", type=str, default=None,
-                  help="device mac address.")
+                            dest="address", type=str, default=None,
+                            help="device mac address.")
         parser.add_argument("-n", "--name",
-                  dest="name", type=str, default=None,
-                  help="name of the device.")
+                            dest="name", type=str, default=None,
+                            help="name of the device.")
         parser.add_argument("-b", "--backend",
-                  dest="backend", type=str, default="auto",
-                  help="pygatt backend to use. can be auto, gatt or bgapi")
+                            dest="backend", type=str, default="auto",
+                            help="pygatt backend to use. can be auto, gatt or bgapi")
         parser.add_argument("-i", "--interface",
-                  dest="interface", type=str, default=None,
-                  help="The interface to use, 'hci0' for gatt or a com port for bgapi")
+                            dest="interface", type=str, default=None,
+                            help="The interface to use, 'hci0' for gatt or a com port for bgapi")
         args = parser.parse_args(sys.argv[2:])
         import muse_stream
-        muse_stream.stream(args.address, args.backend, args.interface, args.name)
+        muse_stream.stream(args.address, args.backend,
+                           args.interface, args.name)
 
     def record(self):
-        parser = argparse.ArgumentParser(description='Start LSL stream and record data from Muse headset.')
+        parser = argparse.ArgumentParser(
+            description='Start LSL stream and record data from Muse headset.')
         parser.add_argument("-a", "--address",
-                  dest="address", type=str, default="00:55:DA:B0:06:D6",
-                  help="device mac address.")
+                            dest="address", type=str, default="00:55:DA:B0:06:D6",
+                            help="device mac address.")
         args = parser.parse_args(sys.argv[2:])
         import muse_record
         muse_record.record(args.address)
 
     def lsl_view(self):
-        parser = argparse.ArgumentParser(description='Start viewing EEG data from an LSL stream.')
+        parser = argparse.ArgumentParser(
+            description='Start viewing EEG data from an LSL stream.')
         parser.add_argument("-w", "--window",
-                  dest="window", type=float, default=5.,
-                  help="window length to display in seconds.")
+                            dest="window", type=float, default=5.,
+                            help="window length to display in seconds.")
         parser.add_argument("-s", "--scale",
-                  dest="scale", type=float, default=100,
-                  help="scale in uV")
+                            dest="scale", type=float, default=100,
+                            help="scale in uV")
         parser.add_argument("-r", "--refresh",
-                  dest="refresh", type=float, default=0.2,
-                  help="refresh rate in seconds.")
+                            dest="refresh", type=float, default=0.2,
+                            help="refresh rate in seconds.")
         parser.add_argument("-f", "--figure",
-                  dest="figure", type=str, default="15x6",
-                  help="window size.")
+                            dest="figure", type=str, default="15x6",
+                            help="window size.")
         parser.add_argument("-v", "--version",
-                  dest="version", type=int, default=1,
-                  help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
+                            dest="version", type=int, default=1,
+                            help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
         args = parser.parse_args(sys.argv[2:])
         if args.version == 2:
             import lsl_viewer_V2
@@ -93,16 +112,18 @@ class Program:
 
     def lsl_record(self):
         parser = argparse.ArgumentParser(description='Record data from Muse.')
-        default_fname = ("data_%s.csv" % strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
+        default_fname = ("data_%s.csv" %
+                         strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
         parser.add_argument("-d", "--duration",
-                dest="duration", type=int, default=60,
-                help="duration of the recording in seconds.")
+                            dest="duration", type=int, default=60,
+                            help="duration of the recording in seconds.")
         parser.add_argument("-f", "--filename",
-                dest="filename", type=str, default=default_fname,
-                help="Name of the recording file.")
+                            dest="filename", type=str, default=default_fname,
+                            help="Name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
         import lsl_record
         lsl_record.record(args.duration, args.filename)
+
 
 if __name__ == '__main__':
     Program()
