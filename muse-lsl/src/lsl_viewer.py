@@ -1,50 +1,41 @@
-#!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, lfilter, lfilter_zi, firwin
 from time import sleep
 from pylsl import StreamInlet, resolve_byprop
-from optparse import OptionParser
 import seaborn as sns
 from threading import Thread
 
-sns.set(style="whitegrid")
+def view(window, scale, refresh, figure):
+    sns.set(style="whitegrid")
+    filt = True
+    subsample = 2
+    buf = 12
+    figsize = np.int16(figure.split('x'))
 
-parser = OptionParser()
+    print("looking for an EEG stream...")
+    streams = resolve_byprop('type', 'EEG', timeout=2)
 
-parser.add_option("-w", "--window",
-                  dest="window", type='float', default=5.,
-                  help="window length to display in seconds.")
-parser.add_option("-s", "--scale",
-                  dest="scale", type='float', default=100,
-                  help="scale in uV")
-parser.add_option("-r", "--refresh",
-                  dest="refresh", type='float', default=0.2,
-                  help="refresh rate in seconds.")
-parser.add_option("-f", "--figure",
-                  dest="figure", type='string', default="15x6",
-                  help="window size.")
+    if len(streams) == 0:
+        raise(RuntimeError("Can't find EEG stream"))
+    print("Start acquiring data")
 
-filt = True
-subsample = 2
-buf = 12
-
-(options, args) = parser.parse_args()
-
-window = options.window
-scale = options.scale
-figsize = np.int16(options.figure.split('x'))
-
-print("looking for an EEG stream...")
-streams = resolve_byprop('type', 'EEG', timeout=2)
-
-if len(streams) == 0:
-    raise(RuntimeError("Can't find EEG stream"))
-print("Start acquiring data")
-
+    fig, axes = plt.subplots(1, 1, figsize=figsize, sharex=True)
+    lslv = LSLViewer(streams[0], fig, axes, window, scale)
+    help_str = """
+                toggle filter : d
+                toogle full screen : f
+                zoom out : /
+                zoom in : *
+                increase time scale : -
+                decrease time scale : +
+               """
+    print(help_str)
+    lslv.start()
+    plt.show()
+    lslv.stop()
 
 class LSLViewer():
-
     def __init__(self, stream, fig, axes,  window, scale, dejitter=True):
         """Init"""
         self.stream = stream
@@ -182,21 +173,3 @@ class LSLViewer():
 
     def stop(self):
         self.started = False
-
-
-fig, axes = plt.subplots(1, 1, figsize=figsize, sharex=True)
-lslv = LSLViewer(streams[0], fig, axes, window, scale)
-
-help_str = """
-            toggle filter : d
-            toogle full screen : f
-            zoom out : /
-            zoom in : *
-            increase time scale : -
-            decrease time scale : +
-           """
-print(help_str)
-lslv.start()
-
-plt.show()
-lslv.stop()

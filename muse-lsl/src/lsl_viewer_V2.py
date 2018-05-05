@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 2
 # Copyright (c) 2015, Vispy Development Team.
@@ -17,54 +16,6 @@ from pylsl import StreamInlet, resolve_byprop
 from scipy.signal import lfilter, lfilter_zi
 from mne.filter import create_filter
 
-print("looking for an EEG stream...")
-streams = resolve_byprop('type', 'EEG', timeout=2)
-
-if len(streams) == 0:
-    raise(RuntimeError("Can't find EEG stream"))
-print("Start acquiring data")
-
-inlet = StreamInlet(streams[0], max_chunklen=12)
-
-info = inlet.info()
-description = info.desc()
-
-window = 10
-sfreq = info.nominal_srate()
-n_samples = int(sfreq * window)
-n_chan = info.channel_count()
-
-ch = description.child('channels').first_child()
-ch_names = [ch.child_value('label')]
-
-for i in range(n_chan):
-    ch = ch.next_sibling()
-    ch_names.append(ch.child_value('label'))
-
-# Number of cols and rows in the table.
-nrows = n_chan
-ncols = 1
-
-# Number of signals.
-m = nrows*ncols
-
-# Number of samples per signal.
-n = n_samples
-
-# Various signal amplitudes.
-amplitudes = np.zeros((m, n)).astype(np.float32)
-gamma = np.ones((m, n)).astype(np.float32)
-# Generate the signals as a (m, n) array.
-y = amplitudes
-
-color = color_palette("RdBu_r", nrows)
-
-color = np.repeat(color, n, axis=0).astype(np.float32)
-# Signal 2D index of each vertex (row and col) and x-index (sample index
-# within each signal).
-index = np.c_[np.repeat(np.repeat(np.arange(ncols), nrows), n),
-              np.repeat(np.tile(np.arange(nrows), ncols), n),
-              np.tile(np.arange(n), m)].astype(np.float32)
 
 VERT_SHADER = """
 #version 120
@@ -94,7 +45,7 @@ void main() {
     // Find the affine transformation for the subplots.
     vec2 a = vec2(1./ncols, 1./nrows)*.9;
     vec2 b = vec2(-1 + 2*(a_index.x+.5) / ncols,
-                  -1 + 2*(a_index.y+.5) / nrows);
+                    -1 + 2*(a_index.y+.5) / nrows);
     // Apply the static subplot transformation + scaling.
     gl_Position = vec4(a*u_scale*position+b, 0.0, 1.0);
     v_color = vec4(a_color, 1.);
@@ -123,6 +74,57 @@ void main() {
 }
 """
 
+def view():
+    print("looking for an EEG stream...")
+    streams = resolve_byprop('type', 'EEG', timeout=2)
+
+    if len(streams) == 0:
+        raise(RuntimeError("Can't find EEG stream"))
+    print("Start acquiring data")
+
+    inlet = StreamInlet(streams[0], max_chunklen=12)
+
+    info = inlet.info()
+    description = info.desc()
+
+    window = 10
+    sfreq = info.nominal_srate()
+    n_samples = int(sfreq * window)
+    n_chan = info.channel_count()
+
+    ch = description.child('channels').first_child()
+    ch_names = [ch.child_value('label')]
+
+    for i in range(n_chan):
+        ch = ch.next_sibling()
+        ch_names.append(ch.child_value('label'))
+
+    # Number of cols and rows in the table.
+    nrows = n_chan
+    ncols = 1
+
+    # Number of signals.
+    m = nrows*ncols
+
+    # Number of samples per signal.
+    n = n_samples
+
+    # Various signal amplitudes.
+    amplitudes = np.zeros((m, n)).astype(np.float32)
+    gamma = np.ones((m, n)).astype(np.float32)
+    # Generate the signals as a (m, n) array.
+    y = amplitudes
+
+    color = color_palette("RdBu_r", nrows)
+
+    color = np.repeat(color, n, axis=0).astype(np.float32)
+    # Signal 2D index of each vertex (row and col) and x-index (sample index
+    # within each signal).
+    index = np.c_[np.repeat(np.repeat(np.arange(ncols), nrows), n),
+                  np.repeat(np.tile(np.arange(nrows), ncols), n),
+                  np.tile(np.arange(n), m)].astype(np.float32)
+    c = Canvas()
+    app.run()
 
 class Canvas(app.Canvas):
     def __init__(self, scale=500, filt=True):
@@ -248,7 +250,3 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
         self.program.draw('line_strip')
         [t.draw() for t in self.names + self.quality]
-
-if __name__ == '__main__':
-    c = Canvas()
-    app.run()

@@ -14,9 +14,11 @@ class Program:
             description='muse-lsl can be used to stream and visualize EEG data from the Muse 2016 headset.',
             usage='''muse-lsl <command> [<args>]
     These are the commands:
-    stream    Start an LSL stream from Muse headset.
-    view      Start viewing EEG data from LSL stream.
-    record    Record data from Muse.
+    list        List available Muse devices. 
+    stream      Start an LSL stream from Muse headset.
+    record      Start LSL stream and record data from Muse headset.
+    lslview     Visualize EEG data from an LSL stream.
+    lslrecord   Record EEG data from an LSL stream.
         ''')
 
         parser.add_argument('command', help='Command to run.')
@@ -31,6 +33,11 @@ class Program:
 
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
+
+    def list():
+        parser = argparse.ArgumentParser(description='List available Muse devices.')
+        import muse_stream
+        muse_stream.list_devices()
 
     def stream(self):
         parser = argparse.ArgumentParser(description='Start an LSL stream from Muse headset.')
@@ -51,15 +58,16 @@ class Program:
         muse_stream.stream(args.address, args.backend, args.interface, args.name)
 
     def record(self):
-        parser = argparse.ArgumentParser(description='Start an LSL stream from Muse headset.')
+        parser = argparse.ArgumentParser(description='Start LSL stream and record data from Muse headset.')
         parser.add_argument("-a", "--address",
                   dest="address", type=str, default="00:55:DA:B0:06:D6",
                   help="device mac address.")
+        args = parser.parse_args(sys.argv[2:])
         import muse_record
-        muse_record.record(args.address, args.backend, args.interface, args.name)
+        muse_record.record(args.address)
 
     def lsl_view(self):
-        parser = argparse.ArgumentParser(description='Start viewing EEG data from LSL stream.')
+        parser = argparse.ArgumentParser(description='Start viewing EEG data from an LSL stream.')
         parser.add_argument("-w", "--window",
                   dest="window", type=float, default=5.,
                   help="window length to display in seconds.")
@@ -72,6 +80,16 @@ class Program:
         parser.add_argument("-f", "--figure",
                   dest="figure", type=str, default="15x6",
                   help="window size.")
+        parser.add_argument("-v", "--version",
+                  dest="version", type=int, default=1,
+                  help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
+        args = parser.parse_args(sys.argv[2:])
+        if args.version == 2:
+            import lsl_viewer_V2
+            lsl_viewer_V2.view()
+        else:
+            import lsl_viewer
+            lsl_viewer.view(args.window, args.scale, args.refresh, args.figure)
 
     def lsl_record(self):
         parser = argparse.ArgumentParser(description='Record data from Muse.')
@@ -82,17 +100,9 @@ class Program:
         parser.add_argument("-f", "--filename",
                 dest="filename", type=str, default=default_fname,
                 help="Name of the recording file.")
-        from muselsl import lslrecord
-        lslrecord.record(duration, filename)
-
-def run(script, args):  
-    cmd = script + ' ' + args
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-    out, err = p.communicate() 
-    result = out.split('\n')
-    for lin in result:
-        if not lin.startswith('#'):
-            print(lin)
+        args = parser.parse_args(sys.argv[2:])
+        import lsl_record
+        lsl_record.record(args.duration, args.filename)
 
 if __name__ == '__main__':
     Program()

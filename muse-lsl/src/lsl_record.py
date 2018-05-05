@@ -1,16 +1,11 @@
-#!/usr/bin/env python
 import numpy as np
 import pandas as pd
-from optparse import OptionParser
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
 
 def record(duration, filename):
     # dejitter timestamps
     dejitter = False
-
-    (options, args) = parser.parse_args()
-
 
     print("looking for an EEG stream...")
     streams = resolve_byprop('type', 'EEG', timeout=2)
@@ -51,7 +46,7 @@ def record(duration, filename):
     time_correction = inlet.time_correction()
     print(time_correction)
     print('Start recording at time t=%.3f' % t_init)
-    while (time() - t_init) < options.duration:
+    while (time() - t_init) < duration:
         try:
             data, timestamp = inlet.pull_chunk(timeout=1.0,
                                                max_samples=12)
@@ -92,7 +87,6 @@ def record(duration, filename):
         for ii in range(n_markers):
             data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
 
-
-    data.to_csv(options.filename, float_format='%.3f', index=False)
+    data.to_csv(filename, float_format='%.3f', index=False)
 
     print('Done !')

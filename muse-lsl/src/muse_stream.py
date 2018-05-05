@@ -1,9 +1,30 @@
 from muse import Muse
 from time import sleep
 from pylsl import StreamInfo, StreamOutlet, local_clock
-from optparse import OptionParser
+import pygatt
+from sys import platform
 
-def process(data, timestamps):
+def list_devices():
+    interface = None
+    if platform == "linux" or platform == "linux2":
+        backend = 'gatt'
+    else:
+        backend = 'bgapi'
+
+    if backend == 'gatt':
+        interface = interface or 'hci0'
+        adapter = pygatt.GATTToolBackend(interface)
+    else:
+        adapter = pygatt.BGAPIBackend(serial_port=interface)
+
+    print('Searching for Muses, this may take up to 10 seconds...')
+    list_devices = adapter.scan(timeout=10.5)
+
+    for device in list_devices:
+        if 'Muse' in device['name']:
+            print('Found device %s, MAC Address %s' % (device['name'], device['address']))
+
+def __process__(data, timestamps):
         for ii in range(12):
             outlet.push_sample(data[:, ii], timestamps[ii])
 
