@@ -5,9 +5,7 @@ import pandas as pd
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("-a", "--address",
-                  dest="address", type='string', default="00:55:DA:B0:06:D6",
-                  help="device mac address.")
+
 
 (options, args) = parser.parse_args()
 
