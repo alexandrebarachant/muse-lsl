@@ -4,6 +4,7 @@ from pylsl import StreamInfo, StreamOutlet, local_clock
 import pygatt
 from sys import platform
 
+
 def list_devices():
     interface = None
     if platform == "linux" or platform == "linux2":
@@ -18,19 +19,24 @@ def list_devices():
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
     print('Searching for Muses, this may take up to 10 seconds...')
-    list_devices = adapter.scan(timeout=10.5)
+    devices = adapter.scan(timeout=10.5)
+    muses = []
 
-    for device in list_devices:
-        if 'Muse' in device['name']:
-            print('Found device %s, MAC Address %s' % (device['name'], device['address']))
+    for device in devices:
+        if device['name'] and 'Muse' in device['name']:
+            muses = muses + [device]
+
+    return muses
+
 
 def __process__(data, timestamps):
-        for ii in range(12):
-            outlet.push_sample(data[:, ii], timestamps[ii])
+    for ii in range(12):
+        outlet.push_sample(data[:, ii], timestamps[ii])
+
 
 def stream(address, backend, interface, name):
     info = info = StreamInfo('Muse', 'EEG', 5, 256, 'float32',
-                         'Muse%s' % address)
+                             'Muse%s' % address)
 
     info.desc().append_child_value("manufacturer", "Muse")
     channels = info.desc().append_child("channels")

@@ -48,11 +48,17 @@ class Program:
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
 
-    def list():
+    def list(self):
         parser = argparse.ArgumentParser(
             description='List available Muse devices.')
         import muse_stream
-        muse_stream.list_devices()
+        muses = muse_stream.list_devices()
+        if(muses):
+            for muse in muses:
+                print('Found device %s, MAC Address %s' %
+                      (muse['name'], muse['address']))
+        else:
+            print('No Muses found')
 
     def stream(self):
         parser = argparse.ArgumentParser(
