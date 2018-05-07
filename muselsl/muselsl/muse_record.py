@@ -11,7 +11,7 @@ def __process__(data, timestamps):
     full_data.append(data)
 
 def record(address):
-    muse = Muse(address, process)
+    muse = Muse(address, __process__)
 
     muse.connect()
     muse.start()

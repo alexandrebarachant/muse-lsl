@@ -3,6 +3,7 @@ import pygatt
 import numpy as np
 from time import time, sleep
 from sys import platform
+import subprocess
 
 class Muse():
     """Muse 2016 headband"""
@@ -39,7 +40,7 @@ class Muse():
         self.interface = interface
         self.time_func = time_func
 
-        if backend in ['auto', 'gatt', 'bgapi']:
+        if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:
             if backend == 'auto':
                 if platform == "linux" or platform == "linux2":
                     self.backend = 'gatt'
@@ -48,44 +49,53 @@ class Muse():
             else:
                 self.backend = backend
         else:
-            raise(ValueError('Backend must be auto, gatt or bgapi'))
+            raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse'))
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
+        if self.backend == 'bluemuse':
+            print('Starting BlueMuse')
+            subprocess.call('start bluemuse:', shell=True)
 
-        if self.backend == 'gatt':
-            self.interface = self.interface or 'hci0'
-            self.adapter = pygatt.GATTToolBackend(self.interface)
         else:
-            self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
+            if self.backend == 'gatt':
+                self.interface = self.interface or 'hci0'
+                self.adapter = pygatt.GATTToolBackend(self.interface)
+            elif self.backend == 'bgapi':
+                self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)            
 
-        self.adapter.start()
+            self.adapter.start()
+            print('started')
 
-        if self.address is None:
-            address = self.find_muse_address(self.name)
-            if address is None:
-                raise(ValueError("Can't find Muse Device"))
-            else:
-                self.address = address
-        self.device = self.adapter.connect(self.address)
+            if self.address is None:
+                address = self.find_muse_address(self.name)
+                if address is None:
+                    raise(ValueError("Can't find Muse Device"))
+                else:
+                    self.address = address
+            self.device = self.adapter.connect(self.address)
 
-        # subscribes to EEG stream
-        if self.enable_eeg:
-            self._subscribe_eeg()
+            # subscribes to EEG stream
+            if self.enable_eeg:
+                self._subscribe_eeg()
 
-        if self.enable_control:
-            self._subscribe_control()
+            if self.enable_control:
+                self._subscribe_control()
 
-        if self.enable_telemetry:
-            self._subscribe_telemetry()
+            if self.enable_telemetry:
+                self._subscribe_telemetry()
 
-        if self.enable_acc:
-            self._subscribe_acc()
+            if self.enable_acc:
+                self._subscribe_acc()
 
-        if self.enable_gyro:
-            self._subscribe_gyro()
+            if self.enable_gyro:
+                self._subscribe_gyro()
 
     def find_muse_address(self, name=None):
+        if self.backend == 'bluemuse':
+            print('not supported by bluemuse backend')
+            return None
+
         """look for ble device with a muse in the name"""
         list_devices = self.adapter.scan(timeout=10.5)
         for device in list_devices:
@@ -104,7 +114,6 @@ class Muse():
 
     def _write_cmd(self, cmd):
         """Wrapper to write a command to the Muse device.
-
         cmd -- list of bytes"""
         self.device.char_write_handle(0x000e, cmd, False)
 
@@ -123,6 +132,9 @@ class Muse():
         "ps": preset selected
         "rc": return status, if 0 is OK
         """
+        if self.backend == 'bluemuse':
+            print('not supported by bluemuse backend')
+            return
         self._write_cmd([0x02, 0x73, 0x0a])
 
     def ask_device_info(self):
@@ -139,10 +151,20 @@ class Muse():
         "pv": protocol version?
         "rc": return status, if 0 is OK
         """
+        if self.backend == 'bluemuse':
+            print('not supported by bluemuse backend')
+            return
         self._write_cmd([0x03, 0x76, 0x31, 0x0a])
 
     def start(self):
         """Start streaming."""
+        if self.backend == 'bluemuse':
+            address = self.address if self.address is not None else self.name
+            if address is None:
+                subprocess.call('start bluemuse://start?streamfirst=true'.format(), shell=True)
+            else: subprocess.call('start bluemuse://start?addresses='.format(), shell=True)
+            return
+
         self._init_timestamp_correction()
         self._init_sample()
         self.last_tm = 0
@@ -152,10 +174,18 @@ class Muse():
 
     def stop(self):
         """Stop streaming."""
+        if self.backend == 'bluemuse':
+            subprocess.call('start bluemuse://start?addresses='.format(self.address + self.name), shell=True)
+            return
+
         self._write_cmd([0x02, 0x68, 0x0a])
 
     def disconnect(self):
         """disconnect."""
+        if self.backend == 'bluemuse':
+            subprocess.call('start bluemuse://shutdown', shell=True)
+            return
+
         self.device.disconnect()
         self.adapter.stop()
 

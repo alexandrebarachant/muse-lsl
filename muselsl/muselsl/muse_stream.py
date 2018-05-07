@@ -41,7 +41,7 @@ def stream(address, backend, interface, name):
             .append_child_value("unit", "microvolts") \
             .append_child_value("type", "EEG")
     outlet = StreamOutlet(info, 12, 360)
-    muse = Muse(address=address, callback_eeg=process,
+    muse = Muse(address=address, callback_eeg=__process__,
                 backend=backend, time_func=local_clock,
                 interface=interface, name=name)
 

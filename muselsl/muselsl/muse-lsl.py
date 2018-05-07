@@ -16,7 +16,7 @@ class Program:
     These are the commands:
     list        List available Muse devices. 
     stream      Start an LSL stream from Muse headset.
-    record      Start LSL stream and record data from Muse headset.
+    record      Record data directly from Muse headset (no LSL).
     lslview     Visualize EEG data from an LSL stream.
     lslrecord   Record EEG data from an LSL stream.
         ''')
@@ -36,6 +36,13 @@ class Program:
 
     def list():
         parser = argparse.ArgumentParser(description='List available Muse devices.')
+        parser.add_argument("-b", "--backend",
+            dest="backend", type=str, default="auto",
+            help="pygatt backend to use. can be auto, gatt or bgapi")
+        parser.add_argument("-i", "--interface",
+            dest="interface", type=str, default=None,
+            help="The interface to use, 'hci0' for gatt or a com port for bgapi")
+        args = parser.parse_args(sys.argv[2:])
         import muse_stream
         muse_stream.list_devices()
 
