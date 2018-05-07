@@ -4,7 +4,6 @@ import getopt
 import argparse
 import re
 import os
-import subprocess
 import configparser
 from time import time, strftime, gmtime
 

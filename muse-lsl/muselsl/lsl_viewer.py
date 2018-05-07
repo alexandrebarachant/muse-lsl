@@ -5,12 +5,12 @@ from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
 from threading import Thread
+from constants import VIEW_SUBSAMPLE, VIEW_BUFFER
+
 
 def view(window, scale, refresh, figure):
     sns.set(style="whitegrid")
-    filt = True
-    subsample = 2
-    buf = 12
+
     figsize = np.int16(figure.split('x'))
 
     print("looking for an EEG stream...")
@@ -35,6 +35,7 @@ def view(window, scale, refresh, figure):
     plt.show()
     lslv.stop()
 
+
 class LSLViewer():
     def __init__(self, stream, fig, axes,  window, scale, dejitter=True):
         """Init"""
@@ -42,8 +43,9 @@ class LSLViewer():
         self.window = window
         self.scale = scale
         self.dejitter = dejitter
-        self.inlet = StreamInlet(stream, max_chunklen=buf)
+        self.inlet = StreamInlet(stream, max_chunklen=VIEW_BUFFER)
         self.filt = True
+        self.subsample = VIEW_SUBSAMPLE
 
         info = self.inlet.info()
         description = info.desc()

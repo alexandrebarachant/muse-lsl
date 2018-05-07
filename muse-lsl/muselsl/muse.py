@@ -85,6 +85,7 @@ class Muse():
         if self.enable_gyro:
             self._subscribe_gyro()
 
+    # TTODO: remove this
     def find_muse_address(self, name=None):
         """look for ble device with a muse in the name"""
         list_devices = self.adapter.scan(timeout=10.5)

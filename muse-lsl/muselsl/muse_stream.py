@@ -1,4 +1,5 @@
 from muse import Muse
+from constants import NB_CHANNELS, SAMPLING_RATE, SCAN_TIMEOUT, LSL_CHUNK
 from time import sleep
 from pylsl import StreamInfo, StreamOutlet, local_clock
 import pygatt
@@ -17,9 +18,9 @@ def list_devices():
         adapter = pygatt.GATTToolBackend(interface)
     else:
         adapter = pygatt.BGAPIBackend(serial_port=interface)
-
+ 
     print('Searching for Muses, this may take up to 10 seconds...')
-    devices = adapter.scan(timeout=10.5)
+    devices = adapter.scan(timeout=SCAN_TIMEOUT)
     muses = []
 
     for device in devices:
@@ -28,14 +29,8 @@ def list_devices():
 
     return muses
 
-
-def __process__(data, timestamps):
-    for ii in range(12):
-        outlet.push_sample(data[:, ii], timestamps[ii])
-
-
 def stream(address, backend, interface, name):
-    info = info = StreamInfo('Muse', 'EEG', 5, 256, 'float32',
+    info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',
                              'Muse%s' % address)
 
     info.desc().append_child_value("manufacturer", "Muse")
@@ -46,8 +41,14 @@ def stream(address, backend, interface, name):
             .append_child_value("label", c) \
             .append_child_value("unit", "microvolts") \
             .append_child_value("type", "EEG")
-    outlet = StreamOutlet(info, 12, 360)
-    muse = Muse(address=address, callback_eeg=process,
+
+    outlet = StreamOutlet(info, LSL_CHUNK)
+
+    def push_eeg(data, timestamps):
+        for ii in range(LSL_CHUNK):
+            outlet.push_sample(data[:, ii], timestamps[ii])
+    
+    muse = Muse(address=address, callback_eeg=push_eeg,
                 backend=backend, time_func=local_clock,
                 interface=interface, name=name)
 
