@@ -34,7 +34,7 @@ class Program:
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
 
-    def list():
+    def list(self):
         parser = argparse.ArgumentParser(description='List available Muse devices.')
         parser.add_argument("-b", "--backend",
             dest="backend", type=str, default="auto",
@@ -44,13 +44,13 @@ class Program:
             help="The interface to use, 'hci0' for gatt or a com port for bgapi")
         args = parser.parse_args(sys.argv[2:])
         import muse_stream
-        muse_stream.list_devices()
+        muse_stream.list_devices(args.backend, args.interface)
 
     def stream(self):
         parser = argparse.ArgumentParser(description='Start an LSL stream from Muse headset.')
         parser.add_argument("-a", "--address",
                   dest="address", type=str, default=None,
-                  help="device mac address.")
+                  help="device MAC address.")
         parser.add_argument("-n", "--name",
                   dest="name", type=str, default=None,
                   help="name of the device.")
@@ -67,11 +67,20 @@ class Program:
     def record(self):
         parser = argparse.ArgumentParser(description='Start LSL stream and record data from Muse headset.')
         parser.add_argument("-a", "--address",
-                  dest="address", type=str, default="00:55:DA:B0:06:D6",
-                  help="device mac address.")
+                  dest="address", type=str, default=None,
+                  help="device MAC address.")
+        parser.add_argument("-n", "--name",
+                  dest="name", type=str, default=None,
+                  help="name of the device.")
+        parser.add_argument("-b", "--backend",
+                  dest="backend", type=str, default="auto",
+                  help="pygatt backend to use. can be auto, gatt or bgapi")
+        parser.add_argument("-i", "--interface",
+                  dest="interface", type=str, default=None,
+                  help="The interface to use, 'hci0' for gatt or a com port for bgapi")
         args = parser.parse_args(sys.argv[2:])
         import muse_record
-        muse_record.record(args.address)
+        muse_record.record(args.address, args.backend, args.interface, args.name)
 
     def lsl_view(self):
         parser = argparse.ArgumentParser(description='Start viewing EEG data from an LSL stream.')

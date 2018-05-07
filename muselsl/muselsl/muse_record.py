@@ -10,7 +10,11 @@ def __process__(data, timestamps):
     full_time.append(timestamps)
     full_data.append(data)
 
-def record(address):
+def record(address, backend, interface, name):
+    if backend == 'bluemuse':
+        raise(NotImplementedError('Direct record not supported with BlueMuse background. Use lslrecord with BlueMuse instead.'))
+        return
+
     muse = Muse(address, __process__)
 
     muse.connect()

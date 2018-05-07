@@ -2,18 +2,30 @@ from muse import Muse
 from time import sleep
 from pylsl import StreamInfo, StreamOutlet, local_clock
 import pygatt
+import subprocess
 from sys import platform
 
-def list_devices():
+def list_devices(backend, interface):
     interface = None
-    if platform == "linux" or platform == "linux2":
-        backend = 'gatt'
+
+    if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:
+        if backend == 'auto':
+            if platform == "linux" or platform == "linux2":
+                backend = 'gatt'
+            else:
+                backend = 'bgapi'
+        else:
+            backend = backend
     else:
-        backend = 'bgapi'
+        raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse'))
 
     if backend == 'gatt':
         interface = interface or 'hci0'
         adapter = pygatt.GATTToolBackend(interface)
+    elif backend == 'bluemuse':
+        print('Starting BlueMuse, see BlueMuse window for interactive list of devices.')
+        subprocess.call('start bluemuse:', shell=True)
+        return
     else:
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
