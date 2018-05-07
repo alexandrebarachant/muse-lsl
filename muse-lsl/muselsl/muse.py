@@ -4,7 +4,6 @@ import numpy as np
 from time import time, sleep
 from sys import platform
 
-
 class Muse():
     """Muse 2016 headband"""
 
