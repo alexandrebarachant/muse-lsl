@@ -54,7 +54,7 @@ def stream(address, backend, interface, name):
             address = found_muse['address']
             name = found_muse['name']
 
-    print('Connecting to %s : %s...' % (name, address))
+    print('Connecting to %s : %s...' % (name if name else 'Muse', address))
 
     info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',
                              'Muse%s' % address)
@@ -78,17 +78,18 @@ def stream(address, backend, interface, name):
                 backend=backend, time_func=local_clock,
                 interface=interface, name=name)
 
-    muse.connect()
-    print('Connected')
-    muse.start()
-    print('Streaming')
+    didConnect = muse.connect()
+    if(didConnect):
+        print('Connected')
+        muse.start()
+        print('Streaming')
 
-    while 1:
-        try:
-            sleep(1)
-        except:
-            break
+        while 1:
+            try:
+                sleep(1)
+            except:
+                break
 
-    muse.stop()
-    muse.disconnect()
-    print('Disonnected')
+        muse.stop()
+        muse.disconnect()
+        print('Disconnected')

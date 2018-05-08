@@ -53,31 +53,37 @@ class Muse():
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
+        try:
 
-        if self.backend == 'gatt':
-            self.interface = self.interface or 'hci0'
-            self.adapter = pygatt.GATTToolBackend(self.interface)
-        else:
-            self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
+            if self.backend == 'gatt':
+                self.interface = self.interface or 'hci0'
+                self.adapter = pygatt.GATTToolBackend(self.interface)
+            else:
+                self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
 
-        self.adapter.start()
-        self.device = self.adapter.connect(self.address)
+            self.adapter.start()
+            self.device = self.adapter.connect(self.address)
 
-        # subscribes to EEG stream
-        if self.enable_eeg:
-            self._subscribe_eeg()
+            # subscribes to EEG stream
+            if self.enable_eeg:
+                self._subscribe_eeg()
 
-        if self.enable_control:
-            self._subscribe_control()
+            if self.enable_control:
+                self._subscribe_control()
 
-        if self.enable_telemetry:
-            self._subscribe_telemetry()
+            if self.enable_telemetry:
+                self._subscribe_telemetry()
 
-        if self.enable_acc:
-            self._subscribe_acc()
+            if self.enable_acc:
+                self._subscribe_acc()
 
-        if self.enable_gyro:
-            self._subscribe_gyro()
+            if self.enable_gyro:
+                self._subscribe_gyro()
+
+            return True
+        except (pygatt.exceptions.NotConnectedError, pygatt.exceptions.NotificationTimeout):
+            print('Connection to', self.address, 'failed')
+            return False
 
     def _write_cmd(self, cmd):
         """Wrapper to write a command to the Muse device.
