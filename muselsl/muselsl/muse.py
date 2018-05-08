@@ -5,12 +5,13 @@ from time import time, sleep
 from sys import platform
 import subprocess
 
+
 class Muse():
     """Muse 2016 headband"""
 
-    def __init__(self, address=None, callback_eeg=None, callback_control=None,
-                callback_telemetry=None, callback_acc=None, callback_gyro=None,
-                backend='auto', interface=None, time_func=time, name=None):
+    def __init__(self, address, callback_eeg=None, callback_control=None,
+                 callback_telemetry=None, callback_acc=None, callback_gyro=None,
+                 backend='auto', interface=None, time_func=time, name=None):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -53,43 +54,50 @@ class Muse():
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
-        if self.backend == 'bluemuse':
-            print('Starting BlueMuse')
-            subprocess.call('start bluemuse:', shell=True)
+        try:
+            if self.backend == 'bluemuse':
+                print('Starting BlueMuse')
+                subprocess.call('start bluemuse:', shell=True)
 
-        else:
-            if self.backend == 'gatt':
-                self.interface = self.interface or 'hci0'
-                self.adapter = pygatt.GATTToolBackend(self.interface)
             else:
-                self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)            
-
-            self.adapter.start()
-            print('started')
-
-            if self.address is None:
-                address = self.find_muse_address(self.name)
-                if address is None:
-                    raise(ValueError("Can't find Muse Device"))
+                if self.backend == 'gatt':
+                    self.interface = self.interface or 'hci0'
+                    self.adapter = pygatt.GATTToolBackend(self.interface)
                 else:
-                    self.address = address
-            self.device = self.adapter.connect(self.address)
+                    self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)            
 
-            # subscribes to EEG stream
-            if self.enable_eeg:
-                self._subscribe_eeg()
+                self.adapter.start()
+                print('started')
 
-            if self.enable_control:
-                self._subscribe_control()
+                if self.address is None:
+                    address = self.find_muse_address(self.name)
+                    if address is None:
+                        raise(ValueError("Can't find Muse Device"))
+                    else:
+                        self.address = address
+                self.device = self.adapter.connect(self.address)
 
-            if self.enable_telemetry:
-                self._subscribe_telemetry()
+                # subscribes to EEG stream
+                if self.enable_eeg:
+                    self._subscribe_eeg()
 
-            if self.enable_acc:
-                self._subscribe_acc()
+                if self.enable_control:
+                    self._subscribe_control()
 
-            if self.enable_gyro:
-                self._subscribe_gyro()
+                if self.enable_telemetry:
+                    self._subscribe_telemetry()
+
+                if self.enable_acc:
+                    self._subscribe_acc()
+
+                if self.enable_gyro:
+                    self._subscribe_gyro()
+
+                return True
+
+        except (pygatt.exceptions.NotConnectedError, pygatt.exceptions.NotificationTimeout):
+            print('Connection to', self.address, 'failed')
+            return False
 
     def find_muse_address(self, name=None):
         if self.backend == 'bluemuse':
@@ -192,7 +200,6 @@ class Muse():
         self.device.disconnect()
         self.adapter.stop()
 
-
     def _subscribe_eeg(self):
         """subscribe to eeg stream."""
         self.device.subscribe('273e0003-4c4d-454d-96be-f03bac821358',
@@ -273,13 +280,13 @@ class Muse():
             self.callback_eeg(self.data, timestamps)
             self._init_sample()
 
-
     def _init_control(self):
         """Variable to store the current incoming message."""
         self._current_msg = ""
 
     def _subscribe_control(self):
-        self.device.subscribe('273e0001-4c4d-454d-96be-f03bac821358', callback=self._handle_control)
+        self.device.subscribe(
+            '273e0001-4c4d-454d-96be-f03bac821358', callback=self._handle_control)
 
     def _handle_control(self, handle, packet):
         """Handle the incoming messages from the 0x000e handle.
@@ -317,24 +324,24 @@ class Muse():
         # Add to current message
         self._current_msg += incoming_message
 
-        if incoming_message[-1] == '}': # Message ended completely
+        if incoming_message[-1] == '}':  # Message ended completely
             self.callback_control(self._current_msg)
 
             self._init_control()
 
     def _subscribe_telemetry(self):
         self.device.subscribe('273e000b-4c4d-454d-96be-f03bac821358',
-                            callback=self._handle_telemetry)
+                              callback=self._handle_telemetry)
 
     def _handle_telemetry(self, handle, packet):
         """Handle the telemetry (battery, temperature and stuff) incoming data"""
 
-        if handle != 26: # handle 0x1a
+        if handle != 26:  # handle 0x1a
             return
         timestamp = self.time_func()
 
         bit_decoder = bitstring.Bits(bytes=packet)
-        pattern = "uint:16,uint:16,uint:16,uint:16,uint:16" # The rest is 0 padding
+        pattern = "uint:16,uint:16,uint:16,uint:16,uint:16"  # The rest is 0 padding
         data = bit_decoder.unpack(pattern)
 
         packet_index = data[0]
@@ -343,8 +350,8 @@ class Muse():
         adc_volt = data[3]
         temperature = data[4]
 
-        self.callback_telemetry(timestamp, battery, fuel_gauge, adc_volt, temperature)
-
+        self.callback_telemetry(
+            timestamp, battery, fuel_gauge, adc_volt, temperature)
 
     def _unpack_imu_channel(self, packet, scale=1):
         """Decode data packet of the accelerometer and gyro (imu) channels.
@@ -365,40 +372,42 @@ class Muse():
             scale * data[index + 2]     # z
         ] for index in [1, 4, 7]]
 
-        ## samples is a list with 3 samples
-        ## each sample is a list with [x, y, z]
+        # samples is a list with 3 samples
+        # each sample is a list with [x, y, z]
 
         return packet_index, samples
 
     def _subscribe_acc(self):
         self.device.subscribe('273e000a-4c4d-454d-96be-f03bac821358',
-                            callback=self._handle_acc)
+                              callback=self._handle_acc)
 
     def _handle_acc(self, handle, packet):
         """Handle incoming accelerometer data.
 
         sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
-        if handle != 23: # handle 0x17
+        if handle != 23:  # handle 0x17
             return
         timestamp = self.time_func()
 
-        packet_index, samples = self._unpack_imu_channel(packet, scale=0.0000610352)
+        packet_index, samples = self._unpack_imu_channel(
+            packet, scale=0.0000610352)
 
         self.callback_acc(timestamp, samples)
 
     def _subscribe_gyro(self):
         self.device.subscribe('273e0009-4c4d-454d-96be-f03bac821358',
-                            callback=self._handle_gyro)
+                              callback=self._handle_gyro)
 
     def _handle_gyro(self, handle, packet):
         """Handle incoming gyroscope data.
 
         sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
-        if handle != 20: # handle 0x14
+        if handle != 20:  # handle 0x14
             return
 
         timestamp = self.time_func()
 
-        packet_index, samples = self._unpack_imu_channel(packet, scale=0.0074768)
+        packet_index, samples = self._unpack_imu_channel(
+            packet, scale=0.0074768)
 
         self.callback_gyro(timestamp, samples)
