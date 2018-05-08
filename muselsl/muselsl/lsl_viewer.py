@@ -77,8 +77,8 @@ class LSLViewer():
         lines = []
 
         for ii in range(self.n_chan):
-            line, = axes.plot(self.times[::subsample],
-                              self.data[::subsample, ii] - ii, lw=1)
+            line, = axes.plot(self.times[::self.subsample],
+                              self.data[::self.subsample, ii] - ii, lw=1)
             lines.append(line)
         self.lines = lines
 
@@ -135,9 +135,9 @@ class LSLViewer():
                     elif not self.filt:
                         plot_data = self.data - self.data.mean(axis=0)
                     for ii in range(self.n_chan):
-                        self.lines[ii].set_xdata(self.times[::subsample] -
+                        self.lines[ii].set_xdata(self.times[::self.subsample] -
                                                  self.times[-1])
-                        self.lines[ii].set_ydata(plot_data[::subsample, ii] /
+                        self.lines[ii].set_ydata(plot_data[::self.subsample, ii] /
                                                  self.scale - ii)
                         impedances = np.std(plot_data, axis=0)
 
