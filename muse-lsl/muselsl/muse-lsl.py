@@ -51,7 +51,7 @@ class Program:
         parser = argparse.ArgumentParser(
             description='List available Muse devices.')
         import muse_stream
-        muses = muse_stream.list_devices()
+        muses = muse_stream.list_muses()
         if(muses):
             for muse in muses:
                 print('Found device %s, MAC Address %s' %
