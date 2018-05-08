@@ -70,7 +70,7 @@ def stream(address, backend, interface, name):
         if not address and not name:
             print('Connecting to first device in BlueMuse list, see BlueMuse window...')
         else: 
-            print('Connecting to' + ':'.join(name,address))
+            print('Connecting to: ' + ':'.join(filter(None, [name, address])) + '...')
 
     info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',
                              'Muse%s' % address)
