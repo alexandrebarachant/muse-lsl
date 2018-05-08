@@ -14,23 +14,32 @@ class Program:
             description='Python package for streaming, recording, and visualizing EEG data from the Muse 2016 headset.',
             usage='''muse-lsl <command> [<args>]
     Available commands:
-    list        List available Muse devices. 
+    list        List available Muse devices.
+                -b --backend    pygatt backend to use. can be auto, gatt or bgapi.
+                -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
+
     stream      Start an LSL stream from Muse headset.
-        -a --address    device MAC address
-        -n --name       device name (e.g. Muse-41D2)
-        -b --backend    pygatt backend to use. can be auto, gatt or bgapi
-        -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi
+                -a --address    device MAC address.
+                -n --name       device name (e.g. Muse-41D2).
+                -b --backend    pygatt backend to use. can be auto, gatt or bgapi.
+                -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
+
     record      Record data directly from Muse headset (no LSL).
-        -a --address    device MAC address
-    lslview     Visualize EEG data from an LSL stream.
-        -w --window     window length to display in seconds.
-        -s --scale      scale in uV.
-        -r --refresh    refresh rate in seconds.
-        -f --figure     window size.
-        -v --version    viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).
-    lslrecord   Record EEG data from an LSL stream.
-        -d --duration   duration of the recording in seconds.
-        -f --filename   name of the recording file.
+                -a --address    device MAC address
+                -n --name       device name (e.g. Muse-41D2)
+                -b --backend    pygatt backend to use. can be auto, gatt or bgapi
+                -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
+
+    viewlsl     Visualize EEG data from an LSL stream.
+                -w --window     window length to display in seconds.
+                -s --scale      scale in uV.
+                -r --refresh    refresh rate in seconds.
+                -f --figure     window size.
+                -v --version    viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).
+
+    recordlsl   Record EEG data from an LSL stream.
+                -d --duration   duration of the recording in seconds.
+                -f --filename   name of the recording file.
         ''')
 
         parser.add_argument('command', help='Command to run.')
@@ -50,10 +59,10 @@ class Program:
         parser = argparse.ArgumentParser(description='List available Muse devices.')
         parser.add_argument("-b", "--backend",
             dest="backend", type=str, default="auto",
-            help="pygatt backend to use. can be auto, gatt or bgapi")
+            help="pygatt backend to use. can be auto, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
             dest="interface", type=str, default=None,
-            help="The interface to use, 'hci0' for gatt or a com port for bgapi")
+            help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
         import muse_stream
         muses = muse_stream.list_muses(args.backend, args.interface)
@@ -75,10 +84,10 @@ class Program:
                             help="name of the device.")
         parser.add_argument("-b", "--backend",
                             dest="backend", type=str, default="auto",
-                            help="pygatt backend to use. can be auto, gatt or bgapi")
+                            help="pygatt backend to use. can be auto, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
-                            help="The interface to use, 'hci0' for gatt or a com port for bgapi")
+                            help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
         import muse_stream
         muse_stream.stream(args.address, args.backend,
@@ -103,7 +112,7 @@ class Program:
         import muse_record
         muse_record.record(args.address, args.backend, args.interface, args.name)
 
-    def lsl_view(self):
+    def viewlsl(self):
         parser = argparse.ArgumentParser(
             description='Start viewing EEG data from an LSL stream.')
         parser.add_argument("-w", "--window",
@@ -129,7 +138,7 @@ class Program:
             import lsl_viewer
             lsl_viewer.view(args.window, args.scale, args.refresh, args.figure)
 
-    def lsl_record(self):
+    def recordlsl(self):
         parser = argparse.ArgumentParser(description='Record data from Muse.')
         default_fname = ("data_%s.csv" %
                          strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
