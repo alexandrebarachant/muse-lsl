@@ -55,16 +55,22 @@ def find_muse(name=None):
 
 
 def stream(address, backend, interface, name):
-    if not address:
-        found_muse = find_muse(name)
-        if not found_muse:
-            print('Muse could not be found')
-            return
-        else:
-            address = found_muse['address']
-            name = found_muse['name']
+    if backend != 'bluemuse':
+        if not address:
+            found_muse = find_muse(name)
+            if not found_muse:
+                print('Muse could not be found')
+                return
+            else:
+                address = found_muse['address']
+                name = found_muse['name']
+            print('Connecting to %s : %s...' % (name if name else 'Muse', address))
 
-    print('Connecting to %s : %s...' % (name if name else 'Muse', address))
+    else:
+        if not address and not name:
+            print('Connecting to first device in BlueMuse list, see BlueMuse window...')
+        else: 
+            print('Connecting to' + ':'.join(name,address))
 
     info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',
                              'Muse%s' % address)

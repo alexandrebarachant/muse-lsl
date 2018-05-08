@@ -50,13 +50,13 @@ class Muse():
             else:
                 self.backend = backend
         else:
-            raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse'))
+            raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse.'))
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
         try:
             if self.backend == 'bluemuse':
-                print('Starting BlueMuse')
+                print('Starting BlueMuse.')
                 subprocess.call('start bluemuse:', shell=True)
 
             else:
@@ -93,7 +93,7 @@ class Muse():
                 if self.enable_gyro:
                     self._subscribe_gyro()
 
-                return True
+            return True
 
         except (pygatt.exceptions.NotConnectedError, pygatt.exceptions.NotificationTimeout):
             print('Connection to', self.address, 'failed')
@@ -101,7 +101,7 @@ class Muse():
 
     def find_muse_address(self, name=None):
         if self.backend == 'bluemuse':
-            print('not supported by bluemuse backend')
+            print('Not supported by bluemuse backend.')
             return None
 
         """look for ble device with a muse in the name"""
@@ -141,7 +141,7 @@ class Muse():
         "rc": return status, if 0 is OK
         """
         if self.backend == 'bluemuse':
-            print('not supported by bluemuse backend')
+            print('Not supported by bluemuse backend.')
             return
         self._write_cmd([0x02, 0x73, 0x0a])
 
@@ -160,7 +160,7 @@ class Muse():
         "rc": return status, if 0 is OK
         """
         if self.backend == 'bluemuse':
-            print('not supported by bluemuse backend')
+            print('Not supported by bluemuse backend.')
             return
         self._write_cmd([0x03, 0x76, 0x31, 0x0a])
 
