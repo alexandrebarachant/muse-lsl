@@ -5,7 +5,6 @@ import argparse
 import re
 import os
 import configparser
-from time import time, strftime, gmtime
 
 
 class Program:
@@ -28,7 +27,7 @@ class Program:
                 -a --address    device MAC address
                 -n --name       device name (e.g. Muse-41D2)
                 -b --backend    pygatt backend to use. can be auto, gatt or bgapi
-                -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
+                -i --interface  the interfact to use, 'hci0' for gatt or a com port for bgapi.
 
     viewlsl     Visualize EEG data from an LSL stream.
                 -w --window     window length to display in seconds.
@@ -40,6 +39,7 @@ class Program:
     recordlsl   Record EEG data from an LSL stream.
                 -d --duration   duration of the recording in seconds.
                 -f --filename   name of the recording file.
+                -dj --dejitter  whether to apply dejitter correction to timestamps.
         ''')
 
         parser.add_argument('command', help='Command to run.')
@@ -62,7 +62,7 @@ class Program:
             help="pygatt backend to use. can be auto, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
             dest="interface", type=str, default=None,
-            help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
+            help="the interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
         import muse_stream
         muses = muse_stream.list_muses(args.backend, args.interface)
@@ -107,10 +107,13 @@ class Program:
                   help="pygatt backend to use. can be auto, gatt or bgapi")
         parser.add_argument("-i", "--interface",
                   dest="interface", type=str, default=None,
-                  help="The interface to use, 'hci0' for gatt or a com port for bgapi")
+                  help="the interface to use, 'hci0' for gatt or a com port for bgapi")
+        parser.add_argument("-f", "--filename",
+                dest="filename", type=str, default=None,
+                help="name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
         import muse_record
-        muse_record.record(args.address, args.backend, args.interface, args.name)
+        muse_record.record(args.address, args.backend, args.interface, args.name, args.filename)
 
     def viewlsl(self):
         parser = argparse.ArgumentParser(
@@ -140,17 +143,18 @@ class Program:
 
     def recordlsl(self):
         parser = argparse.ArgumentParser(description='Record data from Muse.')
-        default_fname = ("data_%s.csv" %
-                         strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
         parser.add_argument("-d", "--duration",
                             dest="duration", type=int, default=60,
                             help="duration of the recording in seconds.")
         parser.add_argument("-f", "--filename",
-                            dest="filename", type=str, default=default_fname,
-                            help="Name of the recording file.")
+                            dest="filename", type=str, default=None,
+                            help="name of the recording file.")
+        parser.add_argument("-dj", "--dejitter",
+                            dest="dejitter", type=bool, default=False,
+                            help="whether to apply dejitter correction to timestamps.")
         args = parser.parse_args(sys.argv[2:])
         import lsl_record
-        lsl_record.record(args.duration, args.filename)
+        lsl_record.record(args.duration, args.filename, args.dejitter)
 
 
 if __name__ == '__main__':

@@ -67,14 +67,6 @@ class Muse():
                     self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)            
 
                 self.adapter.start()
-                print('started')
-
-                if self.address is None:
-                    address = self.find_muse_address(self.name)
-                    if address is None:
-                        raise(ValueError("Can't find Muse Device"))
-                    else:
-                        self.address = address
                 self.device = self.adapter.connect(self.address)
 
                 # subscribes to EEG stream
@@ -94,31 +86,11 @@ class Muse():
                     self._subscribe_gyro()
 
             return True
-
+            
         except (pygatt.exceptions.NotConnectedError, pygatt.exceptions.NotificationTimeout):
             print('Connection to', self.address, 'failed')
             return False
 
-    def find_muse_address(self, name=None):
-        if self.backend == 'bluemuse':
-            print('Not supported by bluemuse backend.')
-            return None
-
-        """look for ble device with a muse in the name"""
-        list_devices = self.adapter.scan(timeout=10.5)
-        for device in list_devices:
-            if name:
-                if device['name'] == name:
-                    print('Found device %s : %s' % (device['name'],
-                                                    device['address']))
-                    return device['address']
-
-            elif 'Muse' in device['name']:
-                    print('Found device %s : %s' % (device['name'],
-                                                    device['address']))
-                    return device['address']
-
-        return None
 
     def _write_cmd(self, cmd):
         """Wrapper to write a command to the Muse device.

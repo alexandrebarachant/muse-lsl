@@ -2,10 +2,13 @@ import numpy as np
 import pandas as pd
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
+from time import time, strftime, gmtime
 
-def record(duration, filename):
-    # dejitter timestamps
-    dejitter = False
+
+def record(duration, filename=None, dejitter=False):
+    if not filename:
+        filename = ("recording_%s.csv" %
+                    strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
 
     print("looking for an EEG stream...")
     streams = resolve_byprop('type', 'EEG', timeout=2)

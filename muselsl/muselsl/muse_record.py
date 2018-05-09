@@ -3,19 +3,24 @@ from time import sleep
 import numpy as np
 import pandas as pd
 
-full_time = []
-full_data = []
 
-def __process__(data, timestamps):
-    full_time.append(timestamps)
-    full_data.append(data)
-
-def record(address, backend, interface, name):
+def record(address, backend, interface, name, filename):
     if backend == 'bluemuse':
-        raise(NotImplementedError('Direct record not supported with BlueMuse background. Use lslrecord with BlueMuse instead.'))
-        return
+        raise(NotImplementedError(
+            'Direct record not supported with BlueMuse backend. Use lslrecord instead.'))
 
-    muse = Muse(address, __process__)
+    if not filename:
+        filename = ("recording_%s.csv" %
+                    strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
+
+    eeg_samples = []
+    timestamps = []
+
+    def save_eeg(new_samples, new_timestamps):
+        eeg_samples.append(new_samples)
+        timestamps.append(new_timestamps)
+
+    muse = Muse(address, save_eeg)
 
     muse.connect()
     muse.start()
@@ -29,10 +34,10 @@ def record(address, backend, interface, name):
     muse.stop()
     muse.disconnect()
 
-    full_time = np.concatenate(full_time)
-    full_data = np.concatenate(full_data, 1).T
-    res = pd.DataFrame(data=full_data,
-                       columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
+    timestamps = np.concatenate(timestamps)
+    eeg_samples = np.concatenate(eeg_samples, 1).T
+    recording = pd.DataFrame(data=eeg_samples,
+                             columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
 
-    res['timestamps'] = full_time
-    res.to_csv('dump.csv', float_format='%.3f')
+    recording['timestamps'] = timestamps
+    recording.to_csv(filename, float_format='%.3f')
