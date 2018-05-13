@@ -1,4 +1,16 @@
 from setuptools import setup, find_packages
+from shutil import copyfile
+import os
+
+def copy_docs():
+    docs_dir = 'muselsl/docs'
+    if not os.path.exists(docs_dir):
+        os.makedirs(docs_dir)
+
+    copyfile('README.md', docs_dir + '/README.md')
+    copyfile('blinks.png', docs_dir + '/blinks.png')
+
+copy_docs()
 
 setup(name='muse-lsl',
       version='1.0.0',
@@ -10,7 +22,7 @@ setup(name='muse-lsl',
       license='BSD (3-clause)',
       scripts=['muselsl/muse-lsl.py'],
       packages=find_packages(),
-      package_data={'muselsl': ['README.md', 'LICENSE.txt']},
+      package_data={'muselsl': ['docs/blinks.png', 'docs/README.md']},
       include_package_data=True,
       zip_safe=False,
       install_requires=['bitstring', 'pylsl', 'pygatt', 'pandas', 'scikit-learn', 'numpy', 'seaborn', 'pexpect'],
