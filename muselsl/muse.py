@@ -1,7 +1,7 @@
 import bitstring
 import pygatt
 import numpy as np
-from time import time, sleep
+from time import time
 from sys import platform
 import subprocess
 
@@ -64,7 +64,7 @@ class Muse():
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
                 else:
-                    self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)            
+                    self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
 
                 self.adapter.start()
                 self.device = self.adapter.connect(self.address)
@@ -86,11 +86,10 @@ class Muse():
                     self._subscribe_gyro()
 
             return True
-            
+
         except (pygatt.exceptions.NotConnectedError, pygatt.exceptions.NotificationTimeout):
             print('Connection to', self.address, 'failed')
             return False
-
 
     def _write_cmd(self, cmd):
         """Wrapper to write a command to the Muse device.
@@ -212,7 +211,7 @@ class Muse():
         # initial params for the timestamp correction
         # the time it started + the inverse of sampling rate
         self.sample_index = 0
-        self.reg_params = np.array([self.time_func(), 1./256])
+        self.reg_params = np.array([self.time_func(), 1. / 256])
 
     def _update_timestamp_correction(self, x, y):
         """Update regression for dejittering
@@ -317,7 +316,6 @@ class Muse():
         pattern = "uint:16,uint:16,uint:16,uint:16,uint:16"  # The rest is 0 padding
         data = bit_decoder.unpack(pattern)
 
-        packet_index = data[0]
         battery = data[1] / 512
         fuel_gauge = data[2] * 2.2
         adc_volt = data[3]

@@ -6,8 +6,9 @@ import pygatt
 import subprocess
 from sys import platform
 
+
 # Returns a list of available Muse devices
-def list_muses(backend = 'auto', interface = ''):
+def list_muses(backend='auto', interface=''):
     interface = None
 
     if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:
@@ -69,7 +70,7 @@ def stream(address, backend, interface, name):
     else:
         if not address and not name:
             print('Connecting to first device in BlueMuse list, see BlueMuse window...')
-        else: 
+        else:
             print('Connecting to: ' + ':'.join(filter(None, [name, address])) + '...')
 
     info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',

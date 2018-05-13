@@ -1,10 +1,6 @@
 #!/usr/bin/python
 import sys
-import getopt
 import argparse
-import re
-import os
-import configparser
 
 
 class Program:
@@ -77,8 +73,8 @@ class Program:
         parser = argparse.ArgumentParser(
             description='Start an LSL stream from Muse headset.')
         parser.add_argument("-a", "--address",
-                  dest="address", type=str, default=None,
-                  help="device MAC address.")
+                            dest="address", type=str, default=None,
+                            help="device MAC address.")
         parser.add_argument("-n", "--name",
                             dest="name", type=str, default=None,
                             help="name of the device.")
@@ -135,8 +131,8 @@ class Program:
                             help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
         args = parser.parse_args(sys.argv[2:])
         if args.version == 2:
-            import lsl_viewer_V2
-            lsl_viewer_V2.view()
+            import lsl_viewer_v2
+            lsl_viewer_v2.view()
         else:
             import lsl_viewer
             lsl_viewer.view(args.window, args.scale, args.refresh, args.figure)

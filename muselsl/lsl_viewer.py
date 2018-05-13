@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import butter, lfilter, lfilter_zi, firwin
+from scipy.signal import lfilter, lfilter_zi, firwin
 from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
@@ -13,7 +13,7 @@ def view(window, scale, refresh, figure):
 
     figsize = np.int16(figure.split('x'))
 
-    print("looking for an EEG stream...")
+    print("Looking for an EEG stream...")
     streams = resolve_byprop('type', 'EEG', timeout=2)
 
     if len(streams) == 0:
@@ -37,7 +37,7 @@ def view(window, scale, refresh, figure):
 
 
 class LSLViewer():
-    def __init__(self, stream, fig, axes,  window, scale, dejitter=True):
+    def __init__(self, stream, fig, axes, window, scale, dejitter=True):
         """Init"""
         self.stream = stream
         self.window = window
@@ -72,7 +72,7 @@ class LSLViewer():
         sns.despine(left=True)
 
         self.data = np.zeros((self.n_samples, self.n_chan))
-        self.times = np.arange(-self.window, 0, 1./self.sfreq)
+        self.times = np.arange(-self.window, 0, 1. / self.sfreq)
         impedances = np.std(self.data, axis=0)
         lines = []
 
@@ -93,12 +93,12 @@ class LSLViewer():
                         for ii in range(self.n_chan)]
         axes.set_yticklabels(ticks_labels)
 
-        self.display_every = int(0.2 / (12/self.sfreq))
+        self.display_every = int(0.2 / (12 / self.sfreq))
 
         # self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
         #                          'bandpass')
 
-        self.bf = firwin(32, np.array([1, 40])/(self.sfreq/2.), width=0.05,
+        self.bf = firwin(32, np.array([1, 40]) / (self.sfreq / 2.), width=0.05,
                          pass_zero=False)
         self.af = [1.0]
 
@@ -115,7 +115,7 @@ class LSLViewer():
                 if self.dejitter:
                     timestamps = np.float64(np.arange(len(timestamps)))
                     timestamps /= self.sfreq
-                    timestamps += self.times[-1] + 1./self.sfreq
+                    timestamps += self.times[-1] + 1. / self.sfreq
                 self.times = np.concatenate([self.times, timestamps])
                 self.n_samples = int(self.sfreq * self.window)
                 self.times = self.times[-self.n_samples:]

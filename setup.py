@@ -26,7 +26,7 @@ setup(name='muselsl',
       include_package_data=True,
       zip_safe=False,
       install_requires=['bitstring', 'pylsl', 'pygatt', 'pandas', 'scikit-learn', 'numpy', 'seaborn', 'pexpect'],
-      extra_requires=['mne'],
+      extras_require={'Viewer V2': ['mne', 'vispy']},
       classifiers=[
     # How mature is this project?  Common values are
     #   3 - Alpha

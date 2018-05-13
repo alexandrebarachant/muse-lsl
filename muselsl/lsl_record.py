@@ -18,14 +18,14 @@ def record(duration, filename=None, dejitter=False):
 
     print("Start acquiring data")
     inlet = StreamInlet(streams[0], max_chunklen=12)
-    eeg_time_correction = inlet.time_correction()
+    # eeg_time_correction = inlet.time_correction()
 
     print("looking for a Markers stream...")
     marker_streams = resolve_byprop('name', 'Markers', timeout=2)
 
     if marker_streams:
         inlet_marker = StreamInlet(marker_streams[0])
-        marker_time_correction = inlet_marker.time_correction()
+        # marker_time_correction = inlet_marker.time_correction()
     else:
         inlet_marker = False
         print("Can't find Markers stream")
@@ -33,7 +33,7 @@ def record(duration, filename=None, dejitter=False):
     info = inlet.info()
     description = info.desc()
 
-    freq = info.nominal_srate()
+    # freq = info.nominal_srate()
     Nchan = info.channel_count()
 
     ch = description.child('channels').first_child()
@@ -86,7 +86,6 @@ def record(duration, filename=None, dejitter=False):
     for marker in markers:
         # find index of markers
         ix = np.argmin(np.abs(marker[1] - timestamps))
-        val = timestamps[ix]
         for ii in range(n_markers):
             data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
 
