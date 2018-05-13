@@ -8,10 +8,12 @@ This is a Python package for streaming and visualizing EEG data from the Muse 20
 
 The code relies on [pygatt](https://github.com/peplin/pygatt) for the BLE communication. pygatt works on Linux and should work on Windows and macOS provided that you have a BLED112 Bluetooth dongle.
 
-*Note: Another option for connecting to a Muse on Windows is via [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) which will output the same LSL stream format as muse-lsl.
+*Note: Another option for connecting to a Muse on Windows is via [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) which will output the same LSL stream format as muse-lsl.*
 
 You will need to find the MAC address or name of your Muse headset. 
 
+Compatible with Python 2.7 and Python 3.x.
+ 
 **This code is only compatible with the 2016 version of the Muse headset.**
 
 ## Usage
