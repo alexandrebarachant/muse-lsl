@@ -8,11 +8,11 @@ def copy_docs():
         os.makedirs(docs_dir)
 
     copyfile('README.md', docs_dir + '/README.md')
-    copyfile('blinks.png', docs_dir + '/blinks.png')
+    #copyfile('blinks.png', docs_dir + '/blinks.png')
 
 copy_docs()
 
-setup(name='muse-lsl',
+setup(name='muselsl',
       version='1.0.0',
       description='Stream and visualize EEG data from the Muse 2016 headset.',
       keywords='muse lsl eeg ble neuroscience',
@@ -22,7 +22,7 @@ setup(name='muse-lsl',
       license='BSD (3-clause)',
       scripts=['muselsl/muse-lsl.py'],
       packages=find_packages(),
-      package_data={'muselsl': ['docs/blinks.png', 'docs/README.md']},
+      package_data={'muselsl': ['docs/README.md']},
       include_package_data=True,
       zip_safe=False,
       install_requires=['bitstring', 'pylsl', 'pygatt', 'pandas', 'scikit-learn', 'numpy', 'seaborn', 'pexpect'],
