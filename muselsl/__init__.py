@@ -1,9 +1,9 @@
 from . import muse
 from . import constants
-from . import lsl_record
-from . import lsl_viewer
-from . import lsl_viewer_v2
-from . import muse_record
-from . import muse_stream
+from . import record
+from . import record_direct
+from . import viewer
+from . import viewer_v2
+from . import stream
 
-__version__ = "0.0.1"
+__version__ = "1.0.0"

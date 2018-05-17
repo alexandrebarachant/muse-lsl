@@ -1,5 +1,6 @@
+from .stream import find_muse
 from .muse import Muse
-from time import sleep, strftime, gmtime
+from time import time, sleep, strftime, gmtime
 import numpy as np
 import pandas as pd
 
@@ -8,6 +9,17 @@ def record(address, backend, interface, name, filename):
     if backend == 'bluemuse':
         raise(NotImplementedError(
             'Direct record not supported with BlueMuse backend. Use lslrecord instead.'))
+
+    if not address:
+        found_muse = find_muse(name)
+        if not found_muse:
+            print('Muse could not be found')
+            return
+        else:
+            address = found_muse['address']
+            name = found_muse['name']
+        print('Connecting to %s : %s...' %
+              (name if name else 'Muse', address))
 
     if not filename:
         filename = ("recording_%s.csv" %
@@ -24,6 +36,8 @@ def record(address, backend, interface, name, filename):
 
     muse.connect()
     muse.start()
+
+    print('Start recording at time t=%.3f' % time())
 
     while 1:
         try:

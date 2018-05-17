@@ -45,13 +45,16 @@ Once a stream is up and running, you now have access to the following commands i
 
 To view data 
 
-`muselsl viewlsl`
+`muselsl view`
 
-To record data
+To record data into a CSV file
 
 `muselsl record`
 
- 
+Alternatively, you can record data directly without using LSL with the following command:
+
+`muselsl record_direct`
+
 ### Backends
 You can choose between gatt, bgapi, and bluemuse backends.
 
@@ -64,10 +67,10 @@ If you want to integrate Muse LSL into your own Python project, you can import a
 
 ex:
 ```Python
-from muselsl import muse_stream
+from muselsl import stream
 
-muses = muse_stream.list_muses()
-muse_stream.stream(muses[0]['address'])
+muses = stream.list_muses()
+stream.stream(muses[0]['address'])
 
 # Note: Streaming is synchronous, so code here will not execute until after the stream has been closed
 print('Stream has ended')

@@ -47,12 +47,14 @@ def record(duration, filename=None, dejitter=False):
     markers = []
     t_init = time()
     time_correction = inlet.time_correction()
-    print(time_correction)
     print('Start recording at time t=%.3f' % t_init)
+    print('Time correction: ', time_correction)
     while (time() - t_init) < duration:
+        
         try:
             data, timestamp = inlet.pull_chunk(timeout=1.0,
                                                max_samples=12)
+
             if timestamp:
                 res.append(data)
                 timestamps.extend(timestamp)
@@ -64,7 +66,7 @@ def record(duration, filename=None, dejitter=False):
             break
 
     time_correction = inlet.time_correction()
-    print(time_correction)
+    print('Time correction: ', time_correction)
 
     res = np.concatenate(res, axis=0)
     timestamps = np.array(timestamps) + time_correction
@@ -79,16 +81,17 @@ def record(duration, filename=None, dejitter=False):
     res = np.c_[timestamps, res]
     data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
 
-    n_markers = len(markers[0][0])
-    for ii in range(n_markers):
-        data['Marker%d' % ii] = 0
-    # process markers:
-    for marker in markers:
-        # find index of markers
-        ix = np.argmin(np.abs(marker[1] - timestamps))
+    if inlet_marker:
+        n_markers = len(markers[0][0])
         for ii in range(n_markers):
-            data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
+            data['Marker%d' % ii] = 0
+        # process markers:
+        for marker in markers:
+            # find index of markers
+            ix = np.argmin(np.abs(marker[1] - timestamps))
+            for ii in range(n_markers):
+                data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
 
     data.to_csv(filename, float_format='%.3f', index=False)
 
-    print('Done !')
+    print('Done!')

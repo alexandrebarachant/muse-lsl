@@ -19,23 +19,23 @@ class main:
                 -b --backend    pygatt backend to use. can be auto, gatt or bgapi.
                 -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
 
-    record      Record data directly from Muse headset (no LSL).
-                -a --address    device MAC address
-                -n --name       device name (e.g. Muse-41D2)
-                -b --backend    pygatt backend to use. can be auto, gatt or bgapi
-                -i --interface  the interfact to use, 'hci0' for gatt or a com port for bgapi.
-
-    viewlsl     Visualize EEG data from an LSL stream.
+    view     Visualize EEG data from an LSL stream.
                 -w --window     window length to display in seconds.
                 -s --scale      scale in uV.
                 -r --refresh    refresh rate in seconds.
                 -f --figure     window size.
                 -v --version    viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).
 
-    recordlsl   Record EEG data from an LSL stream.
+    record   Record EEG data from an LSL stream.
                 -d --duration   duration of the recording in seconds.
                 -f --filename   name of the recording file.
                 -dj --dejitter  whether to apply dejitter correction to timestamps.
+
+    record_direct      Record data directly from Muse headset (no LSL).
+                -a --address    device MAC address
+                -n --name       device name (e.g. Muse-41D2)
+                -b --backend    pygatt backend to use. can be auto, gatt or bgapi
+                -i --interface  the interfact to use, 'hci0' for gatt or a com port for bgapi.
         ''')
 
         parser.add_argument('command', help='Command to run.')
@@ -61,8 +61,8 @@ class main:
                             dest="interface", type=str, default=None,
                             help="the interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.muse_stream as muse_stream
-        muses = muse_stream.list_muses(args.backend, args.interface)
+        import muselsl.stream as stream
+        muses = stream.list_muses(args.backend, args.interface)
         if(muses):
             for muse in muses:
                 print('Found device %s, MAC Address %s' %
@@ -86,13 +86,13 @@ class main:
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.muse_stream as muse_stream
-        muse_stream.stream(args.address, args.backend,
-                           args.interface, args.name)
+        import muselsl.stream as stream
+        stream.stream(args.address, args.backend,
+                      args.interface, args.name)
 
-    def record(self):
+    def record_direct(self):
         parser = argparse.ArgumentParser(
-            description='Start LSL stream and record data from Muse headset.')
+            description='Record directly from Muse without LSL.')
         parser.add_argument("-a", "--address",
                             dest="address", type=str, default=None,
                             help="device MAC address.")
@@ -109,13 +109,13 @@ class main:
                             dest="filename", type=str, default=None,
                             help="name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.muse_record as muse_record
-        muse_record.record(args.address, args.backend,
-                           args.interface, args.name, args.filename)
+        import muselsl.record_direct as record_direct
+        record_direct.record(args.address, args.backend,
+                             args.interface, args.name, args.filename)
 
-    def viewlsl(self):
+    def view(self):
         parser = argparse.ArgumentParser(
-            description='Start viewing EEG data from an LSL stream.')
+            description='View EEG data from an LSL stream.')
         parser.add_argument("-w", "--window",
                             dest="window", type=float, default=5.,
                             help="window length to display in seconds.")
@@ -133,14 +133,14 @@ class main:
                             help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
         args = parser.parse_args(sys.argv[2:])
         if args.version == 2:
-            import muselsl.lsl_viewer_v2 as lsl_viewer_v2
-            lsl_viewer_v2.view()
+            import muselsl.viewer_v2 as viewer_v2
+            viewer_v2.view()
         else:
-            import muselsl.lsl_viewer as lsl_viewer
-            lsl_viewer.view(args.window, args.scale, args.refresh, args.figure)
+            import muselsl.viewer as viewer
+            viewer.view(args.window, args.scale, args.refresh, args.figure)
 
-    def recordlsl(self):
-        parser = argparse.ArgumentParser(description='Record data from Muse.')
+    def record(self):
+        parser = argparse.ArgumentParser(description='Record data from an LSL stream.')
         parser.add_argument("-d", "--duration",
                             dest="duration", type=int, default=60,
                             help="duration of the recording in seconds.")
@@ -148,8 +148,8 @@ class main:
                             dest="filename", type=str, default=None,
                             help="name of the recording file.")
         parser.add_argument("-dj", "--dejitter",
-                            dest="dejitter", type=bool, default=False,
+                            dest="dejitter", type=bool, default=True,
                             help="whether to apply dejitter correction to timestamps.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.lsl_record as lsl_record
-        lsl_record.record(args.duration, args.filename, args.dejitter)
+        import muselsl.record as record
+        record.record(args.duration, args.filename, args.dejitter)
