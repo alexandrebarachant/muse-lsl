@@ -18,7 +18,7 @@ Compatible with Python 2.7 and Python 3.x.
 
 ## Usage
 
-*Everything can be run using muse-lsl.py or you may integrate into other packages.
+*Everything can be run as a CLI using muse-lsl.py
 
 To stream data with LSL:
 
@@ -43,6 +43,20 @@ You can choose between gatt, bgapi, and bluemuse backends.
 * gatt - used on unix systems, interfaces with native Bluetooth stack.
 * bgapi - used with BLED112 dongle.
 * bluemuse - used on Windows 10, native Bluetooth stack, requires [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) installation. 
+
+### Integration into other packages
+If you want to integrate Muse LSL into your own Python project, you can import and use its functions as you would any Python package. Examples are available in the `examples` folder.
+
+ex:
+```Python
+from muselsl import muse_stream
+
+muses = muse_stream.list_muses()
+muse_stream.stream(muses[0]['address'])
+
+# Note: Streaming is synchronous, so code here will not execute until after the stream has been closed
+print('Stream has ended')
+```
 
 ## Common issues
 

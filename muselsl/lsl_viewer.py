@@ -1,3 +1,4 @@
+from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import lfilter, lfilter_zi, firwin
@@ -5,7 +6,6 @@ from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
 from threading import Thread
-from constants import VIEW_SUBSAMPLE, VIEW_BUFFER
 
 
 def view(window, scale, refresh, figure):

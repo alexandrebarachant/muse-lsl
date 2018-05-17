@@ -190,7 +190,8 @@ class Canvas(app.Canvas):
             scale_x, scale_y = self.program['u_scale']
             scale_x_new, scale_y_new = (scale_x * math.exp(1.0 * dx),
                                         scale_y * math.exp(0.0 * dx))
-            self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
+            self.program['u_scale'] = (
+                max(1, scale_x_new), max(1, scale_y_new))
             self.update()
 
     def on_mouse_wheel(self, event):
@@ -205,7 +206,7 @@ class Canvas(app.Canvas):
         """Add some data at the end of each signal (real-time signals)."""
 
         samples, timestamps = self.inlet.pull_chunk(timeout=0.0,
-                                               max_samples=100)
+                                                    max_samples=100)
         if timestamps:
             samples = np.array(samples)[:, ::-1]
 
@@ -221,7 +222,8 @@ class Canvas(app.Canvas):
             elif not self.filt:
                 plot_data = (self.data - self.data.mean(axis=0)) / self.scale
 
-            sd = np.std(plot_data[-int(self.sfreq):], axis=0)[::-1] * self.scale
+            sd = np.std(plot_data[-int(self.sfreq):],
+                        axis=0)[::-1] * self.scale
             co = np.int32(np.tanh((sd - 30) / 15)*5 + 5)
             for ii in range(self.n_chans):
                 self.quality[ii].text = '%.2f' % (sd[ii])
@@ -231,7 +233,8 @@ class Canvas(app.Canvas):
                 self.names[ii].font_size = 12 + co[ii]
                 self.names[ii].color = self.quality_colors[co[ii]]
 
-            self.program['a_position'].set_data(plot_data.T.ravel().astype(np.float32))
+            self.program['a_position'].set_data(
+                plot_data.T.ravel().astype(np.float32))
             self.update()
 
     def on_resize(self, event):
@@ -241,11 +244,13 @@ class Canvas(app.Canvas):
 
         for ii, t in enumerate(self.names):
             t.transforms.configure(canvas=self, viewport=vp)
-            t.pos = (self.size[0] * 0.025, ((ii + 0.5) / self.n_chans) * self.size[1])
+            t.pos = (self.size[0] * 0.025,
+                     ((ii + 0.5) / self.n_chans) * self.size[1])
 
         for ii, t in enumerate(self.quality):
             t.transforms.configure(canvas=self, viewport=vp)
-            t.pos = (self.size[0] * 0.975, ((ii + 0.5) / self.n_chans) * self.size[1])
+            t.pos = (self.size[0] * 0.975,
+                     ((ii + 0.5) / self.n_chans) * self.size[1])
 
     def on_draw(self, event):
         gloo.clear()

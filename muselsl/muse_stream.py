@@ -1,5 +1,5 @@
-from muse import Muse
-from constants import NB_CHANNELS, SAMPLING_RATE, SCAN_TIMEOUT, LSL_CHUNK
+from .muse import Muse
+from .constants import NB_CHANNELS, SAMPLING_RATE, SCAN_TIMEOUT, LSL_CHUNK
 from time import sleep
 from pylsl import StreamInfo, StreamOutlet, local_clock
 import pygatt
@@ -8,7 +8,7 @@ from sys import platform
 
 
 # Returns a list of available Muse devices
-def list_muses(backend='auto', interface=''):
+def list_muses(backend='auto', interface=None):
     interface = None
 
     if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:
@@ -55,7 +55,7 @@ def find_muse(name=None):
         return muses[0]
 
 
-def stream(address, backend, interface, name):
+def stream(address, backend='auto', interface=None, name=None):
     if backend != 'bluemuse':
         if not address:
             found_muse = find_muse(name)
@@ -65,13 +65,15 @@ def stream(address, backend, interface, name):
             else:
                 address = found_muse['address']
                 name = found_muse['name']
-            print('Connecting to %s : %s...' % (name if name else 'Muse', address))
+            print('Connecting to %s : %s...' %
+                  (name if name else 'Muse', address))
 
     else:
         if not address and not name:
             print('Connecting to first device in BlueMuse list, see BlueMuse window...')
         else:
-            print('Connecting to: ' + ':'.join(filter(None, [name, address])) + '...')
+            print('Connecting to: ' +
+                  ':'.join(filter(None, [name, address])) + '...')
 
     info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',
                              'Muse%s' % address)

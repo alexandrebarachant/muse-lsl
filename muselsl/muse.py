@@ -64,7 +64,8 @@ class Muse():
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
                 else:
-                    self.adapter = pygatt.BGAPIBackend(serial_port=self.interface)
+                    self.adapter = pygatt.BGAPIBackend(
+                        serial_port=self.interface)
 
                 self.adapter.start()
                 self.device = self.adapter.connect(self.address)
@@ -140,9 +141,11 @@ class Muse():
         if self.backend == 'bluemuse':
             address = self.address if self.address is not None else self.name
             if address is None:
-                subprocess.call('start bluemuse://start?streamfirst=true', shell=True)
+                subprocess.call(
+                    'start bluemuse://start?streamfirst=true', shell=True)
             else:
-                subprocess.call('start bluemuse://start?addresses={0}'.format(address), shell=True)
+                subprocess.call(
+                    'start bluemuse://start?addresses={0}'.format(address), shell=True)
             return
 
         self._init_timestamp_correction()
@@ -158,7 +161,9 @@ class Muse():
             address = self.address if self.address is not None else self.name
             if address is None:
                 subprocess.call('start bluemuse://stopall', shell=True)
-            else: subprocess.call('start bluemuse://stop?addresses={0}'.format(address), shell=True)
+            else:
+                subprocess.call(
+                    'start bluemuse://stop?addresses={0}'.format(address), shell=True)
             return
 
         self._write_cmd([0x02, 0x68, 0x0a])

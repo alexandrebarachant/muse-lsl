@@ -52,13 +52,14 @@ class Program:
         getattr(self, args.command)()
 
     def list(self):
-        parser = argparse.ArgumentParser(description='List available Muse devices.')
+        parser = argparse.ArgumentParser(
+            description='List available Muse devices.')
         parser.add_argument("-b", "--backend",
-            dest="backend", type=str, default="auto",
-            help="pygatt backend to use. can be auto, gatt or bgapi.")
+                            dest="backend", type=str, default="auto",
+                            help="pygatt backend to use. can be auto, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
-            dest="interface", type=str, default=None,
-            help="the interface to use, 'hci0' for gatt or a com port for bgapi.")
+                            dest="interface", type=str, default=None,
+                            help="the interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
         import muse_stream
         muses = muse_stream.list_muses(args.backend, args.interface)
@@ -68,7 +69,7 @@ class Program:
                       (muse['name'], muse['address']))
         else:
             print('No Muses found')
-            
+
     def stream(self):
         parser = argparse.ArgumentParser(
             description='Start an LSL stream from Muse headset.')
@@ -93,23 +94,24 @@ class Program:
         parser = argparse.ArgumentParser(
             description='Start LSL stream and record data from Muse headset.')
         parser.add_argument("-a", "--address",
-                  dest="address", type=str, default=None,
-                  help="device MAC address.")
+                            dest="address", type=str, default=None,
+                            help="device MAC address.")
         parser.add_argument("-n", "--name",
-                  dest="name", type=str, default=None,
-                  help="name of the device.")
+                            dest="name", type=str, default=None,
+                            help="name of the device.")
         parser.add_argument("-b", "--backend",
-                  dest="backend", type=str, default="auto",
-                  help="pygatt backend to use. can be auto, gatt or bgapi")
+                            dest="backend", type=str, default="auto",
+                            help="pygatt backend to use. can be auto, gatt or bgapi")
         parser.add_argument("-i", "--interface",
-                  dest="interface", type=str, default=None,
-                  help="the interface to use, 'hci0' for gatt or a com port for bgapi")
+                            dest="interface", type=str, default=None,
+                            help="the interface to use, 'hci0' for gatt or a com port for bgapi")
         parser.add_argument("-f", "--filename",
-                dest="filename", type=str, default=None,
-                help="name of the recording file.")
+                            dest="filename", type=str, default=None,
+                            help="name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
         import muse_record
-        muse_record.record(args.address, args.backend, args.interface, args.name, args.filename)
+        muse_record.record(args.address, args.backend,
+                           args.interface, args.name, args.filename)
 
     def viewlsl(self):
         parser = argparse.ArgumentParser(

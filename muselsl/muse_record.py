@@ -1,4 +1,4 @@
-from muse import Muse
+from .muse import Muse
 from time import sleep, strftime, gmtime
 import numpy as np
 import pandas as pd
