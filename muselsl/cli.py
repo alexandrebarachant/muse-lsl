@@ -140,7 +140,8 @@ class main:
             viewer.view(args.window, args.scale, args.refresh, args.figure)
 
     def record(self):
-        parser = argparse.ArgumentParser(description='Record data from an LSL stream.')
+        parser = argparse.ArgumentParser(
+            description='Record data from an LSL stream.')
         parser.add_argument("-d", "--duration",
                             dest="duration", type=int, default=60,
                             help="duration of the recording in seconds.")
