@@ -109,8 +109,8 @@ class main:
                             dest="filename", type=str, default=None,
                             help="name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.record_direct as record_direct
-        record_direct.record(args.address, args.backend,
+        import muselsl.record as record
+        record.record_direct(args.address, args.backend,
                              args.interface, args.name, args.filename)
 
     def view(self):
