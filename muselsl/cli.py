@@ -3,11 +3,11 @@ import sys
 import argparse
 
 
-class Program:
+class main:
     def __init__(self):
         parser = argparse.ArgumentParser(
             description='Python package for streaming, recording, and visualizing EEG data from the Muse 2016 headset.',
-            usage='''muse-lsl <command> [<args>]
+            usage='''muselsl <command> [<args>]
     Available commands:
     list        List available Muse devices.
                 -b --backend    pygatt backend to use. can be auto, gatt or bgapi.
@@ -61,7 +61,7 @@ class Program:
                             dest="interface", type=str, default=None,
                             help="the interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
-        import muse_stream
+        import muselsl.muse_stream as muse_stream
         muses = muse_stream.list_muses(args.backend, args.interface)
         if(muses):
             for muse in muses:
@@ -86,7 +86,7 @@ class Program:
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
-        import muse_stream
+        import muselsl.muse_stream as muse_stream
         muse_stream.stream(args.address, args.backend,
                            args.interface, args.name)
 
@@ -109,7 +109,7 @@ class Program:
                             dest="filename", type=str, default=None,
                             help="name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
-        import muse_record
+        import muselsl.muse_record as muse_record
         muse_record.record(args.address, args.backend,
                            args.interface, args.name, args.filename)
 
@@ -133,10 +133,10 @@ class Program:
                             help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
         args = parser.parse_args(sys.argv[2:])
         if args.version == 2:
-            import lsl_viewer_v2
+            import muselsl.lsl_viewer_v2 as lsl_viewer_v2
             lsl_viewer_v2.view()
         else:
-            import lsl_viewer
+            import muselsl.lsl_viewer as lsl_viewer
             lsl_viewer.view(args.window, args.scale, args.refresh, args.figure)
 
     def recordlsl(self):
@@ -151,9 +151,5 @@ class Program:
                             dest="dejitter", type=bool, default=False,
                             help="whether to apply dejitter correction to timestamps.")
         args = parser.parse_args(sys.argv[2:])
-        import lsl_record
+        import muselsl.lsl_record as lsl_record
         lsl_record.record(args.duration, args.filename, args.dejitter)
-
-
-if __name__ == '__main__':
-    Program()

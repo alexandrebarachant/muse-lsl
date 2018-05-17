@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 from shutil import copyfile
 import os
 
+
 def copy_docs():
     docs_dir = 'muselsl/docs'
     if not os.path.exists(docs_dir):
@@ -9,6 +10,7 @@ def copy_docs():
 
     copyfile('README.md', docs_dir + '/README.md')
     #copyfile('blinks.png', docs_dir + '/blinks.png')
+
 
 copy_docs()
 
@@ -20,33 +22,38 @@ setup(name='muselsl',
       author='Alexandre Barachant',
       author_email='alexandre.barachant@gmail.com',
       license='BSD (3-clause)',
-      scripts=['muselsl/muse-lsl.py'],
+      entry_points={
+          'console_scripts': [
+              'muselsl=muselsl.cli:main',
+          ],
+      },
       packages=find_packages(),
-      package_data={'muselsl': ['docs/README.md']},
+      package_data={'muselsl': ['docs/README.md', 'docs/examples/*']},
       include_package_data=True,
       zip_safe=False,
-      install_requires=['bitstring', 'pylsl', 'pygatt', 'pandas', 'scikit-learn', 'numpy', 'seaborn', 'pexpect'],
+      install_requires=['bitstring', 'pylsl', 'pygatt',
+                        'pandas', 'scikit-learn', 'numpy', 'seaborn', 'pexpect'],
       extras_require={'Viewer V2': ['mne', 'vispy']},
       classifiers=[
-    # How mature is this project?  Common values are
-    #   3 - Alpha
-    #   4 - Beta
-    #   5 - Production/Stable
-    'Development Status :: 4 - Beta',
+          # How mature is this project?  Common values are
+          #   3 - Alpha
+          #   4 - Beta
+          #   5 - Production/Stable
+          'Development Status :: 4 - Beta',
 
-    # Indicate who your project is intended for
-    'Intended Audience :: Science/Research',
-    'Topic :: Software Development :: Utilities',
+          # Indicate who your project is intended for
+          'Intended Audience :: Science/Research',
+          'Topic :: Software Development :: Utilities',
 
-    # Pick your license as you wish (should match "license" above)
-    'License :: OSI Approved :: BSD License',
+          # Pick your license as you wish (should match "license" above)
+          'License :: OSI Approved :: BSD License',
 
-    # Specify the Python versions you support here.  In particular, ensure
-    # that you indicate whether you support Python 2, Python 3 or both.
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: POSIX',
-    'Operating System :: Unix',
-    'Operating System :: MacOS'
+          # Specify the Python versions you support here.  In particular, ensure
+          # that you indicate whether you support Python 2, Python 3 or both.
+          'Operating System :: Microsoft :: Windows',
+          'Operating System :: POSIX',
+          'Operating System :: Unix',
+          'Operating System :: MacOS'
 
-    'Programming Language :: Python']
-    )
+          'Programming Language :: Python']
+      )

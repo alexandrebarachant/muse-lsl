@@ -8,7 +8,7 @@ This is a Python package for streaming and visualizing EEG data from the Muse 20
 
 The code relies on [pygatt](https://github.com/peplin/pygatt) for the BLE communication. pygatt works on Linux and should work on Windows and macOS provided that you have a BLED112 Bluetooth dongle.
 
-*Note: Another option for connecting to a Muse on Windows is via [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) which will output the same LSL stream format as muse-lsl.*
+*Note: Another option for connecting to a Muse on Windows is via [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) which will output the same LSL stream format as muselsl.*
 
 You will need to find the MAC address or name of your Muse headset. 
 
@@ -18,25 +18,40 @@ Compatible with Python 2.7 and Python 3.x.
 
 ## Usage
 
-*Everything can be run as a CLI using muse-lsl.py
+Install with pip
+
+`pip install muselsl`
+
+*Everything can be run directly from the command line*
+
+To print a list of available muses:
+
+`muselsl list`
 
 To stream data with LSL:
 
-`python muse-lsl.py stream`
+`muselsl stream`
 
 The script will auto detect and connect to the first Muse device. In case you want
 a specific device or if the detection fails, find the name of the device and pass it to the script:
 
-`python muse-lsl.py stream --name YOUR_DEVICE_NAME`
+`muselsl stream --name YOUR_DEVICE_NAME`
 
 You can also directly pass the MAC address (this option is also faster at startup):
 
-`python muse-lsl.py stream --address YOUR_DEVICE_ADDRESS`
+`muselsl stream --address YOUR_DEVICE_ADDRESS`
 
-Once the stream is up and running, from another prompt, you can visualize it with:
+Once a stream is up and running, you now have access to the following commands in another prompt:
 
-`python muse-lsl.py lslview`
+To view data 
 
+`muselsl viewlsl`
+
+To record data
+
+`muselsl record`
+
+ 
 ### Backends
 You can choose between gatt, bgapi, and bluemuse backends.
 
