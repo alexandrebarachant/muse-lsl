@@ -1,16 +1,17 @@
 # Muse LSL
 
-This is a Python package for streaming and visualizing EEG data from the Muse 2016 headset.
+A Python package for streaming, visualizing, and recoridng EEG data from the Muse 2016 headband.
 
 ![Blinks](blinks.png)
 
 ## Requirements
 
-The code relies on [pygatt](https://github.com/peplin/pygatt) for the BLE communication. pygatt works on Linux and should work on Windows and macOS provided that you have a BLED112 Bluetooth dongle.
+The code relies on [pygatt](https://github.com/peplin/pygatt) or [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) for BLE communication and works differently on differnt operating systems.
 
-*Note: Another option for connecting to a Muse on Windows is via [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) which will output the same LSL stream format as muselsl.*
+- Windows: On Windows 10, we recommend installing [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) and specifying it as the  backend when using Muse LSL (i.e. `$ muselsl stream -b bluemuse`). Alternatively, if you have a BLED112 dongle you can try the bgapi backend (default option in CLI).
+- Mac: __BLED112 dongle required__. Use the bgapi backend (default option)
+- Linux: No dongle or seperate install required. Use the pygatt backend (default option on Linux)
 
-You will need to find the MAC address or name of your Muse headset. 
 
 Compatible with Python 2.7 and Python 3.x.
  
@@ -20,30 +21,30 @@ Compatible with Python 2.7 and Python 3.x.
 
 ### Installation
 
-Install with pip
+Install Muse LSL with pip
 
 `pip install muselsl`
 
 ### Setting Up a Stream
 
-*Everything can be run directly from the command line*
+The easiest way to get Muse data is to use Muse LSL directly from the command line. Use the `-h` flag to get a comprehensive list of all commands and options
 
 To print a list of available muses:
 
-    muselsl list
+    $ muselsl list
 
 To stream data with LSL:
 
-    muselsl stream  
+    $ muselsl stream  
 
 The script will auto detect and connect to the first Muse device. In case you want
 a specific device or if the detection fails, find the name of the device and pass it to the script:
 
-    muselsl stream --name YOUR_DEVICE_NAME
+    $ muselsl stream --name YOUR_DEVICE_NAME
 
 You can also directly pass the MAC address (this option is also faster at startup):
 
-    muselsl stream --address YOUR_DEVICE_ADDRESS
+    $ muselsl stream --address YOUR_DEVICE_ADDRESS
 
 
 ### Working with Streaming Data
@@ -57,31 +58,23 @@ To record EEG data into a CSV:
 
     muselsl record  
 
-Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)
+*Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)*
 
 Alternatively, you can record data directly without using LSL through the following command:
 
     muselsl record_direct
 
-Note: direct recording does not allow 'Markers' data to be recorded
+*Note: direct recording does not allow 'Markers' data to be recorded*
 
 ## Running Experiments
 
-Muse LSL was designed so that the Muse could be used to run a number of classic EEG experiments, including the P300 event-related potential and the SSVEP and SSAEP evoked potentials.
+Muse LSL was designed so that the Muse could be used to run a number of classic EEG experiments, including the [P300 event-related potential](http://alexandre.barachant.org/blog/2017/02/05/P300-with-muse.html) and the SSVEP and SSAEP evoked potentials.
 
 The code to perform these experiments is still available, but is now maintained in the [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks) repository by the [NeuroTechX](https://neurotechx.com) community
 
-## Backends
-You can choose between gatt, bgapi, and bluemuse backends.
-
-* gatt - used on unix systems, interfaces with native Bluetooth stack.
-* bgapi - used with BLED112 dongle.
-* bluemuse - used on Windows 10, native Bluetooth stack, requires [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) installation. 
-
 ## Integration into other packages
-If you want to integrate Muse LSL into your own Python project, you can import and use its functions as you would any Python package. Examples are available in the `examples` folder.
+If you want to integrate Muse LSL into your own Python project, you can import and use its functions as you would any Python package. Examples are available in the `examples` folder:
 
-ex:
 ```Python
 from muselsl import stream
 

@@ -10,13 +10,13 @@ class main:
             usage='''muselsl <command> [<args>]
     Available commands:
     list        List available Muse devices.
-                -b --backend    pygatt backend to use. can be auto, gatt or bgapi.
+                -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
                 -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
 
     stream      Start an LSL stream from Muse headset.
                 -a --address    device MAC address.
                 -n --name       device name (e.g. Muse-41D2).
-                -b --backend    pygatt backend to use. can be auto, gatt or bgapi.
+                -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
                 -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
 
     view     Visualize EEG data from an LSL stream.
@@ -34,7 +34,7 @@ class main:
     record_direct      Record data directly from Muse headset (no LSL).
                 -a --address    device MAC address
                 -n --name       device name (e.g. Muse-41D2)
-                -b --backend    pygatt backend to use. can be auto, gatt or bgapi
+                -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
                 -i --interface  the interfact to use, 'hci0' for gatt or a com port for bgapi.
         ''')
 
@@ -56,7 +56,7 @@ class main:
             description='List available Muse devices.')
         parser.add_argument("-b", "--backend",
                             dest="backend", type=str, default="auto",
-                            help="pygatt backend to use. can be auto, gatt or bgapi.")
+                            help="BLE backend to use. can be auto, bluemuse, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
                             help="the interface to use, 'hci0' for gatt or a com port for bgapi.")
@@ -81,7 +81,7 @@ class main:
                             help="name of the device.")
         parser.add_argument("-b", "--backend",
                             dest="backend", type=str, default="auto",
-                            help="pygatt backend to use. can be auto, gatt or bgapi.")
+                            help="BLE backend to use. can be auto, bluemuse, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
@@ -101,7 +101,7 @@ class main:
                             help="name of the device.")
         parser.add_argument("-b", "--backend",
                             dest="backend", type=str, default="auto",
-                            help="pygatt backend to use. can be auto, gatt or bgapi")
+                            help="BLE backend to use. can be auto, bluemuse, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
                             help="the interface to use, 'hci0' for gatt or a com port for bgapi")
@@ -130,7 +130,7 @@ class main:
                             help="window size.")
         parser.add_argument("-v", "--version",
                             dest="version", type=int, default=1,
-                            help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
+                            help="viewer version (1 or 2) - 1 is the default stable version, 2 is in development.")
         args = parser.parse_args(sys.argv[2:])
         if args.version == 2:
             import muselsl.viewer_v2 as viewer_v2
