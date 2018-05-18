@@ -86,6 +86,8 @@ class Muse():
                 if self.enable_gyro:
                     self._subscribe_gyro()
 
+                self.last_timestamp = self.time_func()
+
             return True
 
         except (pygatt.exceptions.NotConnectedError, pygatt.exceptions.NotificationTimeout):
@@ -255,6 +257,11 @@ class Muse():
 
             # push data
             self.callback_eeg(self.data, timestamps)
+
+            # save last timestamp for disconnection timer
+            self.last_timestamp = timestamps[-1]
+
+            # reset sample
             self._init_sample()
 
     def _init_control(self):

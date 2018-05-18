@@ -1,6 +1,6 @@
 from .muse import Muse
-from .constants import NB_CHANNELS, SAMPLING_RATE, SCAN_TIMEOUT, LSL_CHUNK
-from time import sleep
+from .constants import NB_CHANNELS, SAMPLING_RATE, SCAN_TIMEOUT, LSL_CHUNK, AUTO_DISCONNECT_DELAY
+from time import time, sleep
 from pylsl import StreamInfo, StreamOutlet, local_clock
 import pygatt
 import subprocess
@@ -103,12 +103,12 @@ def stream(address, backend='auto', interface=None, name=None):
         muse.start()
         print('Streaming')
 
-        while 1:
+        while local_clock() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
             try:
                 sleep(1)
-            except:
+            except KeyboardInterrupt:
+                muse.stop()
+                muse.disconnect()
                 break
 
-        muse.stop()
-        muse.disconnect()
         print('Disconnected')
