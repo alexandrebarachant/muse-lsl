@@ -1,6 +1,6 @@
 # Muse LSL
 
-A Python package for streaming, visualizing, and recoridng EEG data from the Muse 2016 headband.
+A Python package for streaming, visualizing, and recording EEG data from the Muse 2016 headband.
 
 ![Blinks](blinks.png)
 
