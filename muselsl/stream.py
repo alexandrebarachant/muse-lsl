@@ -1,26 +1,18 @@
-from .muse import Muse
-from .constants import NB_CHANNELS, SAMPLING_RATE, SCAN_TIMEOUT, LSL_CHUNK, AUTO_DISCONNECT_DELAY
 from time import time, sleep
 from pylsl import StreamInfo, StreamOutlet, local_clock
 import pygatt
 import subprocess
 from sys import platform
+from . import helper
+from .muse import Muse
+from .constants import NB_CHANNELS, SAMPLING_RATE, MUSE_SCAN_TIMEOUT, LSL_CHUNK, AUTO_DISCONNECT_DELAY
 
 
-# Returns a list of available Muse devices
+# Returns a list of available Muse devices.
 def list_muses(backend='auto', interface=None):
     interface = None
 
-    if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:
-        if backend == 'auto':
-            if platform == "linux" or platform == "linux2":
-                backend = 'gatt'
-            else:
-                backend = 'bgapi'
-        else:
-            backend = backend
-    else:
-        raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse'))
+    backend = helper.resolve_backend(backend)
 
     if backend == 'gatt':
         interface = interface or 'hci0'
@@ -33,7 +25,7 @@ def list_muses(backend='auto', interface=None):
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
     print('Searching for Muses, this may take up to 10 seconds...')
-    devices = adapter.scan(timeout=SCAN_TIMEOUT)
+    devices = adapter.scan(timeout=MUSE_SCAN_TIMEOUT)
     muses = []
 
     for device in devices:
@@ -42,9 +34,7 @@ def list_muses(backend='auto', interface=None):
 
     return muses
 
-# Returns the address of the Muse with the name provided, otherwise returns address of first available muse
-
-
+# Returns the address of the Muse with the name provided, otherwise returns address of first available Muse.
 def find_muse(name=None):
     muses = list_muses()
     if name:
@@ -54,9 +44,9 @@ def find_muse(name=None):
     elif muses:
         return muses[0]
 
-
 def stream(address, backend='auto', interface=None, name=None):
-    if backend != 'bluemuse':
+    bluemuse = backend == 'bluemuse'
+    if not bluemuse:
         if not address:
             found_muse = find_muse(name)
             if not found_muse:
@@ -67,13 +57,6 @@ def stream(address, backend='auto', interface=None, name=None):
                 name = found_muse['name']
             print('Connecting to %s : %s...' %
                   (name if name else 'Muse', address))
-
-    else:
-        if not address and not name:
-            print('Connecting to first device in BlueMuse list, see BlueMuse window...')
-        else:
-            print('Connecting to: ' +
-                  ':'.join(filter(None, [name, address])) + '...')
 
     info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',
                              'Muse%s' % address)
@@ -97,11 +80,23 @@ def stream(address, backend='auto', interface=None, name=None):
                 backend=backend, time_func=local_clock,
                 interface=interface, name=name)
 
-    didConnect = muse.connect()
-    if(didConnect):
-        print('Connected')
+    if(bluemuse):
+        muse.connect()
+        if not address and not name:
+            print('Targeting first device BlueMuse discovers...')
+        else:
+            print('Targeting device: ' +
+                  ':'.join(filter(None, [name, address])) + '...')
+        print('\n*BlueMuse will auto connect and stream when the device is found. \n*You can also use the BlueMuse interface to manage your stream(s).')
         muse.start()
-        print('Streaming')
+        return 
+
+    didConnect = muse.connect()
+    
+    if(didConnect):
+        print('Connected.')
+        muse.start()
+        print('Streaming...')
 
         while local_clock() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
             try:
@@ -111,4 +106,4 @@ def stream(address, backend='auto', interface=None, name=None):
                 muse.disconnect()
                 break
 
-        print('Disconnected')
+        print('Disconnected.')

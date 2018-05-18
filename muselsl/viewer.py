@@ -1,4 +1,3 @@
-from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import lfilter, lfilter_zi, firwin
@@ -6,6 +5,7 @@ from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
 from threading import Thread
+from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE
 
 
 def view(window, scale, refresh, figure):
@@ -14,11 +14,11 @@ def view(window, scale, refresh, figure):
     figsize = np.int16(figure.split('x'))
 
     print("Looking for an EEG stream...")
-    streams = resolve_byprop('type', 'EEG', timeout=2)
+    streams = resolve_byprop('type', 'EEG', timeout=LSL_SCAN_TIMEOUT)
 
     if len(streams) == 0:
-        raise(RuntimeError("Can't find EEG stream"))
-    print("Start acquiring data")
+        raise(RuntimeError("Can't find EEG stream."))
+    print("Start acquiring data.")
 
     fig, axes = plt.subplots(1, 1, figsize=figsize, sharex=True)
     lslv = LSLViewer(streams[0], fig, axes, window, scale)
@@ -43,7 +43,7 @@ class LSLViewer():
         self.window = window
         self.scale = scale
         self.dejitter = dejitter
-        self.inlet = StreamInlet(stream, max_chunklen=VIEW_BUFFER)
+        self.inlet = StreamInlet(stream, max_chunklen=LSL_CHUNK)
         self.filt = True
         self.subsample = VIEW_SUBSAMPLE
 
@@ -110,7 +110,7 @@ class LSLViewer():
         k = 0
         while self.started:
             samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
-                                                        max_samples=12)
+                                                        max_samples=LSL_CHUNK)
             if timestamps:
                 if self.dejitter:
                     timestamps = np.float64(np.arange(len(timestamps)))

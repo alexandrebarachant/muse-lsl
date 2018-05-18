@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from time import time, sleep, strftime, gmtime
 from .stream import find_muse
 from .muse import Muse
+from . constants import LSL_SCAN_TIMEOUT, LSL_CHUNK
 
 
 def record(duration, filename=None, dejitter=False):
@@ -12,25 +13,25 @@ def record(duration, filename=None, dejitter=False):
         filename = ("recording_%s.csv" %
                     strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
 
-    print("looking for an EEG stream...")
-    streams = resolve_byprop('type', 'EEG', timeout=2)
+    print("Looking for an EEG stream...")
+    streams = resolve_byprop('type', 'EEG', timeout=LSL_SCAN_TIMEOUT)
 
     if len(streams) == 0:
-        raise(RuntimeError, "Can't find EEG stream")
+        raise(RuntimeError("Can't find EEG stream."))
 
-    print("Start acquiring data")
-    inlet = StreamInlet(streams[0], max_chunklen=12)
+    print("Started acquiring data.")
+    inlet = StreamInlet(streams[0], max_chunklen=LSL_CHUNK)
     # eeg_time_correction = inlet.time_correction()
 
-    print("looking for a Markers stream...")
-    marker_streams = resolve_byprop('name', 'Markers', timeout=2)
+    print("Looking for a Markers stream...")
+    marker_streams = resolve_byprop('name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
 
     if marker_streams:
         inlet_marker = StreamInlet(marker_streams[0])
         # marker_time_correction = inlet_marker.time_correction()
     else:
         inlet_marker = False
-        print("Can't find Markers stream")
+        print("Can't find Markers stream.")
 
     info = inlet.info()
     description = info.desc()
@@ -55,7 +56,7 @@ def record(duration, filename=None, dejitter=False):
 
         try:
             data, timestamp = inlet.pull_chunk(timeout=1.0,
-                                               max_samples=12)
+                                               max_samples=LSL_CHUNK)
 
             if timestamp:
                 res.append(data)
@@ -96,13 +97,13 @@ def record(duration, filename=None, dejitter=False):
 
     data.to_csv(filename, float_format='%.3f', index=False)
 
-    print('Done!')
+    print('Done - wrote file: ' + filename + '.')
 
 
 def record_direct(address, backend, interface, name, filename):
     if backend == 'bluemuse':
         raise(NotImplementedError(
-            'Direct record not supported with BlueMuse backend. Use lslrecord instead.'))
+            'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'))
 
     if not address:
         found_muse = find_muse(name)
@@ -151,3 +152,5 @@ def record_direct(address, backend, interface, name, filename):
 
     recording['timestamps'] = timestamps
     recording.to_csv(filename, float_format='%.3f')
+    print('Done - wrote file: ' + filename + '.')
+

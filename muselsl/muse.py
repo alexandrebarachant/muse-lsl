@@ -4,6 +4,7 @@ import numpy as np
 from time import time
 from sys import platform
 import subprocess
+from . import helper
 
 
 class Muse():
@@ -41,16 +42,7 @@ class Muse():
         self.interface = interface
         self.time_func = time_func
 
-        if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:
-            if backend == 'auto':
-                if platform == "linux" or platform == "linux2":
-                    self.backend = 'gatt'
-                else:
-                    self.backend = 'bgapi'
-            else:
-                self.backend = backend
-        else:
-            raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse.'))
+        self.backend = helper.resolve_backend(backend)
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
