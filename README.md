@@ -52,17 +52,17 @@ Once a stream is up and running, you now have access to the following commands i
 
 To view data:
 
-    muselsl view    
+    $ muselsl view    
 
 To record EEG data into a CSV:
 
-    muselsl record  
+    $ muselsl record  
 
 *Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)*
 
 Alternatively, you can record data directly without using LSL through the following command:
 
-    muselsl record_direct
+    $ muselsl record_direct
 
 *Note: direct recording does not allow 'Markers' data to be recorded*
 
