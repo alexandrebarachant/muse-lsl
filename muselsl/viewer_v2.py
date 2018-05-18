@@ -163,7 +163,7 @@ class Canvas(app.Canvas):
         self.data = np.zeros((n_samples, self.n_chans))
 
         self.bf = create_filter(self.data_f.T, self.sfreq, 3, 40.,
-                                method='fir', fir_design='firwin')
+                                method='fir')
 
         zi = lfilter_zi(self.bf, self.af)
         self.filt_state = np.tile(zi, (self.n_chans, 1)).transpose()
