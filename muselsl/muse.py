@@ -366,7 +366,7 @@ class Muse():
         timestamp = self.time_func()
 
         packet_index, samples = self._unpack_imu_channel(
-            packet, scale=0.0000610352)
+            packet, scale=MUSE_ACCELEROMETER_SCALE_FACTOR)
 
         self.callback_acc(timestamp, samples)
 
@@ -384,6 +384,6 @@ class Muse():
         timestamp = self.time_func()
 
         packet_index, samples = self._unpack_imu_channel(
-            packet, scale=0.0074768)
+            packet, scale=MUSE_GYRO_SCALE_FACTOR)
 
         self.callback_gyro(timestamp, samples)
