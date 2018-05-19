@@ -10,7 +10,7 @@ The code relies on [pygatt](https://github.com/peplin/pygatt) or [BlueMuse](http
 
 - Windows: On Windows 10, we recommend installing [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) and specifying it as the  backend when using Muse LSL (i.e. `$ muselsl stream -b bluemuse`). Alternatively, if you have a BLED112 dongle you can try the bgapi backend (default option in CLI).
 - Mac: __BLED112 dongle required__. Use the bgapi backend (default option)
-- Linux: No dongle or seperate install required. Use the pygatt backend (default option on Linux)
+- Linux: No dongle or separate install required. Use the pygatt backend (default option on Linux)
 
 
 Compatible with Python 2.7 and Python 3.x.

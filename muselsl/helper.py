@@ -1,5 +1,8 @@
 from sys import platform
+import warnings
 
+def warn_bluemuse_not_supported():
+    warnings.warn('Operation not supported by bluemuse backend.', RuntimeWarning)
 
 def resolve_backend(backend):
     if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:

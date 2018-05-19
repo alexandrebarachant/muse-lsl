@@ -5,6 +5,7 @@ from time import time
 from sys import platform
 import subprocess
 from . import helper
+from .constants import *
 
 
 class Muse():
@@ -107,7 +108,7 @@ class Muse():
         "rc": return status, if 0 is OK
         """
         if self.backend == 'bluemuse':
-            print('Not supported by bluemuse backend.')
+            helper.warn_bluemuse_not_supported()
             return
         self._write_cmd([0x02, 0x73, 0x0a])
 
@@ -126,7 +127,7 @@ class Muse():
         "rc": return status, if 0 is OK
         """
         if self.backend == 'bluemuse':
-            print('Not supported by bluemuse backend.')
+            helper.warn_bluemuse_not_supported()
             return
         self._write_cmd([0x03, 0x76, 0x31, 0x0a])
 
@@ -173,15 +174,15 @@ class Muse():
 
     def _subscribe_eeg(self):
         """subscribe to eeg stream."""
-        self.device.subscribe('273e0003-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_TP9,
                               callback=self._handle_eeg)
-        self.device.subscribe('273e0004-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_AF7,
                               callback=self._handle_eeg)
-        self.device.subscribe('273e0005-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_AF8,
                               callback=self._handle_eeg)
-        self.device.subscribe('273e0006-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_TP10,
                               callback=self._handle_eeg)
-        self.device.subscribe('273e0007-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_RIGHTAUX,
                               callback=self._handle_eeg)
 
     def _unpack_eeg_channel(self, packet):
@@ -210,7 +211,7 @@ class Muse():
         # initial params for the timestamp correction
         # the time it started + the inverse of sampling rate
         self.sample_index = 0
-        self.reg_params = np.array([self.time_func(), 1. / 256])
+        self.reg_params = np.array([self.time_func(), 1. / MUSE_SAMPLING_RATE])
 
     def _update_timestamp_correction(self, x, y):
         """Update regression for dejittering
@@ -262,7 +263,7 @@ class Muse():
 
     def _subscribe_control(self):
         self.device.subscribe(
-            '273e0001-4c4d-454d-96be-f03bac821358', callback=self._handle_control)
+            MUSE_GATT_ATTR_STREAM_TOGGLE, callback=self._handle_control)
 
     def _handle_control(self, handle, packet):
         """Handle the incoming messages from the 0x000e handle.
@@ -306,7 +307,7 @@ class Muse():
             self._init_control()
 
     def _subscribe_telemetry(self):
-        self.device.subscribe('273e000b-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_TELEMETRY,
                               callback=self._handle_telemetry)
 
     def _handle_telemetry(self, handle, packet):
@@ -353,7 +354,7 @@ class Muse():
         return packet_index, samples
 
     def _subscribe_acc(self):
-        self.device.subscribe('273e000a-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_ACCELEROMETER,
                               callback=self._handle_acc)
 
     def _handle_acc(self, handle, packet):
@@ -370,7 +371,7 @@ class Muse():
         self.callback_acc(timestamp, samples)
 
     def _subscribe_gyro(self):
-        self.device.subscribe('273e0009-4c4d-454d-96be-f03bac821358',
+        self.device.subscribe(MUSE_GATT_ATTR_GYRO,
                               callback=self._handle_gyro)
 
     def _handle_gyro(self, handle, packet):

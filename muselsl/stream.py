@@ -5,7 +5,7 @@ import subprocess
 from sys import platform
 from . import helper
 from .muse import Muse
-from .constants import NB_CHANNELS, SAMPLING_RATE, MUSE_SCAN_TIMEOUT, LSL_CHUNK, AUTO_DISCONNECT_DELAY
+from .constants import MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, MUSE_SCAN_TIMEOUT, LSL_CHUNK, AUTO_DISCONNECT_DELAY
 
 
 # Returns a list of available Muse devices.
@@ -58,7 +58,7 @@ def stream(address, backend='auto', interface=None, name=None):
             print('Connecting to %s : %s...' %
                   (name if name else 'Muse', address))
 
-    info = info = StreamInfo('Muse', 'EEG', NB_CHANNELS, SAMPLING_RATE, 'float32',
+    info = info = StreamInfo('Muse', 'EEG', MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, 'float32',
                              'Muse%s' % address)
 
     info.desc().append_child_value("manufacturer", "Muse")

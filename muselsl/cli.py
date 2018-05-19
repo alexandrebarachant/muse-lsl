@@ -11,13 +11,13 @@ class main:
     Available commands:
     list        List available Muse devices.
                 -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
-                -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
+                -i --interface  The interface to use, 'hci0' for gatt or a com port for bgapi.
 
     stream      Start an LSL stream from Muse headset.
                 -a --address    Device MAC address.
                 -n --name       Device name (e.g. Muse-41D2).
                 -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
-                -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
+                -i --interface  The interface to use, 'hci0' for gatt or a com port for bgapi.
 
     view     Visualize EEG data from an LSL stream.
                 -w --window     Window length to display in seconds.
@@ -35,7 +35,7 @@ class main:
                 -a --address    Device MAC address.
                 -n --name       Device name (e.g. Muse-41D2).
                 -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
-                -i --interface  The interfact to use, 'hci0' for gatt or a com port for bgapi.
+                -i --interface  The interface to use, 'hci0' for gatt or a com port for bgapi.
         ''')
 
         parser.add_argument('command', help='Command to run.')
