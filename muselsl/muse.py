@@ -170,7 +170,8 @@ class Muse():
             return
 
         self.device.disconnect()
-        self.adapter.stop()
+        if self.adapter:
+            self.adapter.stop()
 
     def _subscribe_eeg(self):
         """subscribe to eeg stream."""

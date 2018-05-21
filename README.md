@@ -27,7 +27,9 @@ Install Muse LSL with pip
 
 ### Setting Up a Stream
 
-The easiest way to get Muse data is to use Muse LSL directly from the command line. Use the `-h` flag to get a comprehensive list of all commands and options
+The easiest way to get Muse data is to use Muse LSL directly from the command line. Use the `-h` flag to get a comprehensive list of all commands and options.
+
+*Note: if you run into any issues, first check out out [Common Issues](#common-issues) and then the [Issues](https://github.com/alexandrebarachant/muse-lsl/issues) section of this repository*
 
 To print a list of available muses:
 
@@ -85,7 +87,7 @@ stream.stream(muses[0]['address'])
 print('Stream has ended')
 ```
 
-## Common issues
+## Common Issues
 
 1. `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Operation not permitted` (Linux)
  - This is an issue with pygatt requiring root privileges to run a scan. Make sure you have `libcap` installed and run ```sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcitool` ```
@@ -98,4 +100,11 @@ print('Stream has ended')
 3. Connection issues with BLED112 dongle (Windows):
  - You may need to use the --interface argument to provide the appropriate COM port value for the BLED112 device. The default value is COM9. To setup or view the device's COM port go to:
  `Control Panel\Hardware and Sound\Devices and Printers > Right Click > Bluetooth settings > COM Ports > (Add > Incoming)`
+
+4. `pygatt.exceptions.BLEError: No BLE adapter found`
+- Make sure your computer's Bluetooth is turned on.
+
+5. `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Connection timed out`
+- This seems to be due to a OS-level Bluetooth crash. Try turning your computer's bluetooth off and on again
+
  

@@ -58,7 +58,7 @@ def stream(address, backend='auto', interface=None, name=None):
             print('Connecting to %s : %s...' %
                   (name if name else 'Muse', address))
 
-    info = info = StreamInfo('Muse', 'EEG', MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, 'float32',
+    info = StreamInfo('Muse', 'EEG', MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, 'float32',
                              'Muse%s' % address)
 
     info.desc().append_child_value("manufacturer", "Muse")

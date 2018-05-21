@@ -31,7 +31,7 @@ setup(name='muselsl',
       package_data={'muselsl': ['docs/README.md', 'docs/examples/*']},
       include_package_data=True,
       zip_safe=False,
-      install_requires=['bitstring', 'pylsl', 'pygatt',
+      install_requires=['bitstring', 'pylsl', 'pygatt==3.1.1',
                         'pandas', 'scikit-learn', 'numpy', 'seaborn', 'pexpect'],
       extras_require={'Viewer V2': ['mne', 'vispy']},
       classifiers=[
