@@ -91,6 +91,22 @@ class main:
         stream.stream(args.address, args.backend,
                       args.interface, args.name)
 
+    def record(self):
+        parser = argparse.ArgumentParser(
+            description='Record data from an LSL stream.')
+        parser.add_argument("-d", "--duration",
+                            dest="duration", type=int, default=60,
+                            help="Duration of the recording in seconds.")
+        parser.add_argument("-f", "--filename",
+                            dest="filename", type=str, default=None,
+                            help="Name of the recording file.")
+        parser.add_argument("-dj", "--dejitter",
+                            dest="dejitter", type=bool, default=True,
+                            help="Whether to apply dejitter correction to timestamps.")
+        args = parser.parse_args(sys.argv[2:])
+        import muselsl.record as record
+        record.record(args.duration, args.filename, args.dejitter)
+
     def record_direct(self):
         parser = argparse.ArgumentParser(
             description='Record directly from Muse without LSL.')
@@ -106,13 +122,16 @@ class main:
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
+        parser.add_argument("-d", "--duration",
+                            dest="duration", type=int, default=60,
+                            help="Duration of the recording in seconds.")
         parser.add_argument("-f", "--filename",
                             dest="filename", type=str, default=None,
                             help="Name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
         import muselsl.record as record
         record.record_direct(args.address, args.backend,
-                             args.interface, args.name, args.filename)
+                             args.interface, args.name, args.duration, args.filename)
 
     def view(self):
         parser = argparse.ArgumentParser(
@@ -139,19 +158,3 @@ class main:
         else:
             import muselsl.viewer as viewer
             viewer.view(args.window, args.scale, args.refresh, args.figure)
-
-    def record(self):
-        parser = argparse.ArgumentParser(
-            description='Record data from an LSL stream.')
-        parser.add_argument("-d", "--duration",
-                            dest="duration", type=int, default=60,
-                            help="Duration of the recording in seconds.")
-        parser.add_argument("-f", "--filename",
-                            dest="filename", type=str, default=None,
-                            help="Name of the recording file.")
-        parser.add_argument("-dj", "--dejitter",
-                            dest="dejitter", type=bool, default=True,
-                            help="Whether to apply dejitter correction to timestamps.")
-        args = parser.parse_args(sys.argv[2:])
-        import muselsl.record as record
-        record.record(args.duration, args.filename, args.dejitter)

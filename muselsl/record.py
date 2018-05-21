@@ -53,7 +53,6 @@ def record(duration, filename=None, dejitter=False):
     print('Start recording at time t=%.3f' % t_init)
     print('Time correction: ', time_correction)
     while (time() - t_init) < duration:
-
         try:
             data, timestamp = inlet.pull_chunk(timeout=1.0,
                                                max_samples=LSL_CHUNK)
@@ -100,7 +99,7 @@ def record(duration, filename=None, dejitter=False):
     print('Done - wrote file: ' + filename + '.')
 
 
-def record_direct(address, backend, interface, name, filename):
+def record_direct(address, backend, interface, name, duration, filename=None):
     if backend == 'bluemuse':
         raise(NotImplementedError(
             'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'))
@@ -123,23 +122,21 @@ def record_direct(address, backend, interface, name, filename):
     eeg_samples = []
     timestamps = []
 
-
     def save_eeg(new_samples, new_timestamps):
         eeg_samples.append(new_samples)
         timestamps.append(new_timestamps)
 
-
     muse = Muse(address, save_eeg)
-
     muse.connect()
     muse.start()
 
-    print('Start recording at time t=%.3f' % time())
+    t_init = time()
+    print('Start recording at time t=%.3f' % t_init)
 
-    while 1:
+    while (time() - t_init) < duration:
         try:
             sleep(1)
-        except:
+        except KeyboardInterrupt:
             break
 
     muse.stop()
