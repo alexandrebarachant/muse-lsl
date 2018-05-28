@@ -5,7 +5,7 @@ from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
 from threading import Thread
-from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE
+from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE, LSL_SCAN_TIMEOUT, LSL_CHUNK
 
 
 def view(window, scale, refresh, figure):
