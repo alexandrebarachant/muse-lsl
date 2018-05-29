@@ -8,7 +8,7 @@ from threading import Thread
 from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE, LSL_SCAN_TIMEOUT, LSL_CHUNK
 
 
-def view(window, scale, refresh, figure):
+def view(window, scale, refresh, figure, version=1):
     sns.set(style="whitegrid")
 
     figsize = np.int16(figure.split('x'))

@@ -1,8 +1,6 @@
 #!/usr/bin/python
 import sys
 import argparse
-
-
 class main:
     def __init__(self):
         parser = argparse.ArgumentParser(
@@ -61,9 +59,8 @@ class main:
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.stream as stream
-        muses = stream.list_muses(args.backend, args.interface)
-        
+        from . import list_muses
+        list_muses(args.backend, args.interface)
 
     def stream(self):
         parser = argparse.ArgumentParser(
@@ -81,9 +78,9 @@ class main:
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.stream as stream
-        stream.stream(args.address, args.backend,
-                      args.interface, args.name)
+        from . import stream
+        stream(args.address, args.backend,
+               args.interface, args.name)
 
     def record(self):
         parser = argparse.ArgumentParser(
@@ -98,8 +95,8 @@ class main:
                             dest="dejitter", type=bool, default=True,
                             help="Whether to apply dejitter correction to timestamps.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.record as record
-        record.record(args.duration, args.filename, args.dejitter)
+        from . import record
+        record(args.duration, args.filename, args.dejitter)
 
     def record_direct(self):
         parser = argparse.ArgumentParser(
@@ -123,9 +120,9 @@ class main:
                             dest="filename", type=str, default=None,
                             help="Name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
-        import muselsl.record as record
-        record.record_direct(args.address, args.backend,
-                             args.interface, args.name, args.duration, args.filename)
+        from . import record_direct
+        record_direct(args.address, args.backend,
+                      args.interface, args.name, args.duration, args.filename)
 
     def view(self):
         parser = argparse.ArgumentParser(
@@ -146,9 +143,5 @@ class main:
                             dest="version", type=int, default=1,
                             help="Viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
         args = parser.parse_args(sys.argv[2:])
-        if args.version == 2:
-            import muselsl.viewer_v2 as viewer_v2
-            viewer_v2.view()
-        else:
-            import muselsl.viewer as viewer
-            viewer.view(args.window, args.scale, args.refresh, args.figure)
+        from . import view
+        view(args.window, args.scale, args.refresh, args.figure, args.version)
