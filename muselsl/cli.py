@@ -63,13 +63,7 @@ class main:
         args = parser.parse_args(sys.argv[2:])
         import muselsl.stream as stream
         muses = stream.list_muses(args.backend, args.interface)
-        if args.backend != 'bluemuse':
-            if(muses):
-                for muse in muses:
-                    print('Found device %s, MAC Address %s' %
-                          (muse['name'], muse['address']))
-            else:
-                print('No Muses found.')
+        
 
     def stream(self):
         parser = argparse.ArgumentParser(

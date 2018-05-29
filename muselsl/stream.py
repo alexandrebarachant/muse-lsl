@@ -32,9 +32,18 @@ def list_muses(backend='auto', interface=None):
         if device['name'] and 'Muse' in device['name']:
             muses = muses + [device]
 
+    if(muses):
+        for muse in muses:
+            print('Found device %s, MAC Address %s' %
+                  (muse['name'], muse['address']))
+    else:
+        print('No Muses found.')
+        
     return muses
 
 # Returns the address of the Muse with the name provided, otherwise returns address of first available Muse.
+
+
 def find_muse(name=None):
     muses = list_muses()
     if name:
@@ -43,6 +52,7 @@ def find_muse(name=None):
                 return muse
     elif muses:
         return muses[0]
+
 
 def stream(address, backend='auto', interface=None, name=None):
     bluemuse = backend == 'bluemuse'
@@ -59,7 +69,7 @@ def stream(address, backend='auto', interface=None, name=None):
                   (name if name else 'Muse', address))
 
     info = StreamInfo('Muse', 'EEG', MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, 'float32',
-                             'Muse%s' % address)
+                      'Muse%s' % address)
 
     info.desc().append_child_value("manufacturer", "Muse")
     channels = info.desc().append_child("channels")
@@ -89,10 +99,10 @@ def stream(address, backend='auto', interface=None, name=None):
                   ':'.join(filter(None, [name, address])) + '...')
         print('\n*BlueMuse will auto connect and stream when the device is found. \n*You can also use the BlueMuse interface to manage your stream(s).')
         muse.start()
-        return 
+        return
 
     didConnect = muse.connect()
-    
+
     if(didConnect):
         print('Connected.')
         muse.start()
