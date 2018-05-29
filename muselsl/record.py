@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
 from time import time, sleep, strftime, gmtime
@@ -10,8 +11,8 @@ from . constants import LSL_SCAN_TIMEOUT, LSL_CHUNK
 
 def record(duration, filename=None, dejitter=False):
     if not filename:
-        filename = ("recording_%s.csv" %
-                    strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
+        filename = os.path.join(os.getcwd(), ("recording_%s.csv" %
+                                              strftime("%Y-%m-%d-%H.%M.%S", gmtime())))
 
     print("Looking for an EEG stream...")
     streams = resolve_byprop('type', 'EEG', timeout=LSL_SCAN_TIMEOUT)
@@ -24,7 +25,8 @@ def record(duration, filename=None, dejitter=False):
     # eeg_time_correction = inlet.time_correction()
 
     print("Looking for a Markers stream...")
-    marker_streams = resolve_byprop('name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
+    marker_streams = resolve_byprop(
+        'name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
 
     if marker_streams:
         inlet_marker = StreamInlet(marker_streams[0])
@@ -94,12 +96,16 @@ def record(duration, filename=None, dejitter=False):
             for ii in range(n_markers):
                 data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
 
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     data.to_csv(filename, float_format='%.3f', index=False)
 
     print('Done - wrote file: ' + filename + '.')
 
 
-def record_direct(address, backend, interface, name, duration, filename=None):
+def record_direct(duration, address, filename=None, backend='auto', interface=None, name=None):
     if backend == 'bluemuse':
         raise(NotImplementedError(
             'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'))
@@ -113,11 +119,11 @@ def record_direct(address, backend, interface, name, duration, filename=None):
             address = found_muse['address']
             name = found_muse['name']
         print('Connecting to %s : %s...' %
-            (name if name else 'Muse', address))
+              (name if name else 'Muse', address))
 
     if not filename:
-        filename = ("recording_%s.csv" %
-                    strftime("%Y-%m-%d-%H.%M.%S", gmtime()))
+        filename = os.path.join(os.getcwd(), ("recording_%s.csv" %
+                                              strftime("%Y-%m-%d-%H.%M.%S", gmtime())))
 
     eeg_samples = []
     timestamps = []
@@ -145,9 +151,13 @@ def record_direct(address, backend, interface, name, duration, filename=None):
     timestamps = np.concatenate(timestamps)
     eeg_samples = np.concatenate(eeg_samples, 1).T
     recording = pd.DataFrame(data=eeg_samples,
-                            columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
+                             columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
 
     recording['timestamps'] = timestamps
+
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     recording.to_csv(filename, float_format='%.3f')
     print('Done - wrote file: ' + filename + '.')
-
