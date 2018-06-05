@@ -23,7 +23,7 @@ def view(window, scale, refresh, figure, version=1):
 
     fig, axes = matplotlib.pyplot.subplots(1, 1, figsize=figsize, sharex=True)
     lslv = LSLViewer(streams[0], fig, axes, window, scale)
-    print(lslv)
+
     help_str = """
                 toggle filter : d
                 toogle full screen : f
@@ -35,7 +35,6 @@ def view(window, scale, refresh, figure, version=1):
     print(help_str)
     lslv.start()
     matplotlib.pyplot.show()
-    # lslv.stop()
 
 
 class LSLViewer():
@@ -177,5 +176,4 @@ class LSLViewer():
         self.thread.start()
 
     def stop(self):
-        print('stopped')
         self.started = False
