@@ -23,6 +23,7 @@ def view(window, scale, refresh, figure, version=1):
 
     fig, axes = matplotlib.pyplot.subplots(1, 1, figsize=figsize, sharex=True)
     lslv = LSLViewer(streams[0], fig, axes, window, scale)
+    fig.canvas.mpl_connect('close_event', lslv.stop)
 
     help_str = """
                 toggle filter : d
@@ -35,6 +36,7 @@ def view(window, scale, refresh, figure, version=1):
     print(help_str)
     lslv.start()
     matplotlib.pyplot.show()
+    
 
 
 class LSLViewer():
@@ -96,9 +98,6 @@ class LSLViewer():
 
         self.display_every = int(0.2 / (12 / self.sfreq))
 
-        # self.bf, self.af = butter(4, np.array([1, 40])/(self.sfreq/2.),
-        #                          'bandpass')
-
         self.bf = firwin(32, np.array([1, 40]) / (self.sfreq / 2.), width=0.05,
                          pass_zero=False)
         self.af = [1.0]
@@ -109,49 +108,53 @@ class LSLViewer():
 
     def update_plot(self):
         k = 0
-        while self.started:
-            samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
-                                                        max_samples=LSL_CHUNK)
+        try:
+            while self.started:
+                samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
+                                                            max_samples=LSL_CHUNK)
 
-            if timestamps:
-                if self.dejitter:
-                    timestamps = np.float64(np.arange(len(timestamps)))
-                    timestamps /= self.sfreq
-                    timestamps += self.times[-1] + 1. / self.sfreq
-                self.times = np.concatenate([self.times, timestamps])
-                self.n_samples = int(self.sfreq * self.window)
-                self.times = self.times[-self.n_samples:]
-                self.data = np.vstack([self.data, samples])
-                self.data = self.data[-self.n_samples:]
-                filt_samples, self.filt_state = lfilter(
-                    self.bf, self.af,
-                    samples,
-                    axis=0, zi=self.filt_state)
-                self.data_f = np.vstack([self.data_f, filt_samples])
-                self.data_f = self.data_f[-self.n_samples:]
-                k += 1
-                if k == self.display_every:
+                if timestamps:
+                    if self.dejitter:
+                        timestamps = np.float64(np.arange(len(timestamps)))
+                        timestamps /= self.sfreq
+                        timestamps += self.times[-1] + 1. / self.sfreq
+                    self.times = np.concatenate([self.times, timestamps])
+                    self.n_samples = int(self.sfreq * self.window)
+                    self.times = self.times[-self.n_samples:]
+                    self.data = np.vstack([self.data, samples])
+                    self.data = self.data[-self.n_samples:]
+                    filt_samples, self.filt_state = lfilter(
+                        self.bf, self.af,
+                        samples,
+                        axis=0, zi=self.filt_state)
+                    self.data_f = np.vstack([self.data_f, filt_samples])
+                    self.data_f = self.data_f[-self.n_samples:]
+                    k += 1
+                    if k == self.display_every:
 
-                    if self.filt:
-                        plot_data = self.data_f
-                    elif not self.filt:
-                        plot_data = self.data - self.data.mean(axis=0)
-                    for ii in range(self.n_chan):
-                        self.lines[ii].set_xdata(self.times[::self.subsample] -
-                                                 self.times[-1])
-                        self.lines[ii].set_ydata(plot_data[::self.subsample, ii] /
-                                                 self.scale - ii)
-                        impedances = np.std(plot_data, axis=0)
+                        if self.filt:
+                            plot_data = self.data_f
+                        elif not self.filt:
+                            plot_data = self.data - self.data.mean(axis=0)
+                        for ii in range(self.n_chan):
+                            self.lines[ii].set_xdata(self.times[::self.subsample] -
+                                                    self.times[-1])
+                            self.lines[ii].set_ydata(plot_data[::self.subsample, ii] /
+                                                    self.scale - ii)
+                            impedances = np.std(plot_data, axis=0)
 
-                    ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
-                                                   impedances[ii])
-                                    for ii in range(self.n_chan)]
-                    self.axes.set_yticklabels(ticks_labels)
-                    self.axes.set_xlim(-self.window, 0)
-                    self.fig.canvas.draw()
-                    k = 0
-            else:
-                sleep(0.2)
+                        ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
+                                                    impedances[ii])
+                                        for ii in range(self.n_chan)]
+                        self.axes.set_yticklabels(ticks_labels)
+                        self.axes.set_xlim(-self.window, 0)
+                        self.fig.canvas.draw()
+                        k = 0
+                else:
+                    sleep(0.2)
+        except RuntimeError as e:
+            raise
+
 
     def onclick(self, event):
         print((event.button, event.x, event.y, event.xdata, event.ydata))
@@ -175,5 +178,5 @@ class LSLViewer():
         self.thread.daemon = True
         self.thread.start()
 
-    def stop(self):
+    def stop(self, close_event):
         self.started = False
