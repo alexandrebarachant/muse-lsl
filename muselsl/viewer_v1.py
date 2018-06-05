@@ -1,5 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
 from scipy.signal import lfilter, lfilter_zi, firwin
 from time import sleep
 from pylsl import StreamInlet, resolve_byprop
@@ -20,8 +21,9 @@ def view(window, scale, refresh, figure, version=1):
         raise(RuntimeError("Can't find EEG stream."))
     print("Start acquiring data.")
 
-    fig, axes = plt.subplots(1, 1, figsize=figsize, sharex=True)
+    fig, axes = matplotlib.pyplot.subplots(1, 1, figsize=figsize, sharex=True)
     lslv = LSLViewer(streams[0], fig, axes, window, scale)
+    print(lslv)
     help_str = """
                 toggle filter : d
                 toogle full screen : f
@@ -32,8 +34,8 @@ def view(window, scale, refresh, figure, version=1):
                """
     print(help_str)
     lslv.start()
-    plt.show()
-    lslv.stop()
+    matplotlib.pyplot.show()
+    # lslv.stop()
 
 
 class LSLViewer():
@@ -111,6 +113,7 @@ class LSLViewer():
         while self.started:
             samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
                                                         max_samples=LSL_CHUNK)
+
             if timestamps:
                 if self.dejitter:
                     timestamps = np.float64(np.arange(len(timestamps)))
@@ -174,4 +177,5 @@ class LSLViewer():
         self.thread.start()
 
     def stop(self):
+        print('stopped')
         self.started = False
