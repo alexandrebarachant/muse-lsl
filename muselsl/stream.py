@@ -1,5 +1,5 @@
 from time import time, sleep
-from pylsl import StreamInfo, StreamOutlet, local_clock
+from pylsl import StreamInfo, StreamOutlet
 import pygatt
 import subprocess
 from sys import platform
@@ -38,7 +38,7 @@ def list_muses(backend='auto', interface=None):
                   (muse['name'], muse['address']))
     else:
         print('No Muses found.')
-        
+
     return muses
 
 # Returns the address of the Muse with the name provided, otherwise returns address of first available Muse.
@@ -87,8 +87,7 @@ def stream(address, backend='auto', interface=None, name=None):
             outlet.push_sample(data[:, ii], timestamps[ii])
 
     muse = Muse(address=address, callback_eeg=push_eeg,
-                backend=backend, time_func=local_clock,
-                interface=interface, name=name)
+                backend=backend, interface=interface, name=name)
 
     if(bluemuse):
         muse.connect()
@@ -108,7 +107,7 @@ def stream(address, backend='auto', interface=None, name=None):
         muse.start()
         print('Streaming...')
 
-        while local_clock() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
+        while time() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
             try:
                 sleep(1)
             except KeyboardInterrupt:
