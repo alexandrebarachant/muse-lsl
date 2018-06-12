@@ -17,7 +17,7 @@ MUSE_GYRO_SCALE_FACTOR = 0.0074768
 
 AUTO_DISCONNECT_DELAY = 3
 
-LSL_SCAN_TIMEOUT = 2 # How long to look for an LSL stream.
+LSL_SCAN_TIMEOUT = 5 # How long to look for an LSL stream.
 LSL_CHUNK = 12 # Chunk size.
 LSL_BUFFER = 360 # Buffer length.
 
