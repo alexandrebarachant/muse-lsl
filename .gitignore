@@ -1,3 +1,20 @@
 *.pyc
 #*.csv
 .ipynb_checkpoints
+
+build/
+dist/
+*.egg-info/
+*.egg
+*.py[cod]
+__pycache__/
+*.so
+*~
+
+# due to using tox and pytest
+.tox
+.cache
+.vs
+env/
+
+muselsl/docs

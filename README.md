@@ -1,98 +1,93 @@
 # Muse LSL
 
-This is a collection of Python scripts to use the Muse 2016 BLE headset with LSL.
+A Python package for streaming, visualizing, and recording EEG data from the Muse 2016 headband.
 
 ![Blinks](blinks.png)
 
 ## Requirements
 
-The code relies on [pygatt](https://github.com/peplin/pygatt) for the BLE communication.
-pygatt works on Linux and should work on Windows and macOS provided that you have a BLED112 dongle.
-You have to use the development version of pygatt, that can be installed with pip using:
+The code relies on [pygatt](https://github.com/peplin/pygatt) or [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) for BLE communication and works differently on differnt operating systems.
 
-`pip install git+https://github.com/peplin/pygatt`
+- Windows: On Windows 10, we recommend installing [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) and specifying it as the  backend when using Muse LSL (i.e. `$ muselsl stream -b bluemuse`). Alternatively, if you have a BLED112 dongle you can try the bgapi backend (default option in CLI).
+- Mac: __BLED112 dongle required__. Use the bgapi backend (default option)
+- Linux: No dongle or separate install required. Use the pygatt backend (default option on Linux)
 
-You will also need to find the MAC address of your Muse headset. **This code is
-only compatible with the 2016 version of the Muse headset.**
 
-Finally, the code for streaming and recording data is compatible with Python
-2.7 and Python 3.x. However, the code for stimulus presentation relies on
-psychopy and therefore only runs with Python 2.7.
+Compatible with Python 2.7 and Python 3.x.
+ 
+**This code is only compatible with the 2016 version of the Muse headset.**
 
-## Usage
+## Getting Started
+
+### Installation
+
+Install Muse LSL with pip
+
+`pip install muselsl`
+
+### Setting Up a Stream
+
+The easiest way to get Muse data is to use Muse LSL directly from the command line. Use the `-h` flag to get a comprehensive list of all commands and options.
+
+*Note: if you run into any issues, first check out out [Common Issues](#common-issues) and then the [Issues](https://github.com/alexandrebarachant/muse-lsl/issues) section of this repository*
+
+To print a list of available muses:
+
+    $ muselsl list
 
 To stream data with LSL:
 
-`python muse-lsl.py`
+    $ muselsl stream  
 
 The script will auto detect and connect to the first Muse device. In case you want
-a specific device or if the detection fails, find the name of the device and pass it to the script :
+a specific device or if the detection fails, find the name of the device and pass it to the script:
 
-`python muse-lsl.py --name YOUR_DEVICE_NAME`
+    $ muselsl stream --name YOUR_DEVICE_NAME
 
 You can also directly pass the MAC address (this option is also faster at startup):
 
-`python muse-lsl.py --address YOUR_DEVICE_ADDRESS`
+    $ muselsl stream --address YOUR_DEVICE_ADDRESS
 
-Once the stream is up and running, you can visualize it with
 
-`python lsl-viewer.py`
+### Working with Streaming Data
+Once a stream is up and running, you now have access to the following commands in another prompt:
 
-## Available experimental paradigms
+To view data:
 
-The following paradigms are available:
+    $ muselsl view    
 
-Paradigm | Stimulus presentation | Data | Analysis
----------|-----------------------|------|---------
-Visual P300 | `stimulus_presentation/generate_Visual_P300.py` `stimulus_presentation/generate_Visual_P300_stripes.py`| `data/visual/P300/` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/P300%20with%20Muse.ipynb)
-Auditory P300 | `stimulus_presentation/generate_Auditory_P300.py` | `data/auditory/P300` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/Auditory%20P300%20with%20Muse.ipynb)
-N170 | `stimulus_presentation/generate_N170.py` | `data/visual/N170` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/N170%20with%20Muse.ipynb)
-SSVEP | `stimulus_presentation/generate_SSVEP.py` | `data/visual/SSVEP` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/SSVEP%20with%20Muse.ipynb)
-SSAEP | `stimulus_presentation/generate_SSAEP.py` | `data/auditory/SSAEP` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/SSAEP%20with%20Muse.ipynb)
-Spatial frequency | `stimulus_presentation/generate_spatial_gratings.py` | `data/visual/spatial_freq` | [click here](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/Spatial%20Frequency%20Task%20with%20Muse.ipynb)
+To record EEG data into a CSV:
 
-The stimulus presentation scripts can be found under `stimulus_presentation/`.
-Some pre-recorded data is provided under `data/`, alongside analysis notebooks under `notebooks`.
+    $ muselsl record  
 
-### Visual P300
+*Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)*
 
-The task is to count the number of cat images that you see. You can add new jpg images inside the [stimulus_presentation](stimulus_presentation/) directory: use the `target-` prefix for cat images, and `nontarget-` for dog images.
+Alternatively, you can record data directly without using LSL through the following command:
 
-### Auditory P300
+    $ muselsl record_direct
 
-The task is to count the number of high tones that you hear.
+*Note: direct recording does not allow 'Markers' data to be recorded*
 
-### N170
+## Running Experiments
 
-The task is to mentally note whether a "face" or a "house" was just presented.
+Muse LSL was designed so that the Muse could be used to run a number of classic EEG experiments, including the [P300 event-related potential](http://alexandre.barachant.org/blog/2017/02/05/P300-with-muse.html) and the SSVEP and SSAEP evoked potentials.
 
-### SSVEP
+The code to perform these experiments is still available, but is now maintained in the [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks) repository by the [NeuroTechX](https://neurotechx.com) community
 
-The task is to passively fixate the center of the screen.
+## Integration into other packages
+If you want to integrate Muse LSL into your own Python project, you can import and use its functions as you would any Python package. Examples are available in the `examples` folder:
 
-### SSAEP
+```Python
+from muselsl import stream
 
-The task is to passively fixate the center of the screen while listening to the sounds you hear.
+muses = stream.list_muses()
+stream.stream(muses[0]['address'])
 
-### Spatial frequency gratings
+# Note: Streaming is synchronous, so code here will not execute until after the stream has been closed
+print('Stream has ended')
+```
 
-The task is to passively fixate the center of the screen.
-
-## Running an experiment
-
-First, you have to run the muse-lsl script as described above.
-
-In another terminal, run
-
-`python stimulus_presentation/PARADIGM.py -d 120 & python lsl-record.py -d 120`
-
-where `PARADIGM.py` is one of the stimulus presentation scripts described above (e.g., `generate_Visual_P300.py`).
-
-This will launch the selected paradigm and record data for 2 minutes.
-
-For data analysis, check out [these notebooks](https://github.com/alexandrebarachant/muse-lsl/blob/master/notebooks/).
-
-## Common issues
+## Common Issues
 
 1. `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Operation not permitted` (Linux)
  - This is an issue with pygatt requiring root privileges to run a scan. Make sure you have `libcap` installed and run ```sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcitool` ```
@@ -100,3 +95,16 @@ For data analysis, check out [these notebooks](https://github.com/alexandrebarac
 
 2. `pygatt.exceptions.BLEError: No characteristic found matching 273e0003-4c4d-454d-96be-f03bac821358` (Linux)
  - There is a problem with the most recent version of pygatt. Work around this by downgrading to 3.1.1: `pip install pygatt==3.1.1`
+ 
+ 
+3. Connection issues with BLED112 dongle (Windows):
+ - You may need to use the --interface argument to provide the appropriate COM port value for the BLED112 device. The default value is COM9. To setup or view the device's COM port go to:
+ `Control Panel\Hardware and Sound\Devices and Printers > Right Click > Bluetooth settings > COM Ports > (Add > Incoming)`
+
+4. `pygatt.exceptions.BLEError: No BLE adapter found`
+- Make sure your computer's Bluetooth is turned on.
+
+5. `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Connection timed out`
+- This seems to be due to a OS-level Bluetooth crash. Try turning your computer's bluetooth off and on again
+
+ 
