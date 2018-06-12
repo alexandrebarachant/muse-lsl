@@ -65,8 +65,6 @@ def stream(address, backend='auto', interface=None, name=None):
             else:
                 address = found_muse['address']
                 name = found_muse['name']
-            print('Connecting to %s : %s...' %
-                  (name if name else 'Muse', address))
 
     info = StreamInfo('Muse', 'EEG', MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, 'float32',
                       'Muse%s' % address)
