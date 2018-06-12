@@ -1,7 +1,7 @@
 import bitstring
 import pygatt
 import numpy as np
-from time import time
+from time import time, sleep
 from sys import platform
 import subprocess
 from . import helper
@@ -18,7 +18,8 @@ class Muse():
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
         callback_control -- function(message)
-        callback_telemetry -- function(timestamp, battery, fuel_gauge, adc_volt, temperature)
+        callback_telemetry -- function(timestamp, battery, fuel_gauge,
+                                       adc_volt, temperature)
 
         callback_acc -- function(timestamp, samples)
         callback_gyro -- function(timestamp, samples)
@@ -53,6 +54,8 @@ class Muse():
                 subprocess.call('start bluemuse:', shell=True)
 
             else:
+                print('Connecting to %s : %s...' %
+                      (self.name if self.name else 'Muse', self.address))
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
@@ -83,9 +86,36 @@ class Muse():
 
             return True
 
-        except (pygatt.exceptions.NotConnectedError, pygatt.exceptions.NotificationTimeout):
-            print('Connection to', self.address, 'failed')
-            return False
+        except pygatt.exceptions.BLEError as error:
+            if("characteristic" in str(error)):
+                self.ask_reset()
+                sleep(2)
+                self.device = self.adapter.connect(self.address)
+                self.select_preset(preset=21)
+
+                # subscribes to EEG stream
+                if self.enable_eeg:
+                    self._subscribe_eeg()
+
+                if self.enable_control:
+                    self._subscribe_control()
+
+                if self.enable_telemetry:
+                    self._subscribe_telemetry()
+
+                if self.enable_acc:
+                    self._subscribe_acc()
+
+                if self.enable_gyro:
+                    self._subscribe_gyro()
+
+                self.last_timestamp = self.time_func()
+
+                return True
+
+            else:
+                print('Connection to', self.address, 'failed')
+                return False
 
     def _write_cmd(self, cmd):
         """Wrapper to write a command to the Muse device.
@@ -131,6 +161,13 @@ class Muse():
             return
         self._write_cmd([0x03, 0x76, 0x31, 0x0a])
 
+    def ask_reset(self):
+        """Undocumented command reset for '*1'
+        The message received is a singleton with:
+        "rc": return status, if 0 is OK
+        """
+        self._write_cmd([0x03, 0x2a, 0x31, 0x0a])
+
     def start(self):
         """Start streaming."""
         if self.backend == 'bluemuse':
@@ -146,9 +183,12 @@ class Muse():
         self._init_timestamp_correction()
         self._init_sample()
         self.last_tm = 0
-        self._write_cmd([0x02, 0x64, 0x0a])
-
         self._init_control()
+        self.resume()
+
+    def resume(self):
+        """Resume streaming, sending 'd' command"""
+        self._write_cmd([0x02, 0x64, 0x0a])
 
     def stop(self):
         """Stop streaming."""
@@ -162,6 +202,26 @@ class Muse():
             return
 
         self._write_cmd([0x02, 0x68, 0x0a])
+
+    def keep_alive(self):
+        """Keep streaming, sending 'k' command"""
+        self._write_cmd([0x02, 0x6b, 0x0a])
+
+    def select_preset(self, preset=21):
+        """Setting preset for headband configuration
+
+        See details on https://goo.gl/FPN1ib
+        For 2016 headband, possible choice are 'p20' and 'p21'.
+        Untested but possible values are 'p22' and 'p23'
+        Default is 'p21'."""
+        if preset == 20:
+            self._write_cmd([0x04, 0x70, 0x32, 0x30, 0x0a])
+        elif preset == 22:
+            self._write_cmd([0x04, 0x70, 0x32, 0x32, 0x0a])
+        elif preset == 23:
+            self._write_cmd([0x04, 0x70, 0x32, 0x33, 0x0a])
+        else:
+            self._write_cmd([0x04, 0x70, 0x32, 0x31, 0x0a])
 
     def disconnect(self):
         """disconnect."""
@@ -246,7 +306,7 @@ class Muse():
             idxs = np.arange(0, 12) + self.sample_index
             self.sample_index += 12
 
-            # affect as timestamps
+            # timestamps are extrapolated backwards based on sampling rate and current time
             timestamps = self.reg_params[1] * idxs + self.reg_params[0]
 
             # push data
@@ -265,6 +325,8 @@ class Muse():
     def _subscribe_control(self):
         self.device.subscribe(
             MUSE_GATT_ATTR_STREAM_TOGGLE, callback=self._handle_control)
+
+        self._init_control()
 
     def _handle_control(self, handle, packet):
         """Handle the incoming messages from the 0x000e handle.
@@ -312,7 +374,8 @@ class Muse():
                               callback=self._handle_telemetry)
 
     def _handle_telemetry(self, handle, packet):
-        """Handle the telemetry (battery, temperature and stuff) incoming data"""
+        """Handle the telemetry (battery, temperature and stuff) incoming data
+        """
 
         if handle != 26:  # handle 0x1a
             return
