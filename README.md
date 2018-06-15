@@ -54,19 +54,19 @@ To view data:
 
     $ muselsl view
 
-If the visualization freezes or is laggy, you can also try the alternate version of our viewer. Note that you will require the optional dependencies Vispy and MNE `pip install vispy mne`
+If the visualization freezes or is laggy, you can also try the alternate version 2 of the viewer. *Note: this will require the additional [vispy](https://github.com/vispy/vispy) and [mne](https://github.com/mne-tools/mne-python) dependencies*
 
-    $ muselsl view -v 2
+    $ muselsl view --version 2
 
 To record EEG data into a CSV:
 
-    $ muselsl record -d 60  
+    $ muselsl record --duration 60  
 
 _Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)_
 
 Alternatively, you can record data directly without using LSL through the following command:
 
-    $ muselsl record_direct
+    $ muselsl record_direct --duration 60
 
 _Note: direct recording does not allow 'Markers' data to be recorded_
 
@@ -100,7 +100,7 @@ Lab Streaming Layer or LSL is a system designed to unify the collection of time 
 
 1.  Connection issues with BLED112 dongle:
 
-- You may need to use the --interface argument to provide the appropriate COM port value for the BLED112 device. The default value is COM9. To setup or view the device's COM port go to your OS's system settings
+- You may need to use the `--interface` argument to provide the appropriate COM port value for the BLED112 device. The default value is COM9. To setup or view the device's COM port go to your OS's system settings
 
 ### Linux
 
