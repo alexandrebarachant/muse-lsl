@@ -8,6 +8,8 @@ from .stream import find_muse
 from .muse import Muse
 from . constants import LSL_SCAN_TIMEOUT, LSL_CHUNK
 
+# Records a fixed duration of EEG data from an LSL stream into a CSV file
+
 
 def record(duration, filename=None, dejitter=False):
     if not filename:
@@ -30,7 +32,6 @@ def record(duration, filename=None, dejitter=False):
 
     if marker_streams:
         inlet_marker = StreamInlet(marker_streams[0])
-        # marker_time_correction = inlet_marker.time_correction()
     else:
         inlet_marker = False
         print("Can't find Markers stream.")
@@ -38,7 +39,6 @@ def record(duration, filename=None, dejitter=False):
     info = inlet.info()
     description = info.desc()
 
-    # freq = info.nominal_srate()
     Nchan = info.channel_count()
 
     ch = description.child('channels').first_child()
@@ -103,6 +103,8 @@ def record(duration, filename=None, dejitter=False):
     data.to_csv(filename, float_format='%.3f', index=False)
 
     print('Done - wrote file: ' + filename + '.')
+
+# Rercord directly from a Muse without the use of LSL
 
 
 def record_direct(duration, address, filename=None, backend='auto', interface=None, name=None):

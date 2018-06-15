@@ -43,7 +43,7 @@ setup(name='muselsl',
 
           # Indicate who your project is intended for
           'Intended Audience :: Science/Research',
-          'Topic :: Software Development :: Utilities',
+          'Topic :: Software Development',
 
           # Pick your license as you wish (should match "license" above)
           'License :: OSI Approved :: BSD License',
@@ -53,7 +53,7 @@ setup(name='muselsl',
           'Operating System :: Microsoft :: Windows',
           'Operating System :: POSIX',
           'Operating System :: Unix',
-          'Operating System :: MacOS'
+          'Operating System :: MacOS',
 
           'Programming Language :: Python']
       )

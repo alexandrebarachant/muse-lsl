@@ -225,7 +225,7 @@ class Canvas(app.Canvas):
 
             sd = np.std(plot_data[-int(self.sfreq):],
                         axis=0)[::-1] * self.scale
-            co = np.int32(np.tanh((sd - 30) / 15)*5 + 5)
+            co = np.int32(np.tanh((sd - 30) / 15) * 5 + 5)
             for ii in range(self.n_chans):
                 self.quality[ii].text = '%.2f' % (sd[ii])
                 self.quality[ii].color = self.quality_colors[co[ii]]

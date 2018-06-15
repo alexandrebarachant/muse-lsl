@@ -36,7 +36,6 @@ def view(window, scale, refresh, figure, version=1):
     print(help_str)
     lslv.start()
     matplotlib.pyplot.show()
-    
 
 
 class LSLViewer():
@@ -138,13 +137,13 @@ class LSLViewer():
                             plot_data = self.data - self.data.mean(axis=0)
                         for ii in range(self.n_chan):
                             self.lines[ii].set_xdata(self.times[::self.subsample] -
-                                                    self.times[-1])
+                                                     self.times[-1])
                             self.lines[ii].set_ydata(plot_data[::self.subsample, ii] /
-                                                    self.scale - ii)
+                                                     self.scale - ii)
                             impedances = np.std(plot_data, axis=0)
 
                         ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
-                                                    impedances[ii])
+                                                       impedances[ii])
                                         for ii in range(self.n_chan)]
                         self.axes.set_yticklabels(ticks_labels)
                         self.axes.set_xlim(-self.window, 0)
@@ -154,7 +153,6 @@ class LSLViewer():
                     sleep(0.2)
         except RuntimeError as e:
             raise
-
 
     def onclick(self, event):
         print((event.button, event.x, event.y, event.xdata, event.ydata))
