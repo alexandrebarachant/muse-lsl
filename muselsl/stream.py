@@ -10,8 +10,6 @@ from .constants import MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, MUSE_SCAN_TIMEOUT, 
 
 # Returns a list of available Muse devices.
 def list_muses(backend='auto', interface=None):
-    interface = None
-
     backend = helper.resolve_backend(backend)
 
     if backend == 'gatt':
@@ -41,9 +39,8 @@ def list_muses(backend='auto', interface=None):
 
     return muses
 
+
 # Returns the address of the Muse with the name provided, otherwise returns address of first available Muse.
-
-
 def find_muse(name=None):
     muses = list_muses()
     if name:
@@ -54,13 +51,13 @@ def find_muse(name=None):
         return muses[0]
 
 
+# Begins an LSL stream containing EEG data from a Muse with a given address
 def stream(address, backend='auto', interface=None, name=None):
     bluemuse = backend == 'bluemuse'
     if not bluemuse:
         if not address:
             found_muse = find_muse(name)
             if not found_muse:
-                print('Muse could not be found')
                 return
             else:
                 address = found_muse['address']

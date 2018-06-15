@@ -1,6 +1,8 @@
 #!/usr/bin/python
 import sys
 import argparse
+
+
 class main:
     def __init__(self):
         parser = argparse.ArgumentParser(
@@ -57,7 +59,7 @@ class main:
                             help="BLE backend to use. Can be auto, bluemuse, gatt or bgapi.")
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
-                            help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
+                            help="The interface to use, 'hci0' for gatt or a com port for bgapi. WIll auto-detect if not specified")
         args = parser.parse_args(sys.argv[2:])
         from . import list_muses
         list_muses(args.backend, args.interface)
