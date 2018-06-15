@@ -9,14 +9,14 @@ A Python package for streaming, visualizing, and recording EEG data from the Mus
 The code relies on [pygatt](https://github.com/peplin/pygatt) or [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) for BLE communication and works differently on different operating systems.
 
 - Windows: On Windows 10, we recommend installing [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) and using its GUI to find and start streaming from Muses. Alternatively, if you have a BLED112 dongle you can try Muse LSL's bgapi backend (i.e. `$ muselsl stream -b bgapi`).
-- Mac: __BLED112 dongle required__. Use the bgapi backend (default option on Mac)
-- Linux: No dongle or separate install required. Use the pygatt backend (default option on Linux) and make sure to read
+- Mac: **BLED112 dongle required**. Use the bgapi backend (default option on Mac)
+- Linux: No dongle or separate install required. Use the pygatt backend (default option on Linux) and make sure to read the [Common Issues](#linux) 
 
 **Compatible with Python 2.7 and Python 3.x**
- 
+
 **Only compatible with the 2016 model of the Muse headband**
 
-*Note: if you run into any issues, first check out out [Common Issues](#common-issues) and then the [Issues](https://github.com/alexandrebarachant/muse-lsl/issues) section of this repository*
+_Note: if you run into any issues, first check out out [Common Issues](#common-issues) and then the [Issues](https://github.com/alexandrebarachant/muse-lsl/issues) section of this repository_
 
 ## Getting Started
 
@@ -28,7 +28,7 @@ Install Muse LSL with pip
 
 ### Setting Up a Stream
 
-On Windows 10, we recommend using the BlueMuse GUI to set up an LSL stream. On Mac and Linux, the easiest way to get Muse data is to use Muse LSL directly from the command line. Use the `-h` flag to get a comprehensive list of all commands and options.
+On Windows 10, we recommend using the [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) GUI to set up an LSL stream. On Mac and Linux, the easiest way to get Muse data is to use Muse LSL directly from the command line. Use the `-h` flag to get a comprehensive list of all commands and options.
 
 To print a list of available muses:
 
@@ -46,7 +46,6 @@ You can also directly pass the MAC address of your Muse (this is the fastest and
 
     $ muselsl stream --address YOUR_DEVICE_ADDRESS
 
-
 ### Working with Streaming Data
 
 Once a stream is up and running, you now have access to the following commands in another prompt:
@@ -63,13 +62,13 @@ To record EEG data into a CSV:
 
     $ muselsl record -d 60  
 
-*Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)*
+_Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)_
 
 Alternatively, you can record data directly without using LSL through the following command:
 
     $ muselsl record_direct
 
-*Note: direct recording does not allow 'Markers' data to be recorded*
+_Note: direct recording does not allow 'Markers' data to be recorded_
 
 ## Running Experiments
 
@@ -95,27 +94,28 @@ print('Stream has ended')
 
 Lab Streaming Layer or LSL is a system designed to unify the collection of time series data for research experiments. It has become standard in the field of EEG-based brain-computer interfaces for its ability to make seperate streams of data available on a network with time synchronization and near real-time access. For more information, check out this [lecture from Modern Brain-Computer Interface Design](https://www.youtube.com/watch?v=Y1at7yrcFW0) or the [LSL repository](https://github.com/sccn/labstreaminglayer)
 
-
 ## Common Issues
 
-1. `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Operation not permitted` (Linux)
- - This is an issue with pygatt requiring root privileges to run a scan. Make sure you have `libcap` installed and run ```sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcitool` ```
+### Mac and Windows
 
+1.  Connection issues with BLED112 dongle:
 
-2. `pygatt.exceptions.BLEError: No characteristic found matching 273e0003-4c4d-454d-96be-f03bac821358` (Linux)
- - There is a problem with the most recent version of pygatt. Work around this by downgrading to 3.1.1: `pip install pygatt==3.1.1`
- 
- 
-3. Connection issues with BLED112 dongle (Windows and Mac):
- - You may need to use the --interface argument to provide the appropriate COM port value for the BLED112 device. The default value is COM9. To setup or view the device's COM port go to:
- `Control Panel\Hardware and Sound\Devices and Printers > Right Click > Bluetooth settings > COM Ports > (Add > Incoming)`
+- You may need to use the --interface argument to provide the appropriate COM port value for the BLED112 device. The default value is COM9. To setup or view the device's COM port go to your OS's system settings
 
+### Linux
 
-4. `pygatt.exceptions.BLEError: No BLE adapter found` (Linux)
+1.  `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Operation not permitted` (Linux)
+
+- This is an issue with pygatt requiring root privileges to run a scan. Make sure you have `libcap` installed and run `` sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcitool` ``
+
+2.  `pygatt.exceptions.BLEError: No characteristic found matching 273e0003-4c4d-454d-96be-f03bac821358` (Linux)
+
+- There is a problem with the most recent version of pygatt. Work around this by downgrading to 3.1.1: `pip install pygatt==3.1.1`
+
+3.  `pygatt.exceptions.BLEError: No BLE adapter found` (Linux)
+
 - Make sure your computer's Bluetooth is turned on.
 
+4.  `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Connection timed out` (Linux)
 
-5. `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Connection timed out` (Linux)
 - This seems to be due to a OS-level Bluetooth crash. Try turning your computer's bluetooth off and on again
-
- 
