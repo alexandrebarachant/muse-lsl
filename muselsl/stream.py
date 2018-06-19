@@ -22,8 +22,10 @@ def list_muses(backend='auto', interface=None):
     else:
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
+    adapter.start()
     print('Searching for Muses, this may take up to 10 seconds...')
     devices = adapter.scan(timeout=MUSE_SCAN_TIMEOUT)
+    adapter.stop()
     muses = []
 
     for device in devices:
