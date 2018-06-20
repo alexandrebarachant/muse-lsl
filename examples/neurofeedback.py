@@ -5,7 +5,9 @@ Estimate Relaxation from Band Powers
 This example shows how to buffer, epoch, and transform EEG data from a single
 electrode into values for each of the classic frequencies (e.g. alpha, beta, theta)
 Furthermore, it shows how ratios of the band powers can be used to estimate
-mental state. In this case: relaxation.
+mental state for neurofeedback.
+
+Adapted from https://github.com/NeuroTechX/bci-workshop
 """
 
 import numpy as np  # Module that simplifies computations on matrices
@@ -31,7 +33,7 @@ SHIFT_LENGTH = EPOCH_LENGTH - OVERLAP_LENGTH
 
 # Index of the channel (electrode) to be used
 # 0 = left ear, 1 = left forehead, 2 = right forehead, 3 = right ear
-INDEX_CHANNEL = [0]
+INDEX_CHANNEL = [3]
 
 if __name__ == "__main__":
 
@@ -69,7 +71,8 @@ if __name__ == "__main__":
                               SHIFT_LENGTH + 1))
 
     # Initialize the band power buffer (for plotting)
-    band_buffer = np.zeros((n_win_test, len(4)))
+    # bands will be ordered: [delta, theta, alpha, beta]
+    band_buffer = np.zeros((n_win_test, 4))
 
     """ 3. GET DATA """
 
@@ -104,8 +107,22 @@ if __name__ == "__main__":
             band_powers = utils.compute_band_powers(data_epoch, fs)
             band_buffer, _ = utils.update_buffer(band_buffer,
                                                  np.asarray([band_powers]))
+            # Compute the average band powers for all epochs in buffer
+            # This helps to smooth out noise 
+            smooth_band_powers = np.mean(band_buffer, axis=0)
 
-            print(band_powers)
+            # print('Delta: ', band_powers[0], ' Theta: ', band_powers[1],
+            #       ' Alpha: ', band_powers[2], ' Beta: ', band_powers[3])
+
+            # Alpha Protocol:
+            # Simple redout of alpha power, divided by delta waves in order to rule out noise
+            alpha_score = smooth_band_powers[2] / smooth_band_powers[0]
+            print('Alpha Relaxation: ', alpha_score)
+
+            # Beta Protocol:
+            # Beta waves have been used as a measure of mental activity
+            beta_score = smooth_band_powers[3] / smooth_band_powers[1]
+            # print('Beta Protocol: ', beta_score)
 
     except KeyboardInterrupt:
         print('Closing!')

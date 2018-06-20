@@ -61,7 +61,7 @@ def epoch(data, samples_epoch, samples_overlap=0):
 
 
 def compute_band_powers(eegdata, fs):
-    """Extract the features (band powers)from the EEG.
+    """Extract the features (band powers) from the EEG.
 
     Args:
         eegdata (numpy.ndarray): array of dimension [number of samples,
