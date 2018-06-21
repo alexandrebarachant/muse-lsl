@@ -8,7 +8,7 @@ from muselsl import stream, list_muses
 
 if __name__ == "__main__":
 
-muses = list_muses()
+    muses = list_muses()
 
     if not muses:
         print('No Muses found')

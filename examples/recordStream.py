@@ -6,7 +6,7 @@ This example shows how to record data from an existing Muse LSL stream
 from muselsl import record
 
 if __name__ == "__main__":
-    
+
     # Note: an existing Muse LSL stream is required
     record(60)
 

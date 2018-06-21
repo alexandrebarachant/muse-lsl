@@ -7,6 +7,9 @@ electrode into values for each of the classic frequencies (e.g. alpha, beta, the
 Furthermore, it shows how ratios of the band powers can be used to estimate
 mental state for neurofeedback.
 
+The neurofeedback protocols described here are inspired by
+*Neurofeedback: A Comprehensive Review on System Design, Methodology and Clinical Applications* by Marzbani et. al
+
 Adapted from https://github.com/NeuroTechX/bci-workshop
 """
 
@@ -14,6 +17,16 @@ import numpy as np  # Module that simplifies computations on matrices
 import matplotlib.pyplot as plt  # Module used for plotting
 from pylsl import StreamInlet, resolve_byprop  # Module to receive EEG data
 import utils  # Our own utility functions
+
+# Handy little enum to make code more readable
+
+
+class Band:
+    Delta = 0
+    Theta = 1
+    Alpha = 2
+    Beta = 3
+
 
 """ EXPERIMENTAL PARAMETERS """
 # Modify these to change aspects of the signal processing
@@ -31,9 +44,9 @@ OVERLAP_LENGTH = 0.8
 # Amount to 'shift' the start of each next consecutive epoch
 SHIFT_LENGTH = EPOCH_LENGTH - OVERLAP_LENGTH
 
-# Index of the channel (electrode) to be used
+# Index of the channel(s) (electrodes) to be used
 # 0 = left ear, 1 = left forehead, 2 = right forehead, 3 = right ear
-INDEX_CHANNEL = [3]
+INDEX_CHANNEL = [0]
 
 if __name__ == "__main__":
 
@@ -81,8 +94,7 @@ if __name__ == "__main__":
     print('Press Ctrl-C in the console to break the while loop.')
 
     try:
-        # The following loop acquires data, computes band powers, and calculates a band
-        # power ratio associated with relaxation
+        # The following loop acquires data, computes band powers, and calculates neurofeedback metrics based on those band powers
         while True:
 
             """ 3.1 ACQUIRE DATA """
@@ -108,21 +120,34 @@ if __name__ == "__main__":
             band_buffer, _ = utils.update_buffer(band_buffer,
                                                  np.asarray([band_powers]))
             # Compute the average band powers for all epochs in buffer
-            # This helps to smooth out noise 
+            # This helps to smooth out noise
             smooth_band_powers = np.mean(band_buffer, axis=0)
 
-            # print('Delta: ', band_powers[0], ' Theta: ', band_powers[1],
-            #       ' Alpha: ', band_powers[2], ' Beta: ', band_powers[3])
+            # print('Delta: ', band_powers[Band.Delta], ' Theta: ', band_powers[Band.Theta],
+            #       ' Alpha: ', band_powers[Band.Alpha], ' Beta: ', band_powers[Band.Beta])
+
+            """ 3.3 COMPUTE NEUROFEEDBACK METRICS """
+            # These metrics could also be used to drive brain-computer interfaces
 
             # Alpha Protocol:
             # Simple redout of alpha power, divided by delta waves in order to rule out noise
-            alpha_score = smooth_band_powers[2] / smooth_band_powers[0]
-            print('Alpha Relaxation: ', alpha_score)
+            alpha_metric = smooth_band_powers[Band.Alpha] / \
+                smooth_band_powers[Band.Delta]
+            print('Alpha Relaxation: ', alpha_metric)
 
             # Beta Protocol:
-            # Beta waves have been used as a measure of mental activity
-            beta_score = smooth_band_powers[3] / smooth_band_powers[1]
-            # print('Beta Protocol: ', beta_score)
+            # Beta waves have been used as a measure of mental activity and concentration
+            # This beta over theta ratio is commonly used as neurofeedback for ADHD
+            # beta_metric = smooth_band_powers[Band.Beta] / \
+            #     smooth_band_powers[Band.Theta]
+            # print('Beta Concentration: ', beta_metric)
+
+            # Alpha/Theta Protocol:
+            # This is another popular neurofeedback metric for stress reduction
+            # Higher theta over alpha is supposedly associated with reduced anxiety
+            # theta_metric = smooth_band_powers[Band.Theta] / \
+            #     smooth_band_powers[Band.Alpha]
+            # print('Theta Relaxation: ', theta_metric)
 
     except KeyboardInterrupt:
         print('Closing!')
