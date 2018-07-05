@@ -466,6 +466,13 @@ from liblo import *
 from pylsl import local_clock
 import threading
 
+#NEW dependencies
+import argparse
+import math
+from pythonosc import dispatcher
+from pythonosc import osc_Server
+
+
 class Muse_2014 ():
     """Muse 2014 headband"""
 
@@ -497,27 +504,39 @@ class Muse_2014 ():
         # Break out of the loop of data collection.
         self._kill_signal.set()
 
+    def Dispathcher(self):
+        dispatcher = dispatcher.Dispathcher()
+        dispatcher.map("/debug",print)
+        dispatcher.map("/muse/eeg",eeg_callback,"EEG")
+
+
     def connect(self):
         """Start a new thread and connect to """
         if self._active:
             raise RuntimeError("Stream already active.")
         else:
-            self._thread = threading.Thread(target=self.start(), name='Muse-connection')
-            self._thread.daemon = True
-            self._thread.start()
-            self._active = True
+            server = osc_server.ThreadingOSCUDPServer(
+                    (args.ip, args.port), dispatcher)
+            print("Serving on {}".format(server.server_address))
+            server.serve_forever()
+            # self._thread = threading.Thread(target=self.start(), name='Muse-connection')
+            # self._thread.daemon = True
+            # self._thread.start()
+            # self._active = True
             print('Connected to Muse. Streaming data')
         return
 
     @make_method('/muse/eeg', 'ffff')
-    def eeg_callback(self, path, args):
+    def eeg_callback(self, path, args,ch1,ch2,ch3,ch4):
         """callback for receiving a sample
 
         - assuming the hardware sends samples at a stable 220 Hz
         - keep running index of every 4 values (from each channel)
         - calculate timestamp by multiplying index by frequency multiplier
         """
-        timestamp = self.time_index * self.freq_mult + self.start_time
-        self.callback_eeg(args, timestamp, self.time_index, self.outlet)
-        self.time_index += 1
+        # timestamp = self.time_index * self.freq_mult + self.start_time
+        # self.callback_eeg(args, timestamp, self.time_index, self.outlet)
+        # self.time_index += 1
+        print("EEG(uV) per channel",ch1,ch2,ch3,ch4)
+
 # ----------------------------------------------------------------------------------------------------------------
