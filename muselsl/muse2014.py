@@ -6,41 +6,46 @@ from pythonosc import dispatcher
 from pythonosc import osc_server
 
 class Muse_2014():
-"""
-Function: Provides helper functions for Muse 2014 headband
+    """
+    Function: Provides helper functions for Muse 2014 headband
 
-Methods:
-- Connect: Connects to the Muse 2014 headband
-- Start: Starts streaming the data
-- Stop: Stops streaming the data
-- Resume: Resumes streaming the data
-- Pause: Pauses streaming the data
-- Close(to be implemented): Closes the connection with the device
+    Methods:
+    - Connect: Connects to the Muse 2014 headband
+    - Start: Starts streaming the data
+    - Stop: Stops streaming the data
+    - Resume: Resumes streaming the data
+    - Pause: Pauses streaming the data
+    - Close(to be implemented): Closes the connection with the device
 
-Other Methods:
-- eeg_handler: Timestamps and transforms the data
-"""
+    Other Methods:
+    - eeg_handler: Timestamps and transforms the data
+    """
 
 
-    def __init__(self):
+    def __init__(self, ip="127.0.0.1", port=5000, time_func = time.time(), callback_eeg=None):
         """
         Function: Initializes muse 2014
+        Args:
+            - ip and port: ip and port to use for Streaming
+            - time_func: user's function for Timestamping
+            - callback_eeg:
         Returns: None
         """
         print("Initializing Muse 2014 Devices")
         #Device is initially not connected
         self.connected = False
         #Initialize port number and ip
-        self.ip = "127.0.0.1"
-        self.port = 5000
+        self.ip = ip
+        self.port = port
         #Initialize server
         self.server = None
         #Initialize timestamp array
         self.timestamps = []
-        self.perfect_freq = []
-        self.samples = 0
-        #frequency
-        self.freq_mult = 1. / 220
+        #Intialize time fucntion and callback_eeg
+        self.time_func = time_func
+        self.callback_eeg = callback_eeg
+        #Intialize data
+        self.data = []
         #Initailize a dispatcher
         self._dispatcher = dispatcher.Dispatcher()
         self._dispatcher.map("/debug", print)
@@ -52,7 +57,7 @@ Other Methods:
         Function: Connect to the Muse headset, but no streaming is done yet
         Returns: None
         """
-        if(self.connected == True) print("Sorry, headset already connected")
+        if(self.connected == True): print("Sorry, headset already connected")
         else:
             self.server = osc_server.ThreadingOSCUDPServer(
                     (self.ip, self.port), self._dispatcher)
@@ -79,24 +84,6 @@ Other Methods:
         """
         self.server.shutdown() #Stops Streaming the data
 
-        """
-        Logic to do post processing for timestamp and validating 2 methods of
-        timestamping (Will be modified after PR acc to chosen method)
-        """
-        perc_avg_sum = 0 #Sum of percentages
-        perc_avg = 0     #Average percentage
-
-        for count in range(len(self.timestamps)):
-            diff = self.timestamps[count] - (self.timestamps[0]+self.freq_mult*count) #Difference b/w RT Timestamping and perfect freq.
-            self.perfect_freq.append((diff/self.timestamps[count]) * 100) #Appends the percentage difference
-            perc_avg_sum += self.perfect_freq[count] #Sums up all the percentafes
-        perc_avg = perc_avg_sum/(len(self.timestamps)) #Calculates the average
-        self.perfect_freq.append(perc_avg)
-
-        #Saves the file to a csv file
-        save_file = numpy.asarray(self.perfect_freq)
-        numpy.savetxt("timestamps.csv", save_file, delimiter=",")
-
 
     def resume(self):
         """
@@ -106,14 +93,6 @@ Other Methods:
         self.start()
 
 
-    def pause(self):
-        """
-        Function: Pauses streaming the data
-        Returns: None
-        """
-        self.stop()
-
-
     def eeg_handler(self,unusedAddr, args, ch1, ch2, ch3, ch4):
         """
         Function: Does real time timestamping. Any other minor data manipulation must be done here
@@ -121,7 +100,9 @@ Other Methods:
             - ch1, ch2, ch3, ch4 -> Indicates channels streamed from the EEGs on the device
         Returns: None
         """
-        self.timestamps.append(time.time())
+        self.timestamps.append(self.time_func())
+        self.data.append([ch1,ch2,ch3,ch4,self.timestamp[-1]])
+        self.callback_eeg(self.data, self.timestamps)
 
 
 """ FOR TESTING PURPOSES ONLY """
