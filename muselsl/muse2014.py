@@ -49,14 +49,15 @@ class Muse2014:
         # Initialize a dispatcher
         self._dispatcher = dispatcher.Dispatcher()
         self._dispatcher.map("/debug", print)
-        self._dispatcher.map("/muse/eeg", self.eeg_handler,self)
+        self._dispatcher.map("/muse/eeg", self.eeg_handler, self)
 
     def connect(self):
         """
         Function: Connect to the Muse headset, but no streaming is done yet
         Returns: None
         """
-        if self.connected: print("Sorry, headset already connected")
+        if self.connected: 
+            print("Sorry, headset already connected")
         else:
             self.server = osc_server.ThreadingOSCUDPServer(
                     (self.ip, self.port), self._dispatcher)
