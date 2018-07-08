@@ -451,3 +451,13 @@ class Muse():
             packet, scale=MUSE_GYRO_SCALE_FACTOR)
 
         self.callback_gyro(timestamp, samples)
+
+
+# Muse 2014 refactor --------------------------------------------------------------------------------------------
+#TODO: somehow integrate connection to muse-io (see top of page http://developer.choosemuse.com/research-tools-example/grabbing-data-from-museio-a-few-simple-examples-of-muse-osc-servers)
+#TODO: possibly? change base server dependency from pyliblo to python-osc (https://pypi.org/project/python-osc/) (b/c pyliblo only works on linux/mac and is kinda annoying)
+#TODO: refactor the eeg_callback method to not depend on class outlet attribute (similar to 2016 class)
+#TODO: change the timestamping paradigm to be similar to the 2016 class
+#TODO: add method to handle accelerometer data
+#TODO: add start, stop, pause, resume, ask_reset, disconnect methods (basically related to muse-io connection)
+# ----------------------------------------------------------------------------------------------------------------
