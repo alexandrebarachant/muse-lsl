@@ -1,9 +1,9 @@
 import argparse
-import math, time
+import math
+import time
 import numpy
-
-from pythonosc import dispatcher
-from pythonosc import osc_server
+from pythonosc import dispatcher, osc_server
+import subprocess
 
 
 class Muse2014:
@@ -22,7 +22,7 @@ class Muse2014:
     - eeg_handler: Timestamps and transforms the data
     """
 
-    def __init__(self, ip="127.0.0.1", port=5000, time_func=time.time, callback_eeg=None):
+    def __init__(self, address, ip="127.0.0.1", port=5000, time_func=time.time, callback_eeg=None, name=None):
         """
         Function: Initializes muse 2014
         Args:
@@ -34,6 +34,9 @@ class Muse2014:
         print("Initializing Muse 2014 Devices")
         # Device is initially not connected
         self.connected = False
+        self.muse_io = None
+        self.address = address
+        self.name = name
         # Initialize port number and ip
         self.ip = ip
         self.port = port
@@ -56,7 +59,9 @@ class Muse2014:
         Function: Connect to the Muse headset, but no streaming is done yet
         Returns: None
         """
-        if self.connected: 
+        print('Connecting to %s : %s...' % (self.name if self.name else 'Muse', self.address))
+        self.muse_io = subprocess.Popen('exec ./connect_muse_2014.sh {} {}'.format(self.address, self.port), shell=True)
+        if self.connected:
             print("Sorry, headset already connected")
         else:
             self.server = osc_server.ThreadingOSCUDPServer(
@@ -69,11 +74,7 @@ class Muse2014:
         Returns: None
         """
         print("Starting to stream data\n")
-        try:
-            self.server.serve_forever()
-        except KeyboardInterrupt:
-            # Stops streaming on keyboard interrupt
-            self.stop()
+        self.resume()
 
     def stop(self):
         """
@@ -89,7 +90,16 @@ class Muse2014:
         Function: Resumes streaming the data
         Returns: None
         """
-        self.start()
+        try:
+            self.server.serve_forever()
+        except KeyboardInterrupt:
+            # Stops streaming on keyboard interrupt
+            self.stop()
+
+    def disconnect(self):
+        """disconnect."""
+        if self.muse_io:
+            self.muse_io.kill()
 
     def eeg_handler(self, unusedAddr, args, ch1, ch2, ch3, ch4):
         """
