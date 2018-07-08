@@ -100,8 +100,9 @@ class Muse_2014():
             - ch1, ch2, ch3, ch4 -> Indicates channels streamed from the EEGs on the device
         Returns: None
         """
-        self.timestamps.append(self.time_func())
-        self.callback_eeg(ch1, ch2, ch3, ch4, self.timestamps)
+        current_time = self.time_func()
+        self.timestamps.append(current_time)
+        self.callback_eeg(ch1, ch2, ch3, ch4, current_time)
 
 
 """ FOR TESTING PURPOSES ONLY """
