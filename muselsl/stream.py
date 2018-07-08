@@ -132,51 +132,6 @@ def stream(address, backend='auto', interface=None, name=None):
             print('\n*BlueMuse will auto connect and stream when the device is found. \n*You can also use the BlueMuse interface to manage your stream(s).')
             muse.start()
             return
-    
-    # Muse 2014 refactor --------------------------------------------------------------------------------------------
-    # TODO: as noted in muse.py of the 2014 refactor, need to add start, stop, disconnect, and timestamp methods for the below code to work
-    # TODO: integrate muse_2014 with the list_muses and find_muse method above
-
-    # put muse_2014 imports here for now for clarity
-    from .muse import Muse_2014
-
-    # obviously better to integrate if statements into above code, but for now temporarily keep seperate
-    muse_2014 = backend == 'muse_2014'
-    if muse_2014:
-        PORT = '1234'
-        info = StreamInfo('Muse', 'EEG', 4, 220, 'float32',
-                          'MuseName')
-
-        info.desc().append_child_value("manufacturer", "Muse")
-        channels = info.desc().append_child("channels")
-
-        for c in ['TP9-l_ear', 'FP1-l_forehead', 'FP2-r_forehead', 'TP10-r_ear']:
-            channels.append_child("channel") \
-                .append_child_value("label", c) \
-                .append_child_value("unit", "microvolts") \
-                .append_child_value("type", "EEG")
-
-        # create a pylsl outlet; specify info, chunk size (each push yields one chunk), and maximum buffered data
-        outlet = StreamOutlet(info, 1, 360)
-
-        def push_eeg(data, timestamp, index, outlet):
-            """Callback function for pushing data to an lsl outlet.
-
-            Args:
-                data: The data being pushed through the lsl outlet. Must be an array with size specified by the number of
-                    channels in pylsl.StreamInfo.
-                timestamp: The time at which the data sample occurred, such as through pylsl.local_clock(), etc.
-                index: For testing purposes; index at which the sample occurred.
-                outlet: pylsl outlet to which data is pushed.
-            """
-            outlet.push_sample(data, timestamp)
-
-        # connect to the server; start pushing muse data to the pylsl outlet
-        try:
-            muse = Muse_2014(PORT, push_eeg, outlet)
-        except Muse_2014.ServerError:
-            raise ValueError('Cannot create PylibloServer Object.')
-    # ----------------------------------------------------------------------------------------------------------------
 
     didConnect = muse.connect()
 
