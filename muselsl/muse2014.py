@@ -101,8 +101,7 @@ class Muse_2014():
         Returns: None
         """
         self.timestamps.append(self.time_func())
-        self.data.append([ch1,ch2,ch3,ch4,self.timestamp[-1]])
-        self.callback_eeg(self.data, self.timestamps)
+        self.callback_eeg(ch1, ch2, ch3, ch4, self.timestamps)
 
 
 """ FOR TESTING PURPOSES ONLY """
