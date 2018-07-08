@@ -22,7 +22,7 @@ class Muse_2014():
     """
 
 
-    def __init__(self, ip="127.0.0.1", port=5000, time_func = time.time(), callback_eeg=None):
+    def __init__(self, ip="127.0.0.1", port=5000, time_func = time.time, callback_eeg=None):
         """
         Function: Initializes muse 2014
         Args:
