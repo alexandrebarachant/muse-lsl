@@ -15,7 +15,7 @@ def copy_docs():
 copy_docs()
 
 setup(name='muselsl',
-      version='1.0.0',
+      version='1.0.1',
       description='Stream and visualize EEG data from the Muse 2016 headset.',
       keywords='muse lsl eeg ble neuroscience',
       url='https://github.com/alexandrebarachant/muse-lsl/',
@@ -24,7 +24,7 @@ setup(name='muselsl',
       license='BSD (3-clause)',
       entry_points={
           'console_scripts': [
-              'muselsl=muselsl.cli:main',
+              'muselsl=muselsl.__main__:main',
           ],
       },
       packages=find_packages(),
