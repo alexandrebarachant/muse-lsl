@@ -106,7 +106,7 @@ Lab Streaming Layer or LSL is a system designed to unify the collection of time 
 
 1.  `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Operation not permitted` (Linux)
 
-- This is an issue with pygatt requiring root privileges to run a scan. Make sure you have `libcap` installed and run `` sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcitool` ``
+- This is an issue with pygatt requiring root privileges to run a scan. Make sure you [have `libcap` installed](https://askubuntu.com/questions/347788/how-can-i-install-libpcap-header-files-on-ubuntu-12-04) and run `` sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcitool` ``
 
 2.  `pygatt.exceptions.BLEError: No characteristic found matching 273e0003-4c4d-454d-96be-f03bac821358` (Linux)
 
