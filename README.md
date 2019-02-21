@@ -119,3 +119,7 @@ Lab Streaming Layer or LSL is a system designed to unify the collection of time 
 4.  `pygatt.exceptions.BLEError: Unexpected error when scanning: Set scan parameters failed: Connection timed out` (Linux)
 
 - This seems to be due to a OS-level Bluetooth crash. Try turning your computer's bluetooth off and on again
+
+5.  `'RuntimeError: could not create stream outlet'` (Linux)
+
+- This appears to be due to Linux-specific issues with the newest version of pylsl. Ensure that you have pylsl 10.1.5 installed in the environment in which you are trying to run Muse LSL
