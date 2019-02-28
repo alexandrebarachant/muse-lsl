@@ -14,7 +14,7 @@ The code relies on [pygatt](https://github.com/peplin/pygatt) or [BlueMuse](http
 
 **Compatible with Python 2.7 and Python 3.x**
 
-**Only compatible with the 2016 model of the Muse headband**
+**Only compatible with Muse 2 and Muse 2016**
 
 _Note: if you run into any issues, first check out out [Common Issues](#common-issues) and then the [Issues](https://github.com/alexandrebarachant/muse-lsl/issues) section of this repository_
 
