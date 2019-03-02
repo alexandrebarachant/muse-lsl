@@ -18,8 +18,8 @@ class CLI:
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi. WIll auto-detect if not specified")
         args = parser.parse_args(sys.argv[2:])
-        from . import list_muses
-        list_muses(args.backend, args.interface)
+        import list_muses as lm
+        lm.list_muses(args.backend, args.interface)
 
     def stream(self):
         parser = argparse.ArgumentParser(
@@ -36,10 +36,13 @@ class CLI:
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
+        parser.add_argument("-t", "--type",
+                            dest="type", type=int, default=1000,
+                            help="The type of data, combine 1 for EEG, 2 for PPG, 4 for telemetry, 8 for accelero, 16 for gyro")
         args = parser.parse_args(sys.argv[2:])
-        from . import stream
-        stream(args.address, args.backend,
-               args.interface, args.name)
+        import stream as st
+        st.stream(args.address, args.backend,
+               args.interface, args.name, args.type)
 
     def record(self):
         parser = argparse.ArgumentParser(
@@ -54,8 +57,8 @@ class CLI:
                             dest="dejitter", type=bool, default=True,
                             help="Whether to apply dejitter correction to timestamps.")
         args = parser.parse_args(sys.argv[2:])
-        from . import record
-        record(args.duration, args.filename, args.dejitter)
+        import record as rc
+        rc.record(args.duration, args.filename, args.dejitter)
 
     def record_direct(self):
         parser = argparse.ArgumentParser(
@@ -79,8 +82,8 @@ class CLI:
                             dest="filename", type=str, default=None,
                             help="Name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
-        from . import record_direct
-        record_direct(args.address, args.backend,
+        import record_direct as rcd
+        rcd.record_direct(args.address, args.backend,
                       args.interface, args.name, args.duration, args.filename)
 
     def view(self):
@@ -101,6 +104,10 @@ class CLI:
         parser.add_argument("-v", "--version",
                             dest="version", type=int, default=1,
                             help="Viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
+        parser.add_argument("-t", "--type",
+                            dest="type", type=str, default="eeg",
+                            help="type of stream to view between eeg, ppg, gyro, acc or telemetry")
+
         args = parser.parse_args(sys.argv[2:])
-        from . import view
-        view(args.window, args.scale, args.refresh, args.figure, args.version)
+        import view as v
+        v.view(args.window, args.scale, args.refresh, args.figure, args.version, args.type)

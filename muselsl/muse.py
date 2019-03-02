@@ -4,19 +4,20 @@ import numpy as np
 from time import time, sleep
 from sys import platform
 import subprocess
-from . import helper
-from .constants import *
+import helper as hp
+from constants import *
 
 
 class Muse():
     """Muse 2016 headband"""
 
-    def __init__(self, address, callback_eeg=None, callback_control=None,
+    def __init__(self, address, callback_eeg=None, callback_ppg=None, callback_control=None,
                  callback_telemetry=None, callback_acc=None, callback_gyro=None,
                  backend='auto', interface=None, time_func=time, name=None):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
+        callback_ppg -- callback for ppg data, function(data, timestamps)
         callback_control -- function(message)
         callback_telemetry -- function(timestamp, battery, fuel_gauge,
                                        adc_volt, temperature)
@@ -25,17 +26,18 @@ class Muse():
         callback_gyro -- function(timestamp, samples)
         - samples is a list of 3 samples, where each sample is [x, y, z]
         """
-
         self.address = address
         self.name = name
 
         self.callback_eeg = callback_eeg
+        self.callback_ppg = callback_ppg
         self.callback_telemetry = callback_telemetry
         self.callback_control = callback_control
         self.callback_acc = callback_acc
         self.callback_gyro = callback_gyro
 
         self.enable_eeg = not callback_eeg is None
+        self.enable_ppg = not callback_ppg is None
         self.enable_control = not callback_control is None
         self.enable_telemetry = not callback_telemetry is None
         self.enable_acc = not callback_acc is None
@@ -44,7 +46,7 @@ class Muse():
         self.interface = interface
         self.time_func = time_func
 
-        self.backend = helper.resolve_backend(backend)
+        self.backend = hp.resolve_backend(backend)
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
@@ -69,6 +71,9 @@ class Muse():
                 # subscribes to EEG stream
                 if self.enable_eeg:
                     self._subscribe_eeg()
+
+                if self.enable_ppg:
+                    self._subscribe_ppg()
 
                 if self.enable_control:
                     self._subscribe_control()
@@ -96,6 +101,9 @@ class Muse():
                 # subscribes to EEG stream
                 if self.enable_eeg:
                     self._subscribe_eeg()
+
+                if self.enable_ppg:
+                    self._subscribe_ppg()
 
                 if self.enable_control:
                     self._subscribe_control()
@@ -246,6 +254,15 @@ class Muse():
         self.device.subscribe(MUSE_GATT_ATTR_RIGHTAUX,
                               callback=self._handle_eeg)
 
+    def _subscribe_ppg(self):
+        """subscribe to ppg stream."""
+        self.device.subscribe(MUSE_GATT_ATTR_PPG1,
+                              callback=self._handle_ppg)
+        self.device.subscribe(MUSE_GATT_ATTR_PPG2,
+                              callback=self._handle_ppg)
+        self.device.subscribe(MUSE_GATT_ATTR_PPG3,
+                              callback=self._handle_ppg)
+
     def _unpack_eeg_channel(self, packet):
         """Decode data packet of one EEG channel.
 
@@ -262,10 +279,29 @@ class Muse():
         data = 0.48828125 * (np.array(data) - 2048)
         return packetIndex, data
 
+    def _unpack_ppg_channel(self, packet):
+        """Decode data packet of one PPG channel.
+
+        Each packet is encoded with a 16bit timestamp followed by 12 time
+        samples with a 12 bit resolution.
+        """
+        aa = bitstring.Bits(bytes=packet)
+        pattern = "uint:16,uint:12,uint:12,uint:12,uint:12,uint:12,uint:12, \
+                   uint:12,uint:12,uint:12,uint:12,uint:12,uint:12"
+        res = aa.unpack(pattern)
+        packetIndex = res[0]
+        data = res[1:]
+        # 12 bits on a 2 mVpp range
+        #data = 0.48828125 * (np.array(data) - 2048)
+        return packetIndex, data
+
+
     def _init_sample(self):
         """initialize array to store the samples"""
-        self.timestamps = np.zeros(5)
-        self.data = np.zeros((5, 12))
+        self.timestamps_eeg = np.zeros(MUSE_NB_EEG_CHANNELS)
+        self.data_eeg = np.zeros((MUSE_NB_EEG_CHANNELS, 12))
+        self.timestamps_ppg = np.zeros(MUSE_NB_PPG_CHANNELS)
+        self.data_ppg = np.zeros((MUSE_NB_PPG_CHANNELS, 6))
 
     def _init_timestamp_correction(self):
         """Init IRLS params"""
@@ -294,12 +330,12 @@ class Muse():
         if self.last_tm == 0:
             self.last_tm = tm - 1
 
-        self.data[index] = d
-        self.timestamps[index] = timestamp
+        self.data_eeg[index] = d
+        self.timestamps_eeg[index] = timestamp
         # last data received
         if handle == 35:
             if tm != self.last_tm + 1:
-                print("missing sample %d : %d" % (tm, self.last_tm))
+                print("EEG : missing sample %d : %d" % (tm, self.last_tm))
             self.last_tm = tm
 
             # calculate index of time samples
@@ -310,13 +346,52 @@ class Muse():
             timestamps = self.reg_params[1] * idxs + self.reg_params[0]
 
             # push data
-            self.callback_eeg(self.data, timestamps)
+            self.callback_eeg(self.data_eeg, timestamps)
 
             # save last timestamp for disconnection timer
             self.last_timestamp = timestamps[-1]
 
             # reset sample
             self._init_sample()
+
+    def _handle_ppg(self, handle, data):
+        """Callback for receiving a sample.
+
+        samples are received in this order : 56, 59, 62
+        wait until we get 62 and call the data callback
+        """
+        timestamp = self.time_func()
+        index = int((handle - 56) / 3)
+        tm, d = self._unpack_ppg_channel(data)
+
+        if self.last_tm == 0:
+            self.last_tm = tm - 1
+
+        self.data_ppg[index] = [d[1], d[3], d[5], d[7], d[9], d[11]]
+        self.timestamps_ppg[index] = timestamp
+        # last data received
+        if handle == 62:
+            if tm != self.last_tm + 1:
+                print("PPG : missing sample %d : %d" % (tm, self.last_tm))
+            self.last_tm = tm
+
+            # calculate index of time samples
+            idxs = np.arange(0, 6) + self.sample_index
+            self.sample_index += 6
+
+            # timestamps are extrapolated backwards based on sampling rate and current time
+            timestamps = self.reg_params[1] * idxs + self.reg_params[0]
+
+            # push data
+
+            self.callback_ppg(self.data_ppg, timestamps)
+
+            # save last timestamp for disconnection timer
+            self.last_timestamp = timestamps[-1]
+
+            # reset sample
+            self._init_sample()
+
 
     def _init_control(self):
         """Variable to store the current incoming message."""
@@ -391,7 +466,7 @@ class Muse():
         temperature = data[4]
 
         self.callback_telemetry(
-            timestamp, battery, fuel_gauge, adc_volt, temperature)
+            timestamp, [battery, fuel_gauge, adc_volt, temperature])
 
     def _unpack_imu_channel(self, packet, scale=1):
         """Decode data packet of the accelerometer and gyro (imu) channels.
@@ -432,7 +507,9 @@ class Muse():
         packet_index, samples = self._unpack_imu_channel(
             packet, scale=MUSE_ACCELEROMETER_SCALE_FACTOR)
 
-        self.callback_acc(timestamp, samples)
+        timestamps = [timestamp-2, timestamp-1, timestamp]
+        
+        self.callback_acc(timestamps, samples)
 
     def _subscribe_gyro(self):
         self.device.subscribe(MUSE_GATT_ATTR_GYRO,
@@ -450,4 +527,6 @@ class Muse():
         packet_index, samples = self._unpack_imu_channel(
             packet, scale=MUSE_GYRO_SCALE_FACTOR)
 
-        self.callback_gyro(timestamp, samples)
+        timestamps = [timestamp-2, timestamp-1, timestamp]
+
+        self.callback_gyro(timestamps, samples)
