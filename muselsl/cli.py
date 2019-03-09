@@ -101,6 +101,9 @@ class CLI:
         parser.add_argument("-v", "--version",
                             dest="version", type=int, default=1,
                             help="Viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).")
+        parser.add_argument("-b", "--backend",
+                            dest="backend", type=str, default='TkAgg',
+                            help="Matplotlib backend to use. Default: %(default)s")
         args = parser.parse_args(sys.argv[2:])
         from . import view
-        view(args.window, args.scale, args.refresh, args.figure, args.version)
+        view(args.window, args.scale, args.refresh, args.figure, args.version, args.backend)

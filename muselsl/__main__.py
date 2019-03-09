@@ -24,7 +24,7 @@ def main():
                 -r --refresh    Refresh rate in seconds.
                 -f --figure     Window size.
                 -v --version    Viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).
-
+                -b --backend    Matplotlib backend to use. Default: TkAgg
     record   Record EEG data from an LSL stream.
                 -d --duration   Duration of the recording in seconds.
                 -f --filename   Name of the recording file.

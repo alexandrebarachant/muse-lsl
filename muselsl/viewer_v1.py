@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')
 from scipy.signal import lfilter, lfilter_zi, firwin
 from time import sleep
 from pylsl import StreamInlet, resolve_byprop
@@ -9,7 +8,8 @@ from threading import Thread
 from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE, LSL_SCAN_TIMEOUT, LSL_CHUNK
 
 
-def view(window, scale, refresh, figure, version=1):
+def view(window, scale, refresh, figure, backend, version=1):
+    matplotlib.use(backend)
     sns.set(style="whitegrid")
 
     figsize = np.int16(figure.split('x'))
