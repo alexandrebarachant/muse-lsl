@@ -81,10 +81,10 @@ The code to perform these experiments is still available, but is now maintained 
 If you want to integrate Muse LSL into your own Python project, you can import and use its functions as you would any Python package. Examples are available in the `examples` folder:
 
 ```Python
-from muselsl import stream
+from muselsl import stream, list_muses
 
-muses = stream.list_muses()
-stream.stream(muses[0]['address'])
+muses = list_muses()
+stream(muses[0]['address'])
 
 # Note: Streaming is synchronous, so code here will not execute until after the stream has been closed
 print('Stream has ended')
