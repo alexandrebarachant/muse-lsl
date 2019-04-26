@@ -26,5 +26,7 @@ LSL_SCAN_TIMEOUT = 5  # How long to look for an LSL stream.
 LSL_CHUNK = 12  # Chunk size.
 LSL_BUFFER = 360  # Buffer length.
 
+LSL_PPG_CHUNK = 6
+
 VIEW_SUBSAMPLE = 2
 VIEW_BUFFER = 12
