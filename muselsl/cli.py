@@ -104,6 +104,8 @@ class CLI:
         parser.add_argument("-b", "--backend",
                             dest="backend", type=str, default='TkAgg',
                             help="Matplotlib backend to use. Default: %(default)s")
+        parser.add_argument("-t", "--type", type=str, default='EEG',
+                            help="PyLSL Stream type label to connect to (EEG/PPG)")
         args = parser.parse_args(sys.argv[2:])
         from . import view
-        view(args.window, args.scale, args.refresh, args.figure, args.version, args.backend)
+        view(args.window, args.scale, args.refresh, args.figure, args.version, args.backend, args.type)

@@ -76,21 +76,23 @@ void main() {
 """
 
 
-def view():
-    print("Looking for an EEG stream...")
-    streams = resolve_byprop('type', 'EEG', timeout=LSL_SCAN_TIMEOUT)
+def view(stream_type = 'EEG'):
+    print("Looking for a(n) {} stream...".format(stream_type))
+    streams = resolve_byprop('type', stream_type, timeout=LSL_SCAN_TIMEOUT)
+
+    filter_hf = 40. if stream_type is 'EEG' else 31.
 
     if len(streams) == 0:
-        raise(RuntimeError("Can't find EEG stream."))
+        raise(RuntimeError("Can't find {} stream.".format(stream_type)))
     print("Start acquiring data.")
 
     inlet = StreamInlet(streams[0], max_chunklen=LSL_CHUNK)
-    Canvas(inlet)
+    Canvas(inlet, filter_hf=filter_hf)
     app.run()
 
 
 class Canvas(app.Canvas):
-    def __init__(self, lsl_inlet, scale=500, filt=True):
+    def __init__(self, lsl_inlet, scale=500, filt=True, filter_hf = 40.):
         app.Canvas.__init__(self, title='EEG - Use your wheel to zoom!',
                             keys='interactive')
 
@@ -163,7 +165,7 @@ class Canvas(app.Canvas):
         self.data_f = np.zeros((n_samples, self.n_chans))
         self.data = np.zeros((n_samples, self.n_chans))
 
-        self.bf = create_filter(self.data_f.T, self.sfreq, 3, 40.,
+        self.bf = create_filter(self.data_f.T, self.sfreq, 3, filter_hf,
                                 method='fir')
 
         zi = lfilter_zi(self.bf, self.af)
