@@ -28,7 +28,6 @@ class Muse():
 
         self.address = address
         self.name = name
-
         self.callback_eeg = callback_eeg
         self.callback_telemetry = callback_telemetry
         self.callback_control = callback_control
@@ -292,8 +291,10 @@ class Muse():
         # the time it started + the inverse of sampling rate
         self.sample_index = 0
         self.sample_index_ppg = 0
-        self.reg_params = np.array([self.time_func(), 1. / MUSE_SAMPLING_RATE])
-        self.reg_ppg_sample_rate = np.array([self.time_func(), 1. / MUSE_SAMPLING_PPG_RATE])
+        self.reg_params = np.array(
+            [self.time_func(), 1. / MUSE_SAMPLING_EEG_RATE])
+        self.reg_ppg_sample_rate = np.array(
+            [self.time_func(), 1. / MUSE_SAMPLING_PPG_RATE])
 
     def _update_timestamp_correction(self, x, y):
         """Update regression for dejittering
@@ -427,14 +428,7 @@ class Muse():
 
         packet_index = data[0]
 
-        samples = [[
-            scale * data[index],        # x
-            scale * data[index + 1],    # y
-            scale * data[index + 2]     # z
-        ] for index in [1, 4, 7]]
-
-        # samples is a list with 3 samples
-        # each sample is a list with [x, y, z]
+        samples = np.array(data[1:]).reshape((3, 3), order='F') * scale
 
         return packet_index, samples
 
@@ -448,12 +442,15 @@ class Muse():
         sampling rate: ~17 x second (3 samples in each message, roughly 50Hz)"""
         if handle != 23:  # handle 0x17
             return
-        timestamp = self.time_func()
+        timestamps = [self.time_func()] * 3
+
+        # save last timestamp for disconnection timer
+        self.last_timestamp = timestamps[-1]
 
         packet_index, samples = self._unpack_imu_channel(
             packet, scale=MUSE_ACCELEROMETER_SCALE_FACTOR)
 
-        self.callback_acc(timestamp, samples)
+        self.callback_acc(samples, timestamps)
 
     def _subscribe_gyro(self):
         self.device.subscribe(MUSE_GATT_ATTR_GYRO,
@@ -466,12 +463,15 @@ class Muse():
         if handle != 20:  # handle 0x14
             return
 
-        timestamp = self.time_func()
+        timestamps = [self.time_func()] * 3
+
+        # save last timestamp for disconnection timer
+        self.last_timestamp = timestamps[-1]
 
         packet_index, samples = self._unpack_imu_channel(
             packet, scale=MUSE_GYRO_SCALE_FACTOR)
 
-        self.callback_gyro(timestamp, samples)
+        self.callback_gyro(samples, timestamps)
 
     def _subscribe_ppg(self):
         """subscribe to ppg stream."""
@@ -504,11 +504,15 @@ class Muse():
             self.last_tm_ppg = tm
 
             # calculate index of time samples
-            idxs = np.arange(0, 6) + self.sample_index_ppg
-            self.sample_index_ppg += 6
+            idxs = np.arange(0, LSL_PPG_CHUNK) + self.sample_index_ppg
+            self.sample_index_ppg += LSL_PPG_CHUNK
 
             # timestamps are extrapolated backwards based on sampling rate and current time
-            timestamps = self.reg_ppg_sample_rate[1] * idxs + self.reg_ppg_sample_rate[0]
+            timestamps = self.reg_ppg_sample_rate[1] * \
+                idxs + self.reg_ppg_sample_rate[0]
+
+            # save last timestamp for disconnection timer
+            self.last_timestamp = timestamps[-1]
 
             # push data
             if self.callback_ppg:

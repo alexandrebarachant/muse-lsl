@@ -17,6 +17,10 @@ def main():
                 -n --name       Device name (e.g. Muse-41D2).
                 -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
                 -i --interface  The interface to use, 'hci0' for gatt or a com port for bgapi.
+                -p --ppg        Include PPG data
+                -c --acc        Include accelerometer data
+                -g --gyro       Include gyroscope data
+                --disable-eeg   Disable EEG data
 
     view     Visualize EEG data from an LSL stream.
                 -w --window     Window length to display in seconds.
@@ -25,6 +29,7 @@ def main():
                 -f --figure     Window size.
                 -v --version    Viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).
                 -b --backend    Matplotlib backend to use. Default: TkAgg
+
     record   Record EEG data from an LSL stream.
                 -d --duration   Duration of the recording in seconds.
                 -f --filename   Name of the recording file.
@@ -44,9 +49,9 @@ def main():
     args = parser.parse_args(sys.argv[1:2])
 
     if not hasattr(CLI, args.command):
-            print('Incorrect usage. See help below.')
-            parser.print_help()
-            exit(1)
+        print('Incorrect usage. See help below.')
+        parser.print_help()
+        exit(1)
 
     cli = CLI(args.command)
 
