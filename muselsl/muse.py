@@ -13,7 +13,7 @@ class Muse():
 
     def __init__(self, address, callback_eeg=None, callback_control=None,
                  callback_telemetry=None, callback_acc=None, callback_gyro=None,
-                 backend='auto', interface=None, time_func=time, name=None):
+                 callback_ppg=None, backend='auto', interface=None, time_func=time, name=None):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -34,12 +34,14 @@ class Muse():
         self.callback_control = callback_control
         self.callback_acc = callback_acc
         self.callback_gyro = callback_gyro
+        self.callback_ppg = callback_ppg
 
         self.enable_eeg = not callback_eeg is None
         self.enable_control = not callback_control is None
         self.enable_telemetry = not callback_telemetry is None
         self.enable_acc = not callback_acc is None
         self.enable_gyro = not callback_gyro is None
+        self.enable_ppg = not callback_ppg is None
 
         self.interface = interface
         self.time_func = time_func
@@ -82,6 +84,9 @@ class Muse():
                 if self.enable_gyro:
                     self._subscribe_gyro()
 
+                if self.enable_ppg:
+                    self._subscribe_ppg()
+
                 self.last_timestamp = self.time_func()
 
             return True
@@ -108,6 +113,9 @@ class Muse():
 
                 if self.enable_gyro:
                     self._subscribe_gyro()
+
+                if self.enable_ppg:
+                    self._subscribe_ppg()
 
                 self.last_timestamp = self.time_func()
 
@@ -182,7 +190,9 @@ class Muse():
 
         self._init_timestamp_correction()
         self._init_sample()
+        self._init_ppg_sample()
         self.last_tm = 0
+        self.last_tm_ppg = 0
         self._init_control()
         self.resume()
 
@@ -267,12 +277,23 @@ class Muse():
         self.timestamps = np.zeros(5)
         self.data = np.zeros((5, 12))
 
+    def _init_ppg_sample(self):
+        """ Initialise array to store PPG samples
+
+            Must be separate from the EEG packets since they occur with a different sampling rate. Ideally the counters
+            would always match, but this is not guaranteed
+        """
+        self.timestamps_ppg = np.zeros(3)
+        self.data_ppg = np.zeros((3, 6))
+
     def _init_timestamp_correction(self):
         """Init IRLS params"""
         # initial params for the timestamp correction
         # the time it started + the inverse of sampling rate
         self.sample_index = 0
+        self.sample_index_ppg = 0
         self.reg_params = np.array([self.time_func(), 1. / MUSE_SAMPLING_RATE])
+        self.reg_ppg_sample_rate = np.array([self.time_func(), 1. / MUSE_SAMPLING_PPG_RATE])
 
     def _update_timestamp_correction(self, x, y):
         """Update regression for dejittering
@@ -451,3 +472,61 @@ class Muse():
             packet, scale=MUSE_GYRO_SCALE_FACTOR)
 
         self.callback_gyro(timestamp, samples)
+
+    def _subscribe_ppg(self):
+        """subscribe to ppg stream."""
+        self.device.subscribe(MUSE_GATT_ATTR_PPG1,
+                              callback=self._handle_ppg)
+        self.device.subscribe(MUSE_GATT_ATTR_PPG2,
+                              callback=self._handle_ppg)
+        self.device.subscribe(MUSE_GATT_ATTR_PPG3,
+                              callback=self._handle_ppg)
+
+    def _handle_ppg(self, handle, data):
+        """Callback for receiving a sample.
+
+        samples are received in this order : 56, 59, 62
+        wait until we get x and call the data callback
+        """
+        timestamp = self.time_func()
+        index = int((handle - 56) / 3)
+        tm, d = self._unpack_ppg_channel(data)
+
+        if self.last_tm_ppg == 0:
+            self.last_tm_ppg = tm - 1
+
+        self.data_ppg[index] = d
+        self.timestamps_ppg[index] = timestamp
+        # last data received
+        if handle == 62:
+            if tm != self.last_tm_ppg + 1:
+                print("missing sample %d : %d" % (tm, self.last_tm_ppg))
+            self.last_tm_ppg = tm
+
+            # calculate index of time samples
+            idxs = np.arange(0, 6) + self.sample_index_ppg
+            self.sample_index_ppg += 6
+
+            # timestamps are extrapolated backwards based on sampling rate and current time
+            timestamps = self.reg_ppg_sample_rate[1] * idxs + self.reg_ppg_sample_rate[0]
+
+            # push data
+            if self.callback_ppg:
+                self.callback_ppg(self.data_ppg, timestamps)
+
+            # reset sample
+            self._init_ppg_sample()
+
+    def _unpack_ppg_channel(self, packet):
+        """Decode data packet of one PPG channel.
+        Each packet is encoded with a 16bit timestamp followed by 3
+        samples with an x bit resolution.
+        """
+
+        aa = bitstring.Bits(bytes=packet)
+        pattern = "uint:16,uint:24,uint:24,uint:24,uint:24,uint:24,uint:24"
+        res = aa.unpack(pattern)
+        packetIndex = res[0]
+        data = res[1:]
+
+        return packetIndex, data

@@ -5,7 +5,8 @@ import subprocess
 from sys import platform
 from . import helper
 from .muse import Muse
-from .constants import MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, MUSE_SCAN_TIMEOUT, LSL_CHUNK, AUTO_DISCONNECT_DELAY
+from .constants import MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, MUSE_SCAN_TIMEOUT, LSL_CHUNK, AUTO_DISCONNECT_DELAY, \
+    MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_PPG_RATE, LSL_PPG_CHUNK
 
 
 # Returns a list of available Muse devices.
@@ -68,8 +69,12 @@ def stream(address, backend='auto', interface=None, name=None):
     info = StreamInfo('Muse', 'EEG', MUSE_NB_CHANNELS, MUSE_SAMPLING_RATE, 'float32',
                       'Muse%s' % address)
 
+    ppg_stream = StreamInfo('Muse', 'PPG', MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_PPG_RATE,
+                            'float32', 'Muse%s' % address)
+
     info.desc().append_child_value("manufacturer", "Muse")
     channels = info.desc().append_child("channels")
+    ppg_channels = ppg_stream.desc().append_child("channels")
 
     for c in ['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX']:
         channels.append_child("channel") \
@@ -77,13 +82,24 @@ def stream(address, backend='auto', interface=None, name=None):
             .append_child_value("unit", "microvolts") \
             .append_child_value("type", "EEG")
 
+    for x in ['PPG1', 'PPG2', 'PPG3']:
+        ppg_channels.append_child("channel") \
+            .append_child_value("label", x) \
+            .append_child_value("unit", "x") \
+            .append_child_value("type", "PPG")
+
     outlet = StreamOutlet(info, LSL_CHUNK)
+    outlet_ppg = StreamOutlet(ppg_stream, LSL_PPG_CHUNK)
 
     def push_eeg(data, timestamps):
         for ii in range(LSL_CHUNK):
             outlet.push_sample(data[:, ii], timestamps[ii])
 
-    muse = Muse(address=address, callback_eeg=push_eeg,
+    def push_ppg(data, timestamps):
+        for ii in range(LSL_PPG_CHUNK):
+            outlet_ppg.push_sample(data[:, ii], timestamps[ii])
+
+    muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg,
                 backend=backend, interface=interface, name=name)
 
     if(bluemuse):
