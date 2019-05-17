@@ -16,7 +16,7 @@ copy_docs()
 
 setup(
     name="muselsl",
-    version="1.0.5",
+    version="2.0.0",
     description="Stream and visualize EEG data from the Muse 2016 headset.",
     keywords="muse lsl eeg ble neuroscience",
     url="https://github.com/alexandrebarachant/muse-lsl/",

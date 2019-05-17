@@ -15,7 +15,7 @@ from seaborn import color_palette
 from pylsl import StreamInlet, resolve_byprop
 from scipy.signal import lfilter, lfilter_zi
 from mne.filter import create_filter
-from .constants import LSL_SCAN_TIMEOUT, LSL_CHUNK
+from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK
 
 
 VERT_SHADER = """
@@ -84,7 +84,7 @@ def view():
         raise(RuntimeError("Can't find EEG stream."))
     print("Start acquiring data.")
 
-    inlet = StreamInlet(streams[0], max_chunklen=LSL_CHUNK)
+    inlet = StreamInlet(streams[0], max_chunklen=LSL_EEG_CHUNK)
     Canvas(inlet)
     app.run()
 

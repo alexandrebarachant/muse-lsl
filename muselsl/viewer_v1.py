@@ -5,7 +5,7 @@ from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
 from threading import Thread
-from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE, LSL_SCAN_TIMEOUT, LSL_CHUNK
+from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE, LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK
 
 
 def view(window, scale, refresh, figure, backend, version=1):
@@ -45,7 +45,7 @@ class LSLViewer():
         self.window = window
         self.scale = scale
         self.dejitter = dejitter
-        self.inlet = StreamInlet(stream, max_chunklen=LSL_CHUNK)
+        self.inlet = StreamInlet(stream, max_chunklen=LSL_EEG_CHUNK)
         self.filt = True
         self.subsample = VIEW_SUBSAMPLE
 
@@ -110,7 +110,7 @@ class LSLViewer():
         try:
             while self.started:
                 samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
-                                                            max_samples=LSL_CHUNK)
+                                                            max_samples=LSL_EEG_CHUNK)
 
                 if timestamps:
                     if self.dejitter:

@@ -36,10 +36,19 @@ class CLI:
         parser.add_argument("-i", "--interface",
                             dest="interface", type=str, default=None,
                             help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
+        parser.add_argument("-p", "--ppg",
+                            default=False, action="store_true", help="Include PPG data")
+        parser.add_argument("-c", "--acc",
+                            default=False, action="store_true", help="Include accelerometer data")
+        parser.add_argument("-g", "--gyro",
+                            default=False, action="store_true", help="Include gyroscope data")
+        parser.add_argument('-d', '--disable-eeg', dest='disable_eeg',
+                            action='store_true', help="Disable EEG data")
         args = parser.parse_args(sys.argv[2:])
         from . import stream
+
         stream(args.address, args.backend,
-               args.interface, args.name)
+               args.interface, args.name, args.ppg, args.acc, args.gyro, args.disable_eeg)
 
     def record(self):
         parser = argparse.ArgumentParser(
@@ -53,9 +62,12 @@ class CLI:
         parser.add_argument("-dj", "--dejitter",
                             dest="dejitter", type=bool, default=True,
                             help="Whether to apply dejitter correction to timestamps.")
+        parser.add_argument("-t", "--type", type=str, default="EEG",
+                            help="Data type to record from. Either EEG, PPG, ACC, or GYRO.")
+
         args = parser.parse_args(sys.argv[2:])
         from . import record
-        record(args.duration, args.filename, args.dejitter)
+        record(args.duration, args.filename, args.dejitter, args.type)
 
     def record_direct(self):
         parser = argparse.ArgumentParser(
@@ -106,4 +118,5 @@ class CLI:
                             help="Matplotlib backend to use. Default: %(default)s")
         args = parser.parse_args(sys.argv[2:])
         from . import view
-        view(args.window, args.scale, args.refresh, args.figure, args.version, args.backend)
+        view(args.window, args.scale, args.refresh,
+             args.figure, args.version, args.backend)
