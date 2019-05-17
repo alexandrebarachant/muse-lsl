@@ -64,7 +64,7 @@ To record EEG data into a CSV:
 
     $ muselsl record --duration 60  
 
-_Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)_
+*Note: this command will also save data from any LSL stream containing 'Markers' data, such as from the stimulus presentation scripts in [EEG Notebooks](https://github.com/neurotechx/eeg-notebooks)*
 
 Alternatively, you can record data directly without using LSL through the following command:
 
@@ -92,9 +92,9 @@ stream(muses[0]['address'])
 print('Stream has ended')
 ```
 
-## Alternate Data Sources
+## Alternate Data Types
 
-In addition to EEG, the Muse also provides data from an accelerometer, gyroscope, and, in the case of the Muse 2, a photoplethysmography (PPG) sensor. These data sources can be enabled via command line arguments or by passing the correct parameters to the `stream` function. Once enabled, PPG, accelerometer, and gyroscope data will streamed in their own separate LSL streams named "PPG", "ACC", and "GYRO", respectively.
+In addition to EEG, the Muse also provides data from an accelerometer, gyroscope, and, in the case of the Muse 2, a photoplethysmography (PPG) sensor. These data types can be enabled via command line arguments or by passing the correct parameters to the `stream` function. Once enabled, PPG, accelerometer, and gyroscope data will streamed in their own separate LSL streams named "PPG", "ACC", and "GYRO", respectively.
 
 To stream data from all sensors in a Muse 2 from the command line:
 
@@ -108,6 +108,12 @@ from muselsl import stream, list_muses
 muses = list_muses()
 stream(muses[0]['address'], ppg_enabled=True, acc_enabled=True, gyro_enabled=True)
 ```
+
+To record data from an alternate data source:
+
+    muselsl record --type ACC
+
+*Note: The record process will only record from one data type at a time. However, multiple terminals or processes can be used to record from multiple data types simultaneously*
 
 ## What is LSL?
 

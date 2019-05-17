@@ -34,6 +34,7 @@ def main():
                 -d --duration   Duration of the recording in seconds.
                 -f --filename   Name of the recording file.
                 -dj --dejitter  Whether to apply dejitter correction to timestamps.
+                -t --type       Data type to record from. Either EEG, PPG, ACC, or GYRO 
 
     record_direct      Record data directly from Muse headset (no LSL).
                 -a --address    Device MAC address.
