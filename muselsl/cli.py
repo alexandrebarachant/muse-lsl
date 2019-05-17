@@ -43,11 +43,11 @@ class CLI:
                             default=False, action="store_true", help="Include accelerometer data")
         parser.add_argument("-g", "--gyro",
                             default=False, action="store_true", help="Include gyroscope data")
-        parser.add_argument('--disable-eeg', dest='disable_eeg',
+        parser.add_argument('-d', '--disable-eeg', dest='disable_eeg',
                             action='store_true', help="Disable EEG data")
         args = parser.parse_args(sys.argv[2:])
         from . import stream
-        
+
         stream(args.address, args.backend,
                args.interface, args.name, args.ppg, args.acc, args.gyro, args.disable_eeg)
 
