@@ -3,6 +3,13 @@ from shutil import copyfile
 import os
 
 
+def get_long_description():
+    this_directory = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(this_directory, 'README.md')) as f:
+        long_description = f.read()
+        return long_description
+
+
 def copy_docs():
     docs_dir = "muselsl/docs"
     if not os.path.exists(docs_dir):
@@ -13,11 +20,12 @@ def copy_docs():
 
 
 copy_docs()
+long_description = get_long_description()
 
 setup(
     name="muselsl",
-    version="2.0.0",
-    description="Stream and visualize EEG data from the Muse 2016 headset.",
+    version="2.0.1",
+    description="Stream and visualize EEG data from the Muse headset.",
     keywords="muse lsl eeg ble neuroscience",
     url="https://github.com/alexandrebarachant/muse-lsl/",
     author="Alexandre Barachant",
@@ -28,6 +36,8 @@ setup(
     package_data={"muselsl": ["docs/README.md", "docs/examples/*"]},
     include_package_data=True,
     zip_safe=False,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=[
         "bitstring",
         "pygatt",
@@ -36,8 +46,8 @@ setup(
         "numpy",
         "seaborn",
         "pexpect",
-    ]
-    + (["pylsl==1.10.5"] if os.sys.platform.startswith("linux") else ["pylsl"]),
+    ] +
+    (["pylsl==1.10.5"] if os.sys.platform.startswith("linux") else ["pylsl"]),
     extras_require={"Viewer V2": ["mne", "vispy"]},
     classifiers=[
         # How mature is this project?  Common values are
@@ -59,4 +69,3 @@ setup(
         "Programming Language :: Python",
     ],
 )
-
