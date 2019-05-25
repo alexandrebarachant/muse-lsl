@@ -59,7 +59,6 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
 
     res = []
     timestamps = []
-    receive_time = []
     markers = []
     t_init = time()
     time_correction = inlet.time_correction()
@@ -74,7 +73,6 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
                 res.append(data)
                 timestamps.extend(timestamp)
                 tr = time()
-                receive_time.extend([tr] * len(timestamp))
             if inlet_marker:
                 marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
                 if timestamp:
@@ -95,9 +93,8 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
         lr.fit(X, y)
         timestamps = lr.predict(X)
 
-    res = np.c_[timestamps, receive_time, res]
-    data = pd.DataFrame(
-        data=res, columns=['timestamps', 'receive_time'] + ch_names)
+    res = np.c_[timestamps, res]
+    data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
 
     if inlet_marker:
         n_markers = len(markers[0][0])
