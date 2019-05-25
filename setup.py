@@ -24,7 +24,7 @@ long_description = get_long_description()
 
 setup(
     name="muselsl",
-    version="2.0.1",
+    version="2.0.2",
     description="Stream and visualize EEG data from the Muse headset.",
     keywords="muse lsl eeg ble neuroscience",
     url="https://github.com/alexandrebarachant/muse-lsl/",
