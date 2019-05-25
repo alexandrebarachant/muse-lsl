@@ -22,13 +22,13 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
 
     if not filename:
         filename = os.path.join(os.getcwd(
-        ), f"{data_source}_recording_{strftime('%Y-%m-%d-%H.%M.%S', gmtime())}.csv")
+        ), "%s_recording_%s.csv" % (data_source, strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
 
-    print(f"Looking for a {data_source} stream...")
+    print("Looking for a %s stream..." % (data_source))
     streams = resolve_byprop('type', data_source, timeout=LSL_SCAN_TIMEOUT)
 
     if len(streams) == 0:
-        print(f"Can't find {data_source} stream.")
+        print("Can't find %s stream." % (data_source))
         return
 
     print("Started acquiring data.")

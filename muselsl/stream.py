@@ -158,8 +158,14 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
     if(didConnect):
         print('Connected.')
         muse.start()
-        
-        print(f'Streaming{" EEG" if not eeg_disabled else ""}{" PPG" if ppg_enabled else ""}{" ACC" if acc_enabled else ""}{" GYRO" if gyro_enabled else ""}...')
+
+        eeg_string = " EEG" if not eeg_disabled else ""
+        ppg_string = " PPG" if ppg_enabled else ""
+        acc_string = " ACC" if acc_enabled else ""
+        gyro_string = " GYRO" if gyro_enabled else ""
+
+        print("Streaming%s%s%s%s..." %
+              (eeg_string, ppg_string, acc_string, gyro_string))
 
         while time() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
             try:

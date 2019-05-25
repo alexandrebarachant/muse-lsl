@@ -55,7 +55,7 @@ class Muse():
                 subprocess.call('start bluemuse:', shell=True)
 
             else:
-                print('Connecting to %s : %s...' %
+                print('Connecting to %s: %s...' %
                       (self.name if self.name else 'Muse', self.address))
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
@@ -474,13 +474,17 @@ class Muse():
         self.callback_gyro(samples, timestamps)
 
     def _subscribe_ppg(self):
-        """subscribe to ppg stream."""
-        self.device.subscribe(MUSE_GATT_ATTR_PPG1,
-                              callback=self._handle_ppg)
-        self.device.subscribe(MUSE_GATT_ATTR_PPG2,
-                              callback=self._handle_ppg)
-        self.device.subscribe(MUSE_GATT_ATTR_PPG3,
-                              callback=self._handle_ppg)
+        try:
+            """subscribe to ppg stream."""
+            self.device.subscribe(MUSE_GATT_ATTR_PPG1,
+                                  callback=self._handle_ppg)
+            self.device.subscribe(MUSE_GATT_ATTR_PPG2,
+                                  callback=self._handle_ppg)
+            self.device.subscribe(MUSE_GATT_ATTR_PPG3,
+                                  callback=self._handle_ppg)
+
+        except pygatt.exceptions.BLEError as error:
+            raise Exception('PPG data is not available on this device. PPG is only available on Muse 2')
 
     def _handle_ppg(self, handle, data):
         """Callback for receiving a sample.
