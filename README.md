@@ -151,3 +151,24 @@ Lab Streaming Layer or LSL is a system designed to unify the collection of time 
 5.  `'RuntimeError: could not create stream outlet'` (Linux)
 
 - This appears to be due to Linux-specific issues with the newest version of pylsl. Ensure that you have pylsl 1.10.5 installed in the environment in which you are trying to run Muse LSL
+
+## Citing muse-lsl
+
+```
+@misc{muse-lsl,
+  author       = {Alexandre Barachant and
+                  Dano Morrison and
+                  Hubert Banville and
+                  Jason Kowaleski and
+                  Uri Shaked and
+                  Sylvain Chevallier and
+                  Juan Jesús Torre Tresols},
+  title        = {muse-lsl},
+  month        = may,
+  year         = 2019,
+  doi          = {10.5281/zenodo.3228861},
+  url          = {https://doi.org/10.5281/zenodo.3228861}
+}
+```
+
+> Alexandre Barachant, Dano Morrison, Hubert Banville, Jason Kowaleski, Uri Shaked, Sylvain Chevallier, & Juan Jesús Torre Tresols. (2019, May 25). muse-lsl (Version v2.0.2). Zenodo. http://doi.org/10.5281/zenodo.3228861
