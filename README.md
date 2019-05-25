@@ -1,3 +1,6 @@
+
+[![DOI](https://zenodo.org/badge/80209610.svg)](https://zenodo.org/badge/latestdoi/80209610)
+
 # Muse LSL
 
 A Python package for streaming, visualizing, and recording EEG data from the Muse 2016 headband.
