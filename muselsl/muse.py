@@ -352,15 +352,15 @@ class Muse():
             idxs = np.arange(0, 12) + self.sample_index
             self.sample_index += 12
 
-            # timestamps are extrapolated backwards based on sampling rate
-            # and current time
-            timestamps = self.reg_params[1] * idxs + self.reg_params[0]
-
             # update timestamp correction
             # We received the first packet as soon as the last timestamp got
             # sampled
             self._update_timestamp_correction(idxs[-1], np.min(
                 self.timestamps))
+
+            # timestamps are extrapolated backwards based on sampling rate
+            # and current time
+            timestamps = self.reg_params[1] * idxs + self.reg_params[0]
 
             # push data
             self.callback_eeg(self.data, timestamps)
