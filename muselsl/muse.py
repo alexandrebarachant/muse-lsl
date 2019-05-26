@@ -198,7 +198,7 @@ class Muse():
                     shell=True)
             return
 
-        self._init_timestamp_correction()
+        self.first_sample = True
         self._init_sample()
         self._init_ppg_sample()
         self.last_tm = 0
@@ -302,10 +302,8 @@ class Muse():
         self.sample_index_ppg = 0
         self._P = 1e-4
         t0 = self.time_func()
-        self.reg_params = np.array(
-            [t0 - 12. / MUSE_SAMPLING_EEG_RATE, 1. / MUSE_SAMPLING_EEG_RATE])
-        self.reg_ppg_sample_rate = np.array(
-            [t0 - 6. / MUSE_SAMPLING_PPG_RATE, 1. / MUSE_SAMPLING_PPG_RATE])
+        self.reg_params = np.array([t0, 1. / MUSE_SAMPLING_EEG_RATE])
+        self.reg_ppg_sample_rate = np.array([t0, 1. / MUSE_SAMPLING_PPG_RATE])
 
     def _update_timestamp_correction(self, t_source, t_receiver):
         """Update regression for dejittering
@@ -316,12 +314,14 @@ class Muse():
 
         # remove the offset
         t_receiver = t_receiver - self.reg_params[0]
+
+        # least square estimation
         P = self._P
         R = self.reg_params[1]
-
         P = P - ((P**2) * (t_source**2)) / (1 - (P * (t_source**2)))
         R = R + P * t_source * (t_receiver - t_source * R)
 
+        # update parameters
         self.reg_params[1] = R
         self._P = P
 
@@ -331,6 +331,10 @@ class Muse():
         samples are received in this order : 44, 41, 38, 32, 35
         wait until we get 35 and call the data callback
         """
+        if self.first_sample:
+            self._init_timestamp_correction()
+            self.first_sample = False
+
         timestamp = self.time_func()
         index = int((handle - 32) / 3)
         tm, d = self._unpack_eeg_channel(data)
@@ -343,9 +347,11 @@ class Muse():
         # last data received
         if handle == 35:
             if tm != self.last_tm + 1:
-                print("missing sample %d : %d" % (tm, self.last_tm))
-                # correct sample index for timestamp estimation
-                self.sample_index += 12 * (tm - self.last_tm + 1)
+                if (tm - self.last_tm) != -65535:  # counter reset
+                    print("missing sample %d : %d" % (tm, self.last_tm))
+                    # correct sample index for timestamp estimation
+                    self.sample_index += 12 * (tm - self.last_tm + 1)
+
             self.last_tm = tm
 
             # calculate index of time samples
