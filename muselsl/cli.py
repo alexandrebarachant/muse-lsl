@@ -97,7 +97,9 @@ class CLI:
 
     def view(self):
         parser = argparse.ArgumentParser(
-            description='View EEG data from an LSL stream.')
+            description='View data from an LSL stream.')
+        parser.add_argument("-t", "--type", type=str, default="EEG", dest="data_type",
+                    help="Data type to view. Either EEG, PPG, ACC, or GYRO.")
         parser.add_argument("-w", "--window",
                             dest="window", type=float, default=5.,
                             help="Window length to display in seconds.")
@@ -119,4 +121,4 @@ class CLI:
         args = parser.parse_args(sys.argv[2:])
         from . import view
         view(args.window, args.scale, args.refresh,
-             args.figure, args.version, args.backend)
+             args.figure, args.version, args.backend, args.data_type)
