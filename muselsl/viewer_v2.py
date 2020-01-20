@@ -162,7 +162,7 @@ class Canvas(app.Canvas):
         self.data_f = np.zeros((n_samples, self.n_chans))
         self.data = np.zeros((n_samples, self.n_chans))
         
-        self.bf = create_filter(self.data_f.T, self.sfreq, 3, 40.,
+        self.bf = create_filter(self.data_f.T, self.sfreq, 3, min(40., self.sfreq / 2 - .1),
                                 method='fir')
         print(f"sample_freq: {self.sfreq}")
 
