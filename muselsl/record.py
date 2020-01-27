@@ -7,11 +7,11 @@ from time import time, sleep, strftime, gmtime
 from .stream import find_muse
 from .muse import Muse
 from . constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
-
+from multiprocessing import Event
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
 
 
-def record(duration, filename=None, dejitter=False, data_source="EEG"):
+def record(duration, filename=None, dejitter=False, data_source="EEG", abort=None):
     chunk_length = LSL_EEG_CHUNK
     if data_source == "PPG":
         chunk_length = LSL_PPG_CHUNK
@@ -63,11 +63,34 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
     time_correction = inlet.time_correction()
     print('Start recording at time t=%.3f' % t_init)
     print('Time correction: ', time_correction)
-    while (time() - t_init) < duration:
+
+
+    def is_done():
+        if duration is None:
+            if abort.is_set():
+                print("abborting recording")
+            else:
+                print("not abborting")
+            return abort.is_set()
+        else:
+            return (time() - t_init) >= duration
+
+
+    while not is_done():
         try:
+            print("data1")
+            # import signal
+        
+
+            # def handler(*argc):
+            #     raise KeyboardInterrupt()
+        
+
+            # signal.signal(signal.SIGALRM, handler)
+            # signal.alarm(2)
             data, timestamp = inlet.pull_chunk(timeout=1.0,
                                                max_samples=chunk_length)
-
+            # print("data")
             if timestamp:
                 res.append(data)
                 timestamps.extend(timestamp)
@@ -76,7 +99,9 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
                 if timestamp:
                     markers.append([marker, timestamp])
         except KeyboardInterrupt:
+            print("interupt")
             break
+    print("recording stopped")
 
     time_correction = inlet.time_correction()
     print('Time correction: ', time_correction)
@@ -111,7 +136,7 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
 
     data.to_csv(filename, float_format='%.3f', index=False)
 
-    print('Done - wrote file: ' + filename + '.')
+    print('Done - wrote file: ' + str(filename) + '.')
 
 # Rercord directly from a Muse without the use of LSL
 

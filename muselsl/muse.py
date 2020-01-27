@@ -47,6 +47,14 @@ class Muse():
 
         self.backend = helper.resolve_backend(backend)
 
+    def __exit__(self, exc_type, exc_value, traceback):
+        if hasattr(self, "device"):
+            self.stop()
+            self.disconnect()
+    
+    def __enter__(self):
+        return self
+
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
         try:

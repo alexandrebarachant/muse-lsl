@@ -59,12 +59,13 @@ def find_muse(name=None):
 
 
 # Begins LSL stream(s) from a Muse with a given address with data sources determined by arguments
-def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False,):
+def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False,abort=None):
     bluemuse = backend == 'bluemuse'
     if not bluemuse:
         if not address:
             found_muse = find_muse(name)
             if not found_muse:
+                abort.put(True)
                 return
             else:
                 address = found_muse['address']
@@ -137,42 +138,49 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
 
     if all(f is None for f in [push_eeg, push_ppg, push_acc, push_gyro]):
         print('Stream initiation failed: At least one data source must be enabled.')
+        abort.put(True)
         return
 
     muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
                 backend=backend, interface=interface, name=name)
+    with muse:
+        if(bluemuse):
+            muse.connect()
+            if not address and not name:
+                print('Targeting first device BlueMuse discovers...')
+            else:
+                print('Targeting device: '
+                    + ':'.join(filter(None, [name, address])) + '...')
+            print('\n*BlueMuse will auto connect and stream when the device is found. \n*You can also use the BlueMuse interface to manage your stream(s).')
+            muse.start()
+            abort.put(True)
+            return
 
-    if(bluemuse):
-        muse.connect()
-        if not address and not name:
-            print('Targeting first device BlueMuse discovers...')
-        else:
-            print('Targeting device: '
-                  + ':'.join(filter(None, [name, address])) + '...')
-        print('\n*BlueMuse will auto connect and stream when the device is found. \n*You can also use the BlueMuse interface to manage your stream(s).')
-        muse.start()
-        return
+        didConnect = muse.connect()
 
-    didConnect = muse.connect()
+        if(didConnect):
+            print('Connected.')
+            muse.start()
 
-    if(didConnect):
-        print('Connected.')
-        muse.start()
+            eeg_string = " EEG" if not eeg_disabled else ""
+            ppg_string = " PPG" if ppg_enabled else ""
+            acc_string = " ACC" if acc_enabled else ""
+            gyro_string = " GYRO" if gyro_enabled else ""
 
-        eeg_string = " EEG" if not eeg_disabled else ""
-        ppg_string = " PPG" if ppg_enabled else ""
-        acc_string = " ACC" if acc_enabled else ""
-        gyro_string = " GYRO" if gyro_enabled else ""
+            print("Streaming%s%s%s%s..." %
+                (eeg_string, ppg_string, acc_string, gyro_string))
+            
+            def is_done():
+                if abort is not None:
+                    return abort.get() if abort.qsize() else False
+                else:
+                    return (time() - muse.last_timestamp >= AUTO_DISCONNECT_DELAY)
 
-        print("Streaming%s%s%s%s..." %
-              (eeg_string, ppg_string, acc_string, gyro_string))
+            while not is_done():
+                try:
+                    sleep(1)
+                except KeyboardInterrupt:
+                    break
 
-        while time() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
-            try:
-                sleep(1)
-            except KeyboardInterrupt:
-                muse.stop()
-                muse.disconnect()
-                break
-
-        print('Disconnected.')
+            print('Disconnected.')
+        abort.put(True)
