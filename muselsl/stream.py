@@ -10,7 +10,7 @@ from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
     MUSE_NB_EEG_CHANNELS, MUSE_SAMPLING_EEG_RATE, LSL_EEG_CHUNK,  \
     MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_PPG_RATE, LSL_PPG_CHUNK, \
     MUSE_NB_ACC_CHANNELS, MUSE_SAMPLING_ACC_RATE, LSL_ACC_CHUNK, \
-    MUSE_NB_GYRO_CHANNELS, MUSE_SAMPLING_GYRO_RATE, LSL_GYRO_CHUNK
+    MUSE_NB_GYRO_CHANNELS, MUSE_SAMPLING_GYRO_RATE, LSL_GYRO_CHUNK, StreamProcMessage
 
 
 # Returns a list of available Muse devices.
@@ -59,13 +59,13 @@ def find_muse(name=None):
 
 
 # Begins LSL stream(s) from a Muse with a given address with data sources determined by arguments
-def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False,abort=None):
+def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False,message_get=None,message_set=None):
     bluemuse = backend == 'bluemuse'
     if not bluemuse:
         if not address:
             found_muse = find_muse(name)
             if not found_muse:
-                abort.put(True)
+                message_set.put(StreamProcMessage.Aborting)
                 return
             else:
                 address = found_muse['address']
@@ -138,7 +138,7 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
 
     if all(f is None for f in [push_eeg, push_ppg, push_acc, push_gyro]):
         print('Stream initiation failed: At least one data source must be enabled.')
-        abort.put(True)
+        message_set.put(StreamProcMessage.Aborting)
         return
 
     muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
@@ -153,7 +153,6 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
                     + ':'.join(filter(None, [name, address])) + '...')
             print('\n*BlueMuse will auto connect and stream when the device is found. \n*You can also use the BlueMuse interface to manage your stream(s).')
             muse.start()
-            abort.put(True)
             return
 
         didConnect = muse.connect()
@@ -170,9 +169,11 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
             print("Streaming%s%s%s%s..." %
                 (eeg_string, ppg_string, acc_string, gyro_string))
             
+            message_set.put(StreamProcMessage.Started)
+
             def is_done():
-                if abort is not None:
-                    return abort.get() if abort.qsize() else False
+                if message_get is not None:
+                    return message_get.get() == StreamProcMessage.Aborting if message_get.qsize() else False
                 else:
                     return (time() - muse.last_timestamp >= AUTO_DISCONNECT_DELAY)
 
@@ -183,4 +184,4 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
                     break
 
             print('Disconnected.')
-        abort.put(True)
+        message_set.put(StreamProcMessage.Aborting)
