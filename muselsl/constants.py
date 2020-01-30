@@ -38,3 +38,9 @@ LSL_BUFFER = 360
 
 VIEW_SUBSAMPLE = 2
 VIEW_BUFFER = 12
+
+from enum import Enum
+
+class StreamProcMessage(Enum):
+    Started=0
+    Aborting=1
