@@ -11,7 +11,8 @@ from multiprocessing import Event
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
 
 
-def record(duration, filename=None, dejitter=False, data_source="EEG", abort=None):
+def record(duration, filename=None, dejitter=False, data_source="EEG", abort=None, source_id = None):
+    #'Muse%s' % address
     chunk_length = LSL_EEG_CHUNK
     if data_source == "PPG":
         chunk_length = LSL_PPG_CHUNK
@@ -31,19 +32,23 @@ def record(duration, filename=None, dejitter=False, data_source="EEG", abort=Non
         print("Can't find %s stream." % (data_source))
         return
 
-    print("Started acquiring data.")
+    if source_id is not None:
+        streams = [s for s in streams if s.source_id() == 'Muse%s' % source_id]
+        assert len(streams) == 1, f"Expected to find exaclty one stream with source_id: {'Muse%s' % source_id}, but found {len(inlet)}"
+    
     inlet = StreamInlet(streams[0], max_chunklen=chunk_length)
+    print("Started acquiring data.")
     # eeg_time_correction = inlet.time_correction()
 
-    print("Looking for a Markers stream...")
-    marker_streams = resolve_byprop(
-        'name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
+    # print("Looking for a Markers stream...")
+    # marker_streams = resolve_byprop(
+    #     'name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
 
-    if marker_streams:
-        inlet_marker = StreamInlet(marker_streams[0])
-    else:
-        inlet_marker = False
-        print("Can't find Markers stream.")
+    # if marker_streams:
+    #     inlet_marker = StreamInlet(marker_streams[0])
+    # else:
+    #     inlet_marker = False
+    #     print("Can't find Markers stream.")
 
     info = inlet.info()
     description = info.desc()
@@ -68,17 +73,15 @@ def record(duration, filename=None, dejitter=False, data_source="EEG", abort=Non
     def is_done():
         if duration is None:
             if abort.is_set():
-                print("abborting recording")
-            else:
-                print("not abborting")
+                print(f"[Aborting] Recording of {data_source}")
             return abort.is_set()
         else:
             return (time() - t_init) >= duration
 
+    first_iteration = True
 
     while not is_done():
         try:
-            print("data1")
             # import signal
         
 
@@ -94,14 +97,20 @@ def record(duration, filename=None, dejitter=False, data_source="EEG", abort=Non
             if timestamp:
                 res.append(data)
                 timestamps.extend(timestamp)
-            if inlet_marker:
-                marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
-                if timestamp:
-                    markers.append([marker, timestamp])
+            # if inlet_marker:
+            #     marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
+            #     if timestamp:
+            #         markers.append([marker, timestamp])
+            
+            if first_iteration:
+                first_iteration = False
+                print(f"[Success] Started recording of {data_source}")
+
+
         except KeyboardInterrupt:
             print("interupt")
             break
-    print("recording stopped")
+    print(f"[Stopped] recording of {data_source}")
 
     time_correction = inlet.time_correction()
     print('Time correction: ', time_correction)
@@ -119,16 +128,16 @@ def record(duration, filename=None, dejitter=False, data_source="EEG", abort=Non
     res = np.c_[timestamps, res]
     data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
 
-    if inlet_marker:
-        n_markers = len(markers[0][0])
-        for ii in range(n_markers):
-            data['Marker%d' % ii] = 0
-        # process markers:
-        for marker in markers:
-            # find index of markers
-            ix = np.argmin(np.abs(marker[1] - timestamps))
-            for ii in range(n_markers):
-                data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
+    # if inlet_marker:
+    #     n_markers = len(markers[0][0])
+    #     for ii in range(n_markers):
+    #         data['Marker%d' % ii] = 0
+    #     # process markers:
+    #     for marker in markers:
+    #         # find index of markers
+    #         ix = np.argmin(np.abs(marker[1] - timestamps))
+    #         for ii in range(n_markers):
+    #             data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
 
     directory = os.path.dirname(filename)
     if not os.path.exists(directory):
