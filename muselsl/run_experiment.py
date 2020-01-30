@@ -4,12 +4,14 @@ from multiprocessing import Process, Pipe, Queue, Event
 from datetime import datetime
 from pathlib import Path
 from time import time, sleep
+from .constants import StreamProcMessage
 
 muse_macs = {
     "4EB2": "00:55:DA:B7:4E:B2"
+    ,"528C": "00:55:DA:B5:52:8C"
 }
 
-NUM_PARTICIPANTS_PER_TRAIL = 1
+NUM_PARTICIPANTS_PER_TRIAL = 2
 
 ALL_DATATYPES=["EEG","PPG","ACC","GYRO"]
 
@@ -49,15 +51,20 @@ class Participant:
 
     def start_streaming(self):
         from . import stream
-        self.streaming_queue = Queue()
+        self.streaming_queue_tx = Queue()
+        self.streaming_queue_rx = Queue()
         self.streaming_proc = Process(target =stream, name="streaming_proc" ,kwargs={
                 "address":self.muse_mac, "ppg_enabled":True,
                 "acc_enabled":True, "gyro_enabled":True
-                ,"abort": self.streaming_queue})
+                ,"message_set": self.streaming_queue_rx
+                ,"message_get": self.streaming_queue_tx})
         self.streaming_proc.start()
+        while self.streaming_queue_rx.empty():
+            sleep(0.5)
+        return self.streaming_queue_rx.get() == StreamProcMessage.Started
     
     def stop_streaming(self, join=True):
-        self.streaming_queue.put(True)
+        self.streaming_queue_tx.put(StreamProcMessage.Aborting)
         if join:
             self.streaming_proc.join()
 
@@ -71,6 +78,7 @@ class Participant:
                 ,"dejitter":dejitter
                 ,"data_source":data_type
                 ,"abort":e
+                ,"source_id": self.muse_mac
             })
         self.recording_procs[data_type] = p
         p.start()
@@ -82,10 +90,10 @@ class Participant:
             p.join()
     
     def record_all(self, dejitter, data_types):
-        data_path = Path(self.experimental_run.data_root) / Path(f"trail{self.experimental_run.trail_id}") / Path(f"part{self.participant_id}")
+        data_path = Path(self.experimental_run.data_root) / Path(f"trial{self.experimental_run.trial_id}") / Path(f"part{self.participant_id}")
         data_path.mkdir(parents=True)
         for t in data_types:
-            self._start_recording(data_path / "t.csv",dejitter,t)
+            self._start_recording(data_path / f"{t}.csv",dejitter,t)
 
     def stop_all_recordings(self, join=True):
         for p in self.recording_procs.values():
@@ -98,12 +106,12 @@ class Participant:
         self.recording_procs = {}
 
 class ExperimentalRun:
-    def __init__(self, data_root ,num_participants, trail_id =None):
+    def __init__(self, data_root ,num_participants, trial_id =None):
         self.num_participants = num_participants
         self.participants = []
-        if trail_id is None:
-            trail_id = datetime.now().isoformat()
-        self.trail_id = trail_id
+        if trial_id is None:
+            trial_id = datetime.now().isoformat()
+        self.trial_id = trial_id
         self.data_root = Path(data_root)
         self.data_root.mkdir(parents=True, exist_ok=True)
     
@@ -114,29 +122,36 @@ class ExperimentalRun:
             self.participants.append(tmp)
         
         for p in self.participants:
-            p.start_streaming()
-        
+            success = False
+            while not success:
+                _ = input("Press any key to try again ...")
+                success = p.start_streaming()
+                print(f"{'Success' if success else 'Failed'} Started streaming of Part. {p.participant_id}")
+
+
         for p in self.participants:
             p.record_all(dejitter=True, data_types=ALL_DATATYPES)
         print("all recording")
         while True:
             try:
-                if p.streaming_queue.qsize() and p.streaming_queue.get():
-                    print("something went wrong")
-                    break
+                for p in self.participants:
+                    if p.streaming_queue_rx.qsize() and p.streaming_queue_rx.get() == StreamProcMessage.Aborting:
+                        print("something went wrong")
+                        break
                 sleep(1)
             except KeyboardInterrupt:
                 break
 
 
         for p in self.participants:
-            p.stop_streaming()
             print("stopping recordings")
             p.stop_all_recordings()
+            print("stopping stream")
+            p.stop_streaming()
         
         print("recordings stopped")
         for p in self.participants:
             p.streaming_proc.join()
 
-run = ExperimentalRun(data_root="test_recordings", num_participants=NUM_PARTICIPANTS_PER_TRAIL)
+run = ExperimentalRun(data_root="test_recordings", num_participants=NUM_PARTICIPANTS_PER_TRIAL)
 run.start()
