@@ -60,8 +60,13 @@ def find_muse(name=None):
 
 # Begins LSL stream(s) from a Muse with a given address with data sources determined by arguments
 def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False,):
-    bluemuse = backend == 'bluemuse'
-    if not bluemuse:
+    # If no data types are enabled, we warn the user and return immediately.
+    if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
+        print('Stream initiation failed: At least one data source must be enabled.')
+        return
+
+    # For any backend except bluemuse, we will start LSL streams hooked up to the muse callbacks.
+    if backend != 'bluemuse':
         if not address:
             found_muse = find_muse(name)
             if not found_muse:
@@ -70,80 +75,110 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
                 address = found_muse['address']
                 name = found_muse['name']
 
-    if not eeg_disabled:
-        eeg_info = StreamInfo('Muse', 'EEG', MUSE_NB_EEG_CHANNELS, MUSE_SAMPLING_EEG_RATE, 'float32',
-                              'Muse%s' % address)
-        eeg_info.desc().append_child_value("manufacturer", "Muse")
-        eeg_channels = eeg_info.desc().append_child("channels")
+        if not eeg_disabled:
+            eeg_info = StreamInfo('Muse', 'EEG', MUSE_NB_EEG_CHANNELS, MUSE_SAMPLING_EEG_RATE, 'float32',
+                                'Muse%s' % address)
+            eeg_info.desc().append_child_value("manufacturer", "Muse")
+            eeg_channels = eeg_info.desc().append_child("channels")
 
-        for c in ['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX']:
-            eeg_channels.append_child("channel") \
-                .append_child_value("label", c) \
-                .append_child_value("unit", "microvolts") \
-                .append_child_value("type", "EEG")
+            for c in ['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX']:
+                eeg_channels.append_child("channel") \
+                    .append_child_value("label", c) \
+                    .append_child_value("unit", "microvolts") \
+                    .append_child_value("type", "EEG")
 
-        eeg_outlet = StreamOutlet(eeg_info, LSL_EEG_CHUNK)
+            eeg_outlet = StreamOutlet(eeg_info, LSL_EEG_CHUNK)
 
-    if ppg_enabled:
-        ppg_info = StreamInfo('Muse', 'PPG', MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_PPG_RATE,
-                              'float32', 'Muse%s' % address)
-        ppg_info.desc().append_child_value("manufacturer", "Muse")
-        ppg_channels = ppg_info.desc().append_child("channels")
+        if ppg_enabled:
+            ppg_info = StreamInfo('Muse', 'PPG', MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_PPG_RATE,
+                                'float32', 'Muse%s' % address)
+            ppg_info.desc().append_child_value("manufacturer", "Muse")
+            ppg_channels = ppg_info.desc().append_child("channels")
 
-        for c in ['PPG1', 'PPG2', 'PPG3']:
-            ppg_channels.append_child("channel") \
-                .append_child_value("label", c) \
-                .append_child_value("unit", "mmHg") \
-                .append_child_value("type", "PPG")
+            for c in ['PPG1', 'PPG2', 'PPG3']:
+                ppg_channels.append_child("channel") \
+                    .append_child_value("label", c) \
+                    .append_child_value("unit", "mmHg") \
+                    .append_child_value("type", "PPG")
 
-        ppg_outlet = StreamOutlet(ppg_info, LSL_PPG_CHUNK)
+            ppg_outlet = StreamOutlet(ppg_info, LSL_PPG_CHUNK)
 
-    if acc_enabled:
-        acc_info = StreamInfo('Muse', 'ACC', MUSE_NB_ACC_CHANNELS, MUSE_SAMPLING_ACC_RATE,
-                              'float32', 'Muse%s' % address)
-        acc_info.desc().append_child_value("manufacturer", "Muse")
-        acc_channels = acc_info.desc().append_child("channels")
+        if acc_enabled:
+            acc_info = StreamInfo('Muse', 'ACC', MUSE_NB_ACC_CHANNELS, MUSE_SAMPLING_ACC_RATE,
+                                'float32', 'Muse%s' % address)
+            acc_info.desc().append_child_value("manufacturer", "Muse")
+            acc_channels = acc_info.desc().append_child("channels")
 
-        for c in ['X', 'Y', 'Z']:
-            acc_channels.append_child("channel") \
-                .append_child_value("label", c) \
-                .append_child_value("unit", "g") \
-                .append_child_value("type", "accelerometer")
+            for c in ['X', 'Y', 'Z']:
+                acc_channels.append_child("channel") \
+                    .append_child_value("label", c) \
+                    .append_child_value("unit", "g") \
+                    .append_child_value("type", "accelerometer")
 
-        acc_outlet = StreamOutlet(acc_info, LSL_ACC_CHUNK)
+            acc_outlet = StreamOutlet(acc_info, LSL_ACC_CHUNK)
 
-    if gyro_enabled:
-        gyro_info = StreamInfo('Muse', 'GYRO', MUSE_NB_GYRO_CHANNELS, MUSE_SAMPLING_GYRO_RATE,
-                               'float32', 'Muse%s' % address)
-        gyro_info.desc().append_child_value("manufacturer", "Muse")
-        gyro_channels = gyro_info.desc().append_child("channels")
+        if gyro_enabled:
+            gyro_info = StreamInfo('Muse', 'GYRO', MUSE_NB_GYRO_CHANNELS, MUSE_SAMPLING_GYRO_RATE,
+                                'float32', 'Muse%s' % address)
+            gyro_info.desc().append_child_value("manufacturer", "Muse")
+            gyro_channels = gyro_info.desc().append_child("channels")
 
-        for c in ['X', 'Y', 'Z']:
-            gyro_channels.append_child("channel") \
-                .append_child_value("label", c) \
-                .append_child_value("unit", "dps") \
-                .append_child_value("type", "gyroscope")
+            for c in ['X', 'Y', 'Z']:
+                gyro_channels.append_child("channel") \
+                    .append_child_value("label", c) \
+                    .append_child_value("unit", "dps") \
+                    .append_child_value("type", "gyroscope")
 
-        gyro_outlet = StreamOutlet(gyro_info, LSL_GYRO_CHUNK)
+            gyro_outlet = StreamOutlet(gyro_info, LSL_GYRO_CHUNK)
 
-    def push(data, timestamps, outlet):
-        for ii in range(data.shape[1]):
-            outlet.push_sample(data[:, ii], timestamps[ii])
+        def push(data, timestamps, outlet):
+            for ii in range(data.shape[1]):
+                outlet.push_sample(data[:, ii], timestamps[ii])
 
-    push_eeg = partial(push, outlet=eeg_outlet) if not eeg_disabled else None
-    push_ppg = partial(push, outlet=ppg_outlet) if ppg_enabled else None
-    push_acc = partial(push, outlet=acc_outlet) if acc_enabled else None
-    push_gyro = partial(push, outlet=gyro_outlet) if gyro_enabled else None
+        push_eeg = partial(push, outlet=eeg_outlet) if not eeg_disabled else None
+        push_ppg = partial(push, outlet=ppg_outlet) if ppg_enabled else None
+        push_acc = partial(push, outlet=acc_outlet) if acc_enabled else None
+        push_gyro = partial(push, outlet=gyro_outlet) if gyro_enabled else None
 
-    if all(f is None for f in [push_eeg, push_ppg, push_acc, push_gyro]):
-        print('Stream initiation failed: At least one data source must be enabled.')
-        return
+        muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
+                    backend=backend, interface=interface, name=name)
 
-    muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                backend=backend, interface=interface, name=name)
+        didConnect = muse.connect()
 
-    if(bluemuse):
+        if(didConnect):
+            print('Connected.')
+            muse.start()
+
+            eeg_string = " EEG" if not eeg_disabled else ""
+            ppg_string = " PPG" if ppg_enabled else ""
+            acc_string = " ACC" if acc_enabled else ""
+            gyro_string = " GYRO" if gyro_enabled else ""
+
+            print("Streaming%s%s%s%s..." %
+                (eeg_string, ppg_string, acc_string, gyro_string))
+
+            while time() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
+                try:
+                    sleep(1)
+                except KeyboardInterrupt:
+                    muse.stop()
+                    muse.disconnect()
+                    break
+
+            print('Disconnected.')
+
+    # For bluemuse backend, we don't need to create LSL streams directly, since these are handled in BlueMuse itself.
+    else:
+        # Toggle all data stream types in BlueMuse.
+        subprocess.call('start bluemuse://setting?key=eeg_enabled!value={}'.format('false' if eeg_disabled else 'true'), shell=True)
+        subprocess.call('start bluemuse://setting?key=ppg_enabled!value={}'.format('true' if ppg_enabled else 'false'), shell=True)
+        subprocess.call('start bluemuse://setting?key=accelerometer_enabled!value={}'.format('true' if acc_enabled else 'false'), shell=True)
+        subprocess.call('start bluemuse://setting?key=gyroscope_enabled!value={}'.format('true' if gyro_enabled else 'false'), shell=True)
+
+        muse = Muse(address=address, callback_eeg=None, callback_ppg=None, callback_acc=None, callback_gyro=None,
+                    backend=backend, interface=interface, name=name)
         muse.connect()
+
         if not address and not name:
             print('Targeting first device BlueMuse discovers...')
         else:
@@ -151,28 +186,3 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
                   + ':'.join(filter(None, [name, address])) + '...')
         print('\n*BlueMuse will auto connect and stream when the device is found. \n*You can also use the BlueMuse interface to manage your stream(s).')
         muse.start()
-        return
-
-    didConnect = muse.connect()
-
-    if(didConnect):
-        print('Connected.')
-        muse.start()
-
-        eeg_string = " EEG" if not eeg_disabled else ""
-        ppg_string = " PPG" if ppg_enabled else ""
-        acc_string = " ACC" if acc_enabled else ""
-        gyro_string = " GYRO" if gyro_enabled else ""
-
-        print("Streaming%s%s%s%s..." %
-              (eeg_string, ppg_string, acc_string, gyro_string))
-
-        while time() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
-            try:
-                sleep(1)
-            except KeyboardInterrupt:
-                muse.stop()
-                muse.disconnect()
-                break
-
-        print('Disconnected.')
