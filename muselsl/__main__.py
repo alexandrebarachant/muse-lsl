@@ -29,6 +29,11 @@ def main():
                 -f --figure     Window size.
                 -v --version    Viewer version (1 or 2) - 1 is the default stable version, 2 is in development (and takes no arguments).
                 -b --backend    Matplotlib backend to use. Default: TkAgg
+    record   Recording an experiment.
+                -d --directory      Root-directory to store recorded data in.
+                -n --participants   The number of participants in this run.
+                -i --trial-id       The id of this trial. Data is stored in a subdirectory with this name.
+                                    If no id is provided, the current timestamp is used instead.
         ''')
 
     parser.add_argument('command', help='Command to run.')

@@ -50,11 +50,32 @@ class CLI:
         stream(args.address, args.backend,
                args.interface, args.name, args.ppg, args.acc, args.gyro, args.disable_eeg)
 
+    def record(self):
+        from .run_experiment import ExperimentalRun
+
+        parser = argparse.ArgumentParser(
+            description='Start recording of an experiment.')
+        parser.add_argument("-d", "--directory",
+                            dest="data_root", type=str, required=True,
+                            help="Root-directory to store recorded data in.")
+        parser.add_argument("-n", "--participants",
+                            dest="num_participants", type=int, required=True,
+                            help="The number of participants in this run.")
+        parser.add_argument("-i", "--trial-id",
+                            dest="trial_id", type=str, default=None,
+                            help="The id of this trial. Data is stored in a subdirectory with this name."
+                                 + "If no id is provided, the current timestamp is used instead.")
+        args = parser.parse_args(sys.argv[2:])
+
+        experiment = ExperimentalRun(data_root=args.data_root,
+                                     num_participants=args.num_participants, trial_id=args.trial_id)
+        experiment.start()
+
     def view(self):
         parser = argparse.ArgumentParser(
             description='View data from an LSL stream.')
         parser.add_argument("-t", "--type", type=str, default="EEG", dest="data_type",
-                    help="Data type to view. Either EEG, PPG, ACC, or GYRO.")
+                            help="Data type to view. Either EEG, PPG, ACC, or GYRO.")
         parser.add_argument("-w", "--window",
                             dest="window", type=float, default=5.,
                             help="Window length to display in seconds.")
@@ -74,9 +95,9 @@ class CLI:
                             dest="backend", type=str, default='TkAgg',
                             help="Matplotlib backend to use. Default: %(default)s")
         parser.add_argument("-a", "--address",
-                    dest="source_id", type=str, default=None,
-                    help="Device MAC address.")
+                            dest="source_id", type=str, default=None,
+                            help="Device MAC address.")
         args = parser.parse_args(sys.argv[2:])
         from . import view
         view(args.window, args.scale, args.refresh,
-             args.figure, args.version, args.backend, args.data_type,args.source_id)
+             args.figure, args.version, args.backend, args.data_type, args.source_id)
