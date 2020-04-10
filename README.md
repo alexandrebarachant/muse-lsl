@@ -7,19 +7,32 @@ This repo is forked from [https://github.com/alexandrebarachant/muse-lsl](https:
 
 The original code was modified and extended to allow streaming and recording of two or more muses, simultaniously.
 
+## Installation
+
+Install this repository as a pip package with
+
+    pip3 install .
+    
+or just install the dependencies using:
+
+    pip3 install -r requirements.txt
+
+If you *did not* install the repo as a pip package, you need to replace `muselsl` with
+`python3 -m muselsl` in all following examples.
+
 ## Hardware Setup
 
 We tested different hardware setups for multiple streams.
 The most reliable setup, which allowed streaming of all datastreams from two muses was the following:
 
 - Two Muses
-- Two Laptops (We used a Macbook with `BLED112 dongle` and a linux machine with integraded bluetooth.)
-- Wireless (or wired) Network with peer to peer trafic allowed (HPI network might not work, we made a hotspot using an anrdoid phone)
+- Two Laptops (We used a Macbook with `BLED112 dongle` and a linux machine with integrated bluetooth.)
+- Wireless (or wired) network with peer to peer traffic allowed (HPI network might not work, we made a hotspot using an anrdoid phone)
 
 One of the laptops acts as a *stream source*, while the other *records* its own stream and the stream from the stream source, which is sent over
 the network.
 
-### Stream Source
+## Stream Source
 
 The stream source is started before the recorder and must run until after the recorder has stopped.
 If the stream source crashes it should be restarted, the recorder can recover only if the stream source is restarted, otherwise the recorder will
@@ -31,13 +44,32 @@ The stream source is started with the following command:
 
 Where `<MAC-ADRESS-OF-MUSE>` must be replaced with the mac-address of one of the muses.
 
-### Recorder
+In our setup one stream source is started on the *stream source* machine and one is started
+for the other muse, on the *recording* machine.
+
+
+## View
+
+Before starting the recording, make sure all streams are coming through, and are of decent quality.
+This can be done using the viewer.
+
+    muselsl view -v 2 -a <MAC-ADRESS-OF-MUSE> -t <DATA-TYPE>
+    
+Where data-type can be any of:
+- PPG
+- EEG
+- ACC
+- GYRO
+
+> It is also a good idea, to at least monitor the EEG streams of all participant during the
+> experiment, to be able to detect artifacts early and fix them (eg. loose electrodes, muscle noise, etc.).
+
+## Recorder
 
 When the stream source is running, the recorder script can be started with the following command:
 
-    python3 -m muselsl.run_experiment
+    muselsl record -d <data-path> -n <number-of-participants> [-i <trial-id>]
 
-It should be run from the root directory of this repository.
 The script will ask for the `MUSE-ID` of each participant, which is written on each muse device.
 The `MUSE-ID` are the last two bytes (four letters) of the mac address.
 
@@ -47,9 +79,10 @@ These timestamps can be used to mark when different parts of the experiment begi
 
 The recording will continue, until it is stopped by pressing `CTRL` `+` `C`.
 
-All recordings are saved in the directory `recordings`.
-Every time when running the `run_experiment` script a new subdirectory with the current timestamp is created.
-This direcrory contains the recorded markers, which are stored in `markers.csv` and a subdirectory for each participant.
+All recordings are saved in the specified directory.
+If no `trial-id` is provided, the current timestamp is used instead to create a new subdirectory,
+in which all data is stored.
+This directory contains the recorded markers, which are stored in `markers.csv` and a subdirectory for each participant.
 
 Each participant directory contains the following files:
 
@@ -57,17 +90,18 @@ Each participant directory contains the following files:
 | File | Description |
 |------|-------------|
 |ACC.csv | Data from the Accelerometer |
-| EEG.csv| EEG Data|
-|GYRO.csv | Gyroscop Data |
+|EEG.csv| EEG Data|
+|GYRO.csv | Gyroscope Data |
 |PPG.csv | Hear rate measured with PPG |
 
 ## other Setups
 
-We tried using rapsberry pis as stream source, however 
-even the newest modell 4 with a `BLED112 dongle`
-was not able to stream reliale for more than 10 minutes.
-It might be possible, though to use raspberry pis if not all data
+We tried using Raspberry Pi's as stream source, however 
+even the newest model 4 with a `BLED112 dongle`
+was not able to stream reliable for more than 10 minutes.
+It might be possible, though to use Raspberry Pi's, if not all data
 streams are enabled (eg. if only recording ppg).
+See [this github issue](https://github.com/alexandrebarachant/muse-lsl/issues/55) for more information.
 
 
 [1]
