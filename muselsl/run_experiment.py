@@ -5,10 +5,12 @@ from datetime import datetime
 from pathlib import Path
 from time import time, sleep
 from .constants import StreamProcMessage
+import csv
 
 muse_macs = {
     "4EB2": "00:55:DA:B7:4E:B2"
     ,"528C": "00:55:DA:B5:52:8C"
+    ,"528F": "00:55:DA:B5:52:8F"
 }
 
 NUM_PARTICIPANTS_PER_TRIAL = 2
@@ -90,8 +92,7 @@ class Participant:
             p.join()
     
     def record_all(self, dejitter, data_types):
-        data_path = Path(self.experimental_run.data_root) / Path(f"trial{self.experimental_run.trial_id}") / Path(f"part{self.participant_id}")
-        data_path.mkdir(parents=True)
+        data_path = Path(self.experimental_run.data_root)  / Path(f"part{self.participant_id}")
         for t in data_types:
             self._start_recording(data_path / f"{t}.csv",dejitter,t)
 
@@ -112,46 +113,61 @@ class ExperimentalRun:
         if trial_id is None:
             trial_id = datetime.now().isoformat()
         self.trial_id = trial_id
-        self.data_root = Path(data_root)
-        self.data_root.mkdir(parents=True, exist_ok=True)
+        self.data_root = Path(data_root) / Path(f"trial{self.trial_id}")
+        self.data_root.mkdir(parents=True, exist_ok=False)
+        self.markers_path = self.data_root / "markers.csv"
+        
+        markers_file = self.markers_path.open("w")
+        fieldnames = ['timestamp', 'tag']
+        self.markers = csv.DictWriter(markers_file, fieldnames)
+        self.markers.writeheader()
     
+    def add_marker(self, tag):
+        self.markers.writerow({"timestamp":datetime.now().isoformat(), "tag": tag})
+
     def start(self):
         for i in range(self.num_participants):
             tmp = Participant(self, i)
             tmp.get_input()
             self.participants.append(tmp)
         
-        for p in self.participants:
-            success = False
-            while not success:
-                _ = input("Press any key to try again ...")
-                success = p.start_streaming()
-                print(f"{'Success' if success else 'Failed'} Started streaming of Part. {p.participant_id}")
+        # for p in self.participants:
+        #     success = False
+        #     while not success:
+        #         _ = input("Press any key to try again ...")
+        #         success = p.start_streaming()
+        #         print(f"{'Success' if success else 'Failed'} Started streaming of Part. {p.participant_id}")
 
 
         for p in self.participants:
             p.record_all(dejitter=True, data_types=ALL_DATATYPES)
+       
         print("all recording")
+        self.add_marker("recording_started")
         while True:
             try:
-                for p in self.participants:
-                    if p.streaming_queue_rx.qsize() and p.streaming_queue_rx.get() == StreamProcMessage.Aborting:
-                        print("something went wrong")
-                        break
-                sleep(1)
+                # for p in self.participants:
+                #     if p.streaming_queue_rx.qsize() and p.streaming_queue_rx.get() == StreamProcMessage.Aborting:
+                #         print("something went wrong")
+                #         break
+                tag = input("Marker:")
+                self.add_marker(tag)
+                #sleep(1)
             except KeyboardInterrupt:
+                self.add_marker("KeyboardInterrupt")
                 break
 
 
         for p in self.participants:
             print("stopping recordings")
             p.stop_all_recordings()
-            print("stopping stream")
-            p.stop_streaming()
+            # print("stopping stream")
+            # p.stop_streaming()
         
         print("recordings stopped")
-        for p in self.participants:
-            p.streaming_proc.join()
+        self.add_marker("recordings stopped")
+        # for p in self.participants:
+        #     p.streaming_proc.join()
 
-run = ExperimentalRun(data_root="test_recordings", num_participants=NUM_PARTICIPANTS_PER_TRIAL)
+run = ExperimentalRun(data_root="recordings", num_participants=NUM_PARTICIPANTS_PER_TRIAL)
 run.start()
