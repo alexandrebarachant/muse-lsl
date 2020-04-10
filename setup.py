@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from setuptools import setup, find_packages
 from shutil import copyfile
 import os
@@ -38,16 +40,7 @@ setup(
     zip_safe=False,
     long_description=long_description,
     long_description_content_type='text/markdown',
-    install_requires=[
-        "bitstring",
-        "pygatt",
-        "pandas",
-        "scikit-learn",
-        "numpy",
-        "seaborn",
-        "pexpect",
-    ] +
-    (["pylsl==1.10.5"] if os.sys.platform.startswith("linux") else ["pylsl"]),
+    install_requires=Path("requirements.txt").read_text().splitlines(),
     extras_require={"Viewer V2": ["mne", "vispy"]},
     classifiers=[
         # How mature is this project?  Common values are

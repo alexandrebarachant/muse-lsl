@@ -1,0 +1,9 @@
+bitstring
+pygatt
+pandas
+scikit-learn
+numpy
+seaborn
+pexpect
+pylsl==1.10.5; "linux" in sys.platform
+pylsl; "linux" not in sys.platform
