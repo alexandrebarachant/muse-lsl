@@ -1,158 +1,79 @@
+import csv
+import os
+from pathlib import Path
+from time import time, sleep, strftime, gmtime
+
 import numpy as np
 import pandas as pd
-import os
 from pylsl import StreamInlet, resolve_byprop
-from sklearn.linear_model import LinearRegression
-from time import time, sleep, strftime, gmtime
-from .stream import find_muse
+
+from .constants import LSL_SCAN_TIMEOUT, ChunkLength
 from .muse import Muse
-from . constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
-from multiprocessing import Event
-# Records a fixed duration of EEG data from an LSL stream into a CSV file
+from .stream import find_muse
 
 
-def record(duration, filename=None, dejitter=False, data_source="EEG", abort=None, source_id = None):
-    #'Muse%s' % address
-    chunk_length = LSL_EEG_CHUNK
-    if data_source == "PPG":
-        chunk_length = LSL_PPG_CHUNK
-    if data_source == "ACC":
-        chunk_length = LSL_ACC_CHUNK
-    if data_source == "GYRO":
-        chunk_length = LSL_GYRO_CHUNK
+def record(filename, data_source="EEG", abort=None, source_id=None):
+    """Records a fixed duration of EEG data from an LSL stream into a CSV file"""
 
-    if not filename:
-        filename = os.path.join(os.getcwd(
-        ), "%s_recording_%s.csv" % (data_source, strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
+    float_precision = 3
 
-    print("Looking for a %s stream..." % (data_source))
+    directory = Path(filename).parent
+    directory.mkdir(parents=True, exist_ok=True)
+
+    csv_file = Path(filename).open("w")
+    writer = csv.writer(csv_file, lineterminator="\n")
+
+    chunk_length = ChunkLength[data_source]
+
+    print("Looking for a {data_source} stream...")
     streams = resolve_byprop('type', data_source, timeout=LSL_SCAN_TIMEOUT)
 
     if len(streams) == 0:
-        print("Can't find %s stream." % (data_source))
+        print(f"Can't find {data_source} stream.")
         return
 
     if source_id is not None:
         streams = [s for s in streams if s.source_id() == 'Muse%s' % source_id]
-        assert len(streams) == 1, f"Expected to find exaclty one stream with source_id: {'Muse%s' % source_id}, but found {len(inlet)}"
-    
+        assert len(
+            streams) == 1, f"Expected to find exactly one stream with source_id: {'Muse%s' % source_id}, but found {len(streams)}"
+
     inlet = StreamInlet(streams[0], max_chunklen=chunk_length)
     print("Started acquiring data.")
-    # eeg_time_correction = inlet.time_correction()
-
-    # print("Looking for a Markers stream...")
-    # marker_streams = resolve_byprop(
-    #     'name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
-
-    # if marker_streams:
-    #     inlet_marker = StreamInlet(marker_streams[0])
-    # else:
-    #     inlet_marker = False
-    #     print("Can't find Markers stream.")
 
     info = inlet.info()
     description = info.desc()
 
-    Nchan = info.channel_count()
-
     ch = description.child('channels').first_child()
     ch_names = [ch.child_value('label')]
-    for i in range(1, Nchan):
+    for i in range(1, info.channel_count()):
         ch = ch.next_sibling()
         ch_names.append(ch.child_value('label'))
 
-    res = []
-    timestamps = []
-    markers = []
-    t_init = time()
-    time_correction = inlet.time_correction()
-    print('Start recording at time t=%.3f' % t_init)
-    print('Time correction: ', time_correction)
-
-
-    def is_done():
-        if duration is None:
-            if abort.is_set():
-                print(f"[Aborting] Recording of {data_source}")
-            return abort.is_set()
-        else:
-            return (time() - t_init) >= duration
+    columns = ['timestamps'] + ch_names
+    writer.writerow(columns)
 
     first_iteration = True
 
-    while not is_done():
-        try:
-            # import signal
-        
+    while not abort.is_set():
+        data, timestamp = inlet.pull_chunk(timeout=1.0,
+                                           max_samples=chunk_length)
+        ts = np.array(timestamp) + inlet.time_correction()
+        if timestamp:
+            tmp = np.c_[ts, data]
+            formatted = [[f"{x:.{float_precision}f}" for x in row] for row in tmp]
+            writer.writerows(formatted)
 
-            # def handler(*argc):
-            #     raise KeyboardInterrupt()
-        
+        if first_iteration:
+            first_iteration = False
+            print(f"[Success] Started recording of {data_source}")
 
-            # signal.signal(signal.SIGALRM, handler)
-            # signal.alarm(2)
-            data, timestamp = inlet.pull_chunk(timeout=1.0,
-                                               max_samples=chunk_length)
-            # print("data")
-            if timestamp:
-                res.append(data)
-                timestamps.extend(timestamp)
-            # if inlet_marker:
-            #     marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
-            #     if timestamp:
-            #         markers.append([marker, timestamp])
-            
-            if first_iteration:
-                first_iteration = False
-                print(f"[Success] Started recording of {data_source}")
-
-
-        except KeyboardInterrupt:
-            print("interupt")
-            break
-    print(f"[Stopped] recording of {data_source}")
-
-    time_correction = inlet.time_correction()
-    print('Time correction: ', time_correction)
-
-    res = np.concatenate(res, axis=0)
-    timestamps = np.array(timestamps) + time_correction
-
-    if dejitter:
-        y = timestamps
-        X = np.atleast_2d(np.arange(0, len(y))).T
-        lr = LinearRegression()
-        lr.fit(X, y)
-        timestamps = lr.predict(X)
-
-    res = np.c_[timestamps, res]
-    data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
-
-    # if inlet_marker:
-    #     n_markers = len(markers[0][0])
-    #     for ii in range(n_markers):
-    #         data['Marker%d' % ii] = 0
-    #     # process markers:
-    #     for marker in markers:
-    #         # find index of markers
-    #         ix = np.argmin(np.abs(marker[1] - timestamps))
-    #         for ii in range(n_markers):
-    #             data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
-
-    directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    data.to_csv(filename, float_format='%.3f', index=False)
-
-    print('Done - wrote file: ' + str(filename) + '.')
-
-# Rercord directly from a Muse without the use of LSL
+    print(f"[Success] Stopped recording of {data_source}")
 
 
 def record_direct(duration, address, filename=None, backend='auto', interface=None, name=None):
+    """Rercord directly from a Muse without the use of LSL"""
     if backend == 'bluemuse':
-        raise(NotImplementedError(
+        raise (NotImplementedError(
             'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'))
 
     if not address:

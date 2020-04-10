@@ -75,9 +75,7 @@ class Participant:
         e = Event()
         p = SubProcess(target=record, abort_event=e,name=f"{data_type}_recording_proc"
                 ,kwargs={
-                "duration": None
-                ,"filename":filename
-                ,"dejitter":dejitter
+                "filename":filename
                 ,"data_source":data_type
                 ,"abort":e
                 ,"source_id": self.muse_mac
