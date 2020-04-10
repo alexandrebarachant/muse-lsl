@@ -5,7 +5,7 @@
 
 This repo is forked from [https://github.com/alexandrebarachant/muse-lsl](https://github.com/alexandrebarachant/muse-lsl) [1].
 
-The original code was modified and extended to allow streaming and recording of two or more muses, simultaniously.
+The original code was modified and extended to allow streaming and recording of two or more muses, simultaneously.
 
 ## Installation
 
@@ -23,11 +23,11 @@ If you *did not* install the repo as a pip package, you need to replace `muselsl
 ## Hardware Setup
 
 We tested different hardware setups for multiple streams.
-The most reliable setup, which allowed streaming of all datastreams from two muses was the following:
+The most reliable setup, which allowed streaming of all data-streams from two muses was the following:
 
 - Two Muses
 - Two Laptops (We used a Macbook with `BLED112 dongle` and a linux machine with integrated bluetooth.)
-- Wireless (or wired) network with peer to peer traffic allowed (HPI network might not work, we made a hotspot using an anrdoid phone)
+- Wireless (or wired) network with peer to peer traffic allowed (HPI network might not work, we made a hotspot using an android phone)
 
 One of the laptops acts as a *stream source*, while the other *records* its own stream and the stream from the stream source, which is sent over
 the network.
