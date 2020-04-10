@@ -16,9 +16,9 @@ def record(filename, data_source="EEG", abort=None, source_id=None):
     csv_file = Path(filename).open("w")
     writer = csv.writer(csv_file, lineterminator="\n")
 
-    chunk_length = ChunkLength[data_source]
+    chunk_length = ChunkLength[data_source].value
 
-    print("Looking for a {data_source} stream...")
+    print(f"Looking for a {data_source} stream...")
     streams = resolve_byprop('type', data_source, timeout=LSL_SCAN_TIMEOUT)
 
     if len(streams) == 0:
@@ -31,8 +31,6 @@ def record(filename, data_source="EEG", abort=None, source_id=None):
             streams) == 1, f"Expected to find exactly one stream with source_id: {'Muse%s' % source_id}, but found {len(streams)}"
 
     inlet = StreamInlet(streams[0], max_chunklen=chunk_length)
-    print("Started acquiring data.")
-
     info = inlet.info()
     description = info.desc()
 
@@ -48,16 +46,20 @@ def record(filename, data_source="EEG", abort=None, source_id=None):
     first_iteration = True
 
     while not abort.is_set():
-        data, timestamp = inlet.pull_chunk(timeout=1.0,
-                                           max_samples=chunk_length)
-        ts = np.array(timestamp) + inlet.time_correction()
-        if timestamp:
-            tmp = np.c_[ts, data]
-            formatted = [[f"{x:.{float_precision}f}" for x in row] for row in tmp]
-            writer.writerows(formatted)
+        try:
+            data, timestamp = inlet.pull_chunk(timeout=1.0,
+                                               max_samples=chunk_length)
+            ts = np.array(timestamp) + inlet.time_correction()
+            if timestamp:
+                tmp = np.c_[ts, data]
+                formatted = [[f"{x:.{float_precision}f}" for x in row] for row in tmp]
+                writer.writerows(formatted)
 
-        if first_iteration:
-            first_iteration = False
-            print(f"[Success] Started recording of {data_source}")
+            if first_iteration:
+                first_iteration = False
+                print(f"[Success] Started recording of {data_source}")
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt")
+            break
 
     print(f"[Success] Stopped recording of {data_source}")
