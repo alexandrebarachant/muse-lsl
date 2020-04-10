@@ -1,15 +1,8 @@
 import csv
-import os
 from pathlib import Path
-from time import time, sleep, strftime, gmtime
-
 import numpy as np
-import pandas as pd
 from pylsl import StreamInlet, resolve_byprop
-
 from .constants import LSL_SCAN_TIMEOUT, ChunkLength
-from .muse import Muse
-from .stream import find_muse
 
 
 def record(filename, data_source="EEG", abort=None, source_id=None):
@@ -68,62 +61,3 @@ def record(filename, data_source="EEG", abort=None, source_id=None):
             print(f"[Success] Started recording of {data_source}")
 
     print(f"[Success] Stopped recording of {data_source}")
-
-
-def record_direct(duration, address, filename=None, backend='auto', interface=None, name=None):
-    """Rercord directly from a Muse without the use of LSL"""
-    if backend == 'bluemuse':
-        raise (NotImplementedError(
-            'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'))
-
-    if not address:
-        found_muse = find_muse(name)
-        if not found_muse:
-            print('Muse could not be found')
-            return
-        else:
-            address = found_muse['address']
-            name = found_muse['name']
-        print('Connecting to %s : %s...' %
-              (name if name else 'Muse', address))
-
-    if not filename:
-        filename = os.path.join(os.getcwd(), ("recording_%s.csv" %
-                                              strftime("%Y-%m-%d-%H.%M.%S", gmtime())))
-
-    eeg_samples = []
-    timestamps = []
-
-    def save_eeg(new_samples, new_timestamps):
-        eeg_samples.append(new_samples)
-        timestamps.append(new_timestamps)
-
-    muse = Muse(address, save_eeg)
-    muse.connect()
-    muse.start()
-
-    t_init = time()
-    print('Start recording at time t=%.3f' % t_init)
-
-    while (time() - t_init) < duration:
-        try:
-            sleep(1)
-        except KeyboardInterrupt:
-            break
-
-    muse.stop()
-    muse.disconnect()
-
-    timestamps = np.concatenate(timestamps)
-    eeg_samples = np.concatenate(eeg_samples, 1).T
-    recording = pd.DataFrame(data=eeg_samples,
-                             columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
-
-    recording['timestamps'] = timestamps
-
-    directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    recording.to_csv(filename, float_format='%.3f')
-    print('Done - wrote file: ' + filename + '.')

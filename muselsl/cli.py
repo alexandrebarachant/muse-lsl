@@ -50,51 +50,6 @@ class CLI:
         stream(args.address, args.backend,
                args.interface, args.name, args.ppg, args.acc, args.gyro, args.disable_eeg)
 
-    def record(self):
-        parser = argparse.ArgumentParser(
-            description='Record data from an LSL stream.')
-        parser.add_argument("-d", "--duration",
-                            dest="duration", type=int, default=60,
-                            help="Duration of the recording in seconds.")
-        parser.add_argument("-f", "--filename",
-                            dest="filename", type=str, default=None,
-                            help="Name of the recording file.")
-        parser.add_argument("-dj", "--dejitter",
-                            dest="dejitter", type=bool, default=True,
-                            help="Whether to apply dejitter correction to timestamps.")
-        parser.add_argument("-t", "--type", type=str, default="EEG",
-                            help="Data type to record from. Either EEG, PPG, ACC, or GYRO.")
-
-        args = parser.parse_args(sys.argv[2:])
-        from . import record
-        record(args.duration, args.filename, args.dejitter, args.type)
-
-    def record_direct(self):
-        parser = argparse.ArgumentParser(
-            description='Record directly from Muse without LSL.')
-        parser.add_argument("-a", "--address",
-                            dest="address", type=str, default=None,
-                            help="Device MAC address.")
-        parser.add_argument("-n", "--name",
-                            dest="name", type=str, default=None,
-                            help="Name of the device.")
-        parser.add_argument("-b", "--backend",
-                            dest="backend", type=str, default="auto",
-                            help="BLE backend to use. Can be auto, bluemuse, gatt or bgapi.")
-        parser.add_argument("-i", "--interface",
-                            dest="interface", type=str, default=None,
-                            help="The interface to use, 'hci0' for gatt or a com port for bgapi.")
-        parser.add_argument("-d", "--duration",
-                            dest="duration", type=int, default=60,
-                            help="Duration of the recording in seconds.")
-        parser.add_argument("-f", "--filename",
-                            dest="filename", type=str, default=None,
-                            help="Name of the recording file.")
-        args = parser.parse_args(sys.argv[2:])
-        from . import record_direct
-        record_direct(args.address, args.backend,
-                      args.interface, args.name, args.duration, args.filename)
-
     def view(self):
         parser = argparse.ArgumentParser(
             description='View data from an LSL stream.')
@@ -118,7 +73,10 @@ class CLI:
         parser.add_argument("-b", "--backend",
                             dest="backend", type=str, default='TkAgg',
                             help="Matplotlib backend to use. Default: %(default)s")
+        parser.add_argument("-a", "--address",
+                    dest="source_id", type=str, default=None,
+                    help="Device MAC address.")
         args = parser.parse_args(sys.argv[2:])
         from . import view
         view(args.window, args.scale, args.refresh,
-             args.figure, args.version, args.backend, args.data_type)
+             args.figure, args.version, args.backend, args.data_type,args.source_id)
