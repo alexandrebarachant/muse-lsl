@@ -76,11 +76,17 @@ void main() {
 """
 
 
-def view(data_type):
+def view(data_type, source_id = None):
+
     print(f"Looking for an {data_type} stream...")
     streams = resolve_byprop('type', data_type, timeout=LSL_SCAN_TIMEOUT)
     if len(streams) == 0:
         raise(RuntimeError(f"Can't find {data_type} stream."))
+
+    if source_id is not None:
+        streams = [s for s in streams if s.source_id() == 'Muse%s' % source_id]
+        assert len(streams) == 1, f"Expected to find exaclty one stream with source_id: {'Muse%s' % source_id}, but found {len(streams)}"
+
     print("Start acquiring data.")
 
     inlet = StreamInlet(streams[0], max_chunklen=LSL_EEG_CHUNK)
