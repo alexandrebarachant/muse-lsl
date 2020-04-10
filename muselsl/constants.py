@@ -1,3 +1,5 @@
+from enum import Enum
+
 MUSE_NB_EEG_CHANNELS = 5
 MUSE_SAMPLING_EEG_RATE = 256
 LSL_EEG_CHUNK = 12
@@ -39,8 +41,14 @@ LSL_BUFFER = 360
 VIEW_SUBSAMPLE = 2
 VIEW_BUFFER = 12
 
-from enum import Enum
 
 class StreamProcMessage(Enum):
-    Started=0
-    Aborting=1
+    Started = 0
+    Aborting = 1
+
+
+class ChunkLength(Enum):
+    ACC = LSL_ACC_CHUNK
+    EEG = LSL_EEG_CHUNK
+    GYRO = LSL_GYRO_CHUNK
+    PPG = LSL_PPG_CHUNK
