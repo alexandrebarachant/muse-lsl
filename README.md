@@ -6,6 +6,7 @@
 This repo is forked from [https://github.com/alexandrebarachant/muse-lsl](https://github.com/alexandrebarachant/muse-lsl) [1].
 
 The original code was modified and extended to allow streaming and recording of two or more muses simultaneously.
+We used two `2019 Muse 2 headsets` for developement and testing.
 
 ## Installation
 
