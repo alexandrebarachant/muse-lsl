@@ -13,7 +13,7 @@ We used two `2019 Muse 2 headsets` for developement and testing.
 Install this repository as a pip package with
 
     pip3 install .
-    
+
 or just install the dependencies using:
 
     pip3 install -r requirements.txt
@@ -61,7 +61,7 @@ Before starting the recording, make sure all streams are coming through, and are
 This can be done using the viewer.
 
     muselsl view -v 2 -a <MAC-ADRESS-OF-MUSE> -t <DATA-TYPE>
-    
+
 Where data-type can be any of:
 - PPG
 - EEG
@@ -103,11 +103,11 @@ Each participant directory contains the following files:
 |GYRO.csv | Gyroscope Data |
 |PPG.csv | Heart rate measured with PPG |
 
-## other Setups
+## Other Setups
 
-We tried using Raspberry Pi's as stream source, however 
+We tried using Raspberry Pi's as stream source, however
 even the newest model 4 with a `BLED112 dongle`
-was not able to stream reliable for more than 10 minutes.
+it was not able to stream reliably for more than 10 minutes.
 It might be possible, though to use Raspberry Pi's, if not all data
 streams are enabled (eg. if only recording ppg).
 See [this github issue](https://github.com/alexandrebarachant/muse-lsl/issues/55) for more information.
@@ -115,4 +115,4 @@ See [this github issue](https://github.com/alexandrebarachant/muse-lsl/issues/55
 
 [1]
 > Alexandre Barachant, Dano Morrison, Hubert Banville, Jason Kowaleski, Uri Shaked, Sylvain Chevallier, & Juan Jesús Torre Tresols. (2019, May 25). muse-lsl (Version v2.0.2). Zenodo. http://doi.org/10.5281/zenodo.3228861
-[![DOI](https://zenodo.org/badge/80209610.svg)](https://zenodo.org/badge/latestdoi/80209610) 
+[![DOI](https://zenodo.org/badge/80209610.svg)](https://zenodo.org/badge/latestdoi/80209610)
