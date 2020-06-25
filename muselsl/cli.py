@@ -44,11 +44,16 @@ class CLI:
                             default=False, action="store_true", help="Include gyroscope data")
         parser.add_argument('-d', '--disable-eeg', dest='disable_eeg',
                             action='store_true', help="Disable EEG data")
+        parser.add_argument("-P", "--preset", type=int,
+                            help="Select preset which dictates data channels to be streamed")
+
         args = parser.parse_args(sys.argv[2:])
         from . import stream
 
+        print("CLI Preset {}".format(args.preset))
+
         stream(args.address, args.backend,
-               args.interface, args.name, args.ppg, args.acc, args.gyro, args.disable_eeg)
+               args.interface, args.name, args.ppg, args.acc, args.gyro, args.disable_eeg, args.preset)
 
     def record(self):
         parser = argparse.ArgumentParser(

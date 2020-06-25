@@ -59,7 +59,7 @@ def find_muse(name=None):
 
 
 # Begins LSL stream(s) from a Muse with a given address with data sources determined by arguments
-def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False,):
+def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False, preset=21):
     bluemuse = backend == 'bluemuse'
     if not bluemuse:
         if not address:
@@ -140,7 +140,7 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
         return
 
     muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                backend=backend, interface=interface, name=name)
+                backend=backend, interface=interface, name=name, preset=preset)
 
     if(bluemuse):
         muse.connect()

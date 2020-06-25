@@ -13,7 +13,8 @@ class Muse():
 
     def __init__(self, address, callback_eeg=None, callback_control=None,
                  callback_telemetry=None, callback_acc=None, callback_gyro=None,
-                 callback_ppg=None, backend='auto', interface=None, time_func=time, name=None):
+                 callback_ppg=None, backend='auto', interface=None, time_func=time, name=None,
+                 preset=21):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -41,6 +42,7 @@ class Muse():
         self.enable_acc = not callback_acc is None
         self.enable_gyro = not callback_gyro is None
         self.enable_ppg = not callback_ppg is None
+        self.preset = preset
 
         self.interface = interface
         self.time_func = time_func
@@ -193,6 +195,7 @@ class Muse():
         self.last_tm = 0
         self.last_tm_ppg = 0
         self._init_control()
+        self.select_preset(self.preset)
         self.resume()
 
     def resume(self):
@@ -223,14 +226,23 @@ class Muse():
         For 2016 headband, possible choice are 'p20' and 'p21'.
         Untested but possible values are 'p22' and 'p23'
         Default is 'p21'."""
+
+        print("Using preset {}".format(preset))
+
         if preset == 20:
             self._write_cmd([0x04, 0x70, 0x32, 0x30, 0x0a])
+        elif preset == 21:
+            self._write_cmd([0x04, 0x70, 0x32, 0x31, 0x0a])
         elif preset == 22:
             self._write_cmd([0x04, 0x70, 0x32, 0x32, 0x0a])
         elif preset == 23:
             self._write_cmd([0x04, 0x70, 0x32, 0x33, 0x0a])
+        elif preset == 50:
+            self._write_cmd([0x04, 0x70, 0x35, 0x30, 0x0a])
+        elif preset == 51:
+            self._write_cmd([0x04, 0x70, 0x35, 0x31, 0x0a])
         else:
-            self._write_cmd([0x04, 0x70, 0x32, 0x31, 0x0a])
+            raise Exception('Unknown preset %s', preset)
 
     def disconnect(self):
         """disconnect."""
