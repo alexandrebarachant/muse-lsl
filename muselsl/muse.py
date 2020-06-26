@@ -145,7 +145,7 @@ class Muse():
         "rc": return status, if 0 is OK
         """
         if self.backend == 'bluemuse':
-            helper.warn_bluemuse_not_supported()
+            helper.warn_bluemuse_not_supported('Control information available manually by using the BlueMuse GUI.')
             return
         self._write_cmd([0x02, 0x73, 0x0a])
 
@@ -164,7 +164,7 @@ class Muse():
         "rc": return status, if 0 is OK
         """
         if self.backend == 'bluemuse':
-            helper.warn_bluemuse_not_supported()
+            helper.warn_bluemuse_not_supported('Device information available manually by using the BlueMuse GUI.')
             return
         self._write_cmd([0x03, 0x76, 0x31, 0x0a])
 

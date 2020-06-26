@@ -2,8 +2,8 @@ import platform
 import warnings
 
 
-def warn_bluemuse_not_supported():
-    warnings.warn('Operation not supported by bluemuse backend.',
+def warn_bluemuse_not_supported(extra_text = ''):
+    warnings.warn('Operation not supported by bluemuse backend.' + extra_text,
                   RuntimeWarning)
 
 
