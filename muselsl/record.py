@@ -94,7 +94,7 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
     res = np.c_[timestamps, res]
     data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
 
-    if inlet_marker:
+    if inlet_marker and markers:
         n_markers = len(markers[0][0])
         for ii in range(n_markers):
             data['Marker%d' % ii] = 0
