@@ -129,6 +129,11 @@ class Muse():
         cmd -- list of bytes"""
         self.device.char_write_handle(0x000e, cmd, False)
 
+    def _write_cmd_str(self, cmd):
+        """Wrapper to encode and write a command string to the Muse device.
+        cmd -- string to send"""
+        self._write_cmd([len(cmd) + 1, *(ord(char) for char in cmd), ord('\n')])
+
     def ask_control(self):
         """Send a message to Muse to ask for the control status.
 
@@ -147,7 +152,7 @@ class Muse():
         if self.backend == 'bluemuse':
             helper.warn_bluemuse_not_supported('Control information available manually by using the BlueMuse GUI.')
             return
-        self._write_cmd([0x02, 0x73, 0x0a])
+        self._write_cmd_str('s')
 
     def ask_device_info(self):
         """Send a message to Muse to ask for the device info.
@@ -166,14 +171,14 @@ class Muse():
         if self.backend == 'bluemuse':
             helper.warn_bluemuse_not_supported('Device information available manually by using the BlueMuse GUI.')
             return
-        self._write_cmd([0x03, 0x76, 0x31, 0x0a])
+        self._write_cmd_str('v1')
 
     def ask_reset(self):
         """Undocumented command reset for '*1'
         The message received is a singleton with:
         "rc": return status, if 0 is OK
         """
-        self._write_cmd([0x03, 0x2a, 0x31, 0x0a])
+        self._write_cmd_str('*1')
 
     def start(self):
         """Start streaming."""
@@ -197,7 +202,7 @@ class Muse():
 
     def resume(self):
         """Resume streaming, sending 'd' command"""
-        self._write_cmd([0x02, 0x64, 0x0a])
+        self._write_cmd_str('d')
 
     def stop(self):
         """Stop streaming."""
@@ -210,11 +215,11 @@ class Muse():
                     'start bluemuse://stop?addresses={0}'.format(address), shell=True)
             return
 
-        self._write_cmd([0x02, 0x68, 0x0a])
+        self._write_cmd_str('h')
 
     def keep_alive(self):
         """Keep streaming, sending 'k' command"""
-        self._write_cmd([0x02, 0x6b, 0x0a])
+        self._write_cmd_str('k')
 
     def select_preset(self, preset=21):
         """Setting preset for headband configuration
@@ -224,13 +229,13 @@ class Muse():
         Untested but possible values are 'p22' and 'p23'
         Default is 'p21'."""
         if preset == 20:
-            self._write_cmd([0x04, 0x70, 0x32, 0x30, 0x0a])
+            self._write_cmd_str('p20')
         elif preset == 22:
-            self._write_cmd([0x04, 0x70, 0x32, 0x32, 0x0a])
+            self._write_cmd_str('p22')
         elif preset == 23:
-            self._write_cmd([0x04, 0x70, 0x32, 0x33, 0x0a])
+            self._write_cmd_str('p23')
         else:
-            self._write_cmd([0x04, 0x70, 0x32, 0x31, 0x0a])
+            self._write_cmd_str('p21')
 
     def disconnect(self):
         """disconnect."""
