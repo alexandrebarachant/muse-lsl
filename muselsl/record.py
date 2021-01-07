@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import os
+from typing import Union, List
+from pathlib import Path
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
 from time import time, sleep, strftime, gmtime
@@ -11,7 +13,13 @@ from . constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
 
 
-def record(duration, filename=None, dejitter=False, data_source="EEG"):
+def record(
+    duration: int,
+    filename=None,
+    dejitter=False,
+    data_source="EEG",
+    continuous: bool = False,
+) -> None:
     chunk_length = LSL_EEG_CHUNK
     if data_source == "PPG":
         chunk_length = LSL_PPG_CHUNK
@@ -75,12 +83,50 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
                 marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
                 if timestamp:
                     markers.append([marker, timestamp])
+
+            # Save every 2500 samples (at the Muse sampling freq of 250Hz this is every 10s)
+            if continuous and len(res) % 2500 == 0:
+                _save(
+                    filename,
+                    res,
+                    timestamps,
+                    time_correction,
+                    dejitter,
+                    inlet_marker,
+                    markers,
+                    ch_names,
+                )
+
         except KeyboardInterrupt:
             break
 
     time_correction = inlet.time_correction()
-    print('Time correction: ', time_correction)
+    print("Time correction: ", time_correction)
 
+    _save(
+        filename,
+        res,
+        timestamps,
+        time_correction,
+        dejitter,
+        inlet_marker,
+        markers,
+        ch_names,
+    )
+
+    print("Done - wrote file: {}".format(filename))
+
+
+def _save(
+    filename: Union[str, Path],
+    res: list,
+    timestamps: list,
+    time_correction,
+    dejitter: bool,
+    inlet_marker,
+    markers,
+    ch_names: List[str],
+):
     res = np.concatenate(res, axis=0)
     timestamps = np.array(timestamps) + time_correction
 
@@ -92,9 +138,13 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
         timestamps = lr.predict(X)
 
     res = np.c_[timestamps, res]
-    data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
+    data = pd.DataFrame(data=res, columns=["timestamps"] + ch_names)
 
-    if inlet_marker:
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    if inlet_marker and markers:
         n_markers = len(markers[0][0])
         for ii in range(n_markers):
             data['Marker%d' % ii] = 0
@@ -103,15 +153,10 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
             # find index of markers
             ix = np.argmin(np.abs(marker[1] - timestamps))
             for ii in range(n_markers):
-                data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
-
-    directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+                data.loc[ix, "Marker%d" % ii] = marker[0][ii]
 
     data.to_csv(filename, float_format='%.3f', index=False)
 
-    print('Done - wrote file: ' + filename + '.')
 
 # Rercord directly from a Muse without the use of LSL
 
