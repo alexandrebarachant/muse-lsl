@@ -282,7 +282,7 @@ class Muse():
 
     def _init_sample(self):
         """initialize array to store the samples"""
-        self.timestamps = np.zeros(5)
+        self.timestamps = np.full(5, np.nan)
         self.data = np.zeros((5, 12))
 
     def _init_ppg_sample(self):
@@ -291,7 +291,7 @@ class Muse():
             Must be separate from the EEG packets since they occur with a different sampling rate. Ideally the counters
             would always match, but this is not guaranteed
         """
-        self.timestamps_ppg = np.zeros(3)
+        self.timestamps_ppg = np.full(3, np.nan)
         self.data_ppg = np.zeros((3, 6))
 
     def _init_timestamp_correction(self):
@@ -361,7 +361,7 @@ class Muse():
             # update timestamp correction
             # We received the first packet as soon as the last timestamp got
             # sampled
-            self._update_timestamp_correction(idxs[-1], np.min(
+            self._update_timestamp_correction(idxs[-1], np.nanmin(
                 self.timestamps))
 
             # timestamps are extrapolated backwards based on sampling rate
