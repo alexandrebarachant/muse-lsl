@@ -8,7 +8,7 @@ def warn_bluemuse_not_supported(extra_text = ''):
 
 
 def resolve_backend(backend):
-    if backend in ['auto', 'gatt', 'bgapi', 'bluemuse']:
+    if backend in ['auto', 'gatt', 'bgapi', 'bluemuse', 'bleak']:
         platformName = platform.system().lower()
         if backend == 'auto':
             if platformName == 'linux' or platformName == 'linux2':
@@ -19,4 +19,4 @@ def resolve_backend(backend):
                 backend = 'bgapi'
         return backend
     else:
-        raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse.'))
+        raise(ValueError('Backend must be one of: auto, gatt, bgapi, bluemuse, bleak.'))
