@@ -114,7 +114,17 @@ def find_muse(name=None):
 
 
 # Begins LSL stream(s) from a Muse with a given address with data sources determined by arguments
-def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False, acc_enabled=False, gyro_enabled=False, eeg_disabled=False,):
+def stream(
+    address,
+    backend='auto',
+    interface=None,
+    name=None,
+    ppg_enabled=False,
+    acc_enabled=False,
+    gyro_enabled=False,
+    eeg_disabled=False,
+    timeout=AUTO_DISCONNECT_DELAY,
+):
     # If no data types are enabled, we warn the user and return immediately.
     if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
         print('Stream initiation failed: At least one data source must be enabled.')
@@ -212,7 +222,7 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
             print("Streaming%s%s%s%s..." %
                 (eeg_string, ppg_string, acc_string, gyro_string))
 
-            while time() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
+            while time() - muse.last_timestamp < timeout:
                 try:
                     sleep(1)
                 except KeyboardInterrupt:
