@@ -25,7 +25,7 @@ class BleakBackend:
     def pump(self, seconds=1):
         _wait(asyncio.sleep(seconds))
     def stop(self):
-        for device in self.connected:
+        for device in [*self.connected]:
             device.disconnect()
     def scan(self, timeout=10):
         if isinstance(bleak, ModuleNotFoundError):
