@@ -176,8 +176,8 @@ class CLI:
             help="Name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
         from . import record_direct
-        record_direct(args.address, args.backend, args.interface, args.name,
-                      args.duration, args.filename)
+        record_direct(args.duration, args.address, args.filename, args.backend,
+                      args.interface, args.name)
 
     def view(self):
         parser = argparse.ArgumentParser(

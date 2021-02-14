@@ -108,8 +108,8 @@ def _list_muses_bluetoothctl(timeout, verbose=False):
 
 
 # Returns the address of the Muse with the name provided, otherwise returns address of first available Muse.
-def find_muse(name=None):
-    muses = list_muses()
+def find_muse(name=None, backend='auto'):
+    muses = list_muses(backend)
     if name:
         for muse in muses:
             if muse['name'] == name:
@@ -138,7 +138,7 @@ def stream(
     # For any backend except bluemuse, we will start LSL streams hooked up to the muse callbacks.
     if backend != 'bluemuse':
         if not address:
-            found_muse = find_muse(name)
+            found_muse = find_muse(name, backend)
             if not found_muse:
                 return
             else:

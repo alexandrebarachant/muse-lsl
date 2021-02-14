@@ -131,7 +131,7 @@ def record_direct(duration,
         ))
 
     if not address:
-        found_muse = find_muse(name)
+        found_muse = find_muse(name, backend)
         if not found_muse:
             print('Muse could not be found')
             return
@@ -152,7 +152,7 @@ def record_direct(duration,
         eeg_samples.append(new_samples)
         timestamps.append(new_timestamps)
 
-    muse = Muse(address, save_eeg)
+    muse = Muse(address, save_eeg, backend=backend)
     muse.connect()
     muse.start()
 
