@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import os
+from typing import Union, List, Optional
+from pathlib import Path
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
 from time import time, sleep, strftime, gmtime
@@ -11,7 +13,13 @@ from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_C
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
 
 
-def record(duration, filename=None, dejitter=False, data_source="EEG"):
+def record(
+    duration: int,
+    filename=None,
+    dejitter=False,
+    data_source="EEG",
+    continuous: bool = True,
+) -> None:
     chunk_length = LSL_EEG_CHUNK
     if data_source == "PPG":
         chunk_length = LSL_PPG_CHUNK
@@ -62,6 +70,7 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
     markers = []
     t_init = time()
     time_correction = inlet.time_correction()
+    last_written_timestamp = None
     print('Start recording at time t=%.3f' % t_init)
     print('Time correction: ', time_correction)
     while (time() - t_init) < duration:
@@ -77,12 +86,53 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
                 marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
                 if timestamp:
                     markers.append([marker, timestamp])
+
+            # Save every 5s
+            if continuous and (last_written_timestamp is None or last_written_timestamp + 5 < timestamps[-1]):
+                _save(
+                    filename,
+                    res,
+                    timestamps,
+                    time_correction,
+                    dejitter,
+                    inlet_marker,
+                    markers,
+                    ch_names,
+                    last_written_timestamp=last_written_timestamp,
+                )
+                last_written_timestamp = timestamps[-1]
+
         except KeyboardInterrupt:
             break
 
     time_correction = inlet.time_correction()
-    print('Time correction: ', time_correction)
+    print("Time correction: ", time_correction)
 
+    _save(
+        filename,
+        res,
+        timestamps,
+        time_correction,
+        dejitter,
+        inlet_marker,
+        markers,
+        ch_names,
+    )
+
+    print("Done - wrote file: {}".format(filename))
+
+
+def _save(
+    filename: Union[str, Path],
+    res: list,
+    timestamps: list,
+    time_correction,
+    dejitter: bool,
+    inlet_marker,
+    markers,
+    ch_names: List[str],
+    last_written_timestamp: Optional[float] = None,
+):
     res = np.concatenate(res, axis=0)
     timestamps = np.array(timestamps) + time_correction
 
@@ -94,9 +144,13 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
         timestamps = lr.predict(X)
 
     res = np.c_[timestamps, res]
-    data = pd.DataFrame(data=res, columns=['timestamps'] + ch_names)
+    data = pd.DataFrame(data=res, columns=["timestamps"] + ch_names)
 
-    if inlet_marker:
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    if inlet_marker and markers:
         n_markers = len(markers[0][0])
         for ii in range(n_markers):
             data['Marker%d' % ii] = 0
@@ -105,15 +159,19 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
             # find index of markers
             ix = np.argmin(np.abs(marker[1] - timestamps))
             for ii in range(n_markers):
-                data.loc[ix, 'Marker%d' % ii] = marker[0][ii]
+                data.loc[ix, "Marker%d" % ii] = marker[0][ii]
 
-    directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    # If file doesn't exist, create with headers
+    # If it does exist, just append new rows
+    if not Path(filename).exists():
+        # print("Saving whole file")
+        data.to_csv(filename, float_format='%.3f', index=False)
+    else:
+        # print("Appending file")
+        # truncate already written timestamps
+        data = data[data['timestamps'] > last_written_timestamp]
+        data.to_csv(filename, float_format='%.3f', index=False, mode='a', header=False)
 
-    data.to_csv(filename, float_format='%.3f', index=False)
-
-    print('Done - wrote file: ' + filename + '.')
 
 
 # Rercord directly from a Muse without the use of LSL
