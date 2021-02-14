@@ -238,16 +238,15 @@ class Muse():
 
         See details on https://goo.gl/FPN1ib
         For 2016 headband, possible choice are 'p20' and 'p21'.
-        Untested but possible values are 'p22' and 'p23'
+        Untested but possible values include 'p22','p23','p31','p32','p50','p51','p52','p53','p60','p61','p63','pAB','pAD'
         Default is 'p21'."""
-        if preset == 20:
-            self._write_cmd_str('p20')
-        elif preset == 22:
-            self._write_cmd_str('p22')
-        elif preset == 23:
-            self._write_cmd_str('p23')
-        else:
-            self._write_cmd_str('p21')
+        
+        if type(preset) is int:
+            preset = str(preset)
+        if preset[0] == 'p':
+            preset = preset[1:]
+        preset = bytes(preset, 'utf-8')
+        self._write_cmd([0x04, 0x70, *preset, 0x0a])
 
     def disconnect(self):
         """disconnect."""
