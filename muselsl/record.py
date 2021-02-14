@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 from time import time, sleep, strftime, gmtime
 from .stream import find_muse
 from .muse import Muse
-from . constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
+from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
 
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
 
@@ -21,8 +21,9 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
         chunk_length = LSL_GYRO_CHUNK
 
     if not filename:
-        filename = os.path.join(os.getcwd(
-        ), "%s_recording_%s.csv" % (data_source, strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
+        filename = os.path.join(os.getcwd(), "%s_recording_%s.csv" %
+                                (data_source,
+                                 strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
 
     print("Looking for a %s stream..." % (data_source))
     streams = resolve_byprop('type', data_source, timeout=LSL_SCAN_TIMEOUT)
@@ -65,12 +66,13 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
     print('Time correction: ', time_correction)
     while (time() - t_init) < duration:
         try:
-            data, timestamp = inlet.pull_chunk(timeout=1.0,
-                                               max_samples=chunk_length)
+            data, timestamp = inlet.pull_chunk(
+                timeout=1.0, max_samples=chunk_length)
 
             if timestamp:
                 res.append(data)
                 timestamps.extend(timestamp)
+                tr = time()
             if inlet_marker:
                 marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
                 if timestamp:
@@ -113,13 +115,20 @@ def record(duration, filename=None, dejitter=False, data_source="EEG"):
 
     print('Done - wrote file: ' + filename + '.')
 
+
 # Rercord directly from a Muse without the use of LSL
 
 
-def record_direct(duration, address, filename=None, backend='auto', interface=None, name=None):
+def record_direct(duration,
+                  address,
+                  filename=None,
+                  backend='auto',
+                  interface=None,
+                  name=None):
     if backend == 'bluemuse':
-        raise(NotImplementedError(
-            'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'))
+        raise (NotImplementedError(
+            'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'
+        ))
 
     if not address:
         found_muse = find_muse(name, backend)
@@ -129,12 +138,12 @@ def record_direct(duration, address, filename=None, backend='auto', interface=No
         else:
             address = found_muse['address']
             name = found_muse['name']
-        print('Connecting to %s : %s...' %
-              (name if name else 'Muse', address))
+        print('Connecting to %s : %s...' % (name if name else 'Muse', address))
 
     if not filename:
-        filename = os.path.join(os.getcwd(), ("recording_%s.csv" %
-                                              strftime("%Y-%m-%d-%H.%M.%S", gmtime())))
+        filename = os.path.join(
+            os.getcwd(),
+            ("recording_%s.csv" % strftime("%Y-%m-%d-%H.%M.%S", gmtime())))
 
     eeg_samples = []
     timestamps = []
@@ -161,8 +170,8 @@ def record_direct(duration, address, filename=None, backend='auto', interface=No
 
     timestamps = np.concatenate(timestamps)
     eeg_samples = np.concatenate(eeg_samples, 1).T
-    recording = pd.DataFrame(data=eeg_samples,
-                             columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
+    recording = pd.DataFrame(
+        data=eeg_samples, columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
 
     recording['timestamps'] = timestamps
 
