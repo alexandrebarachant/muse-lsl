@@ -17,7 +17,7 @@ The code relies on [pygatt](https://github.com/peplin/pygatt) or [BlueMuse](http
 
 **Compatible with Python 2.7 and Python 3.x**
 
-**Compatible with Muse 2, Muse S, and the original Muse (2016)**
+**Compatible with Muse 2, Muse S, and the classic Muse (2016)**
 
 _Note: if you run into any issues, first check out out [Common Issues](#common-issues) and then the [Issues](https://github.com/alexandrebarachant/muse-lsl/issues) section of this repository_
 
