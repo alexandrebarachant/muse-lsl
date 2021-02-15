@@ -129,6 +129,7 @@ def stream(
     gyro_enabled=False,
     eeg_disabled=False,
     timeout=AUTO_DISCONNECT_DELAY,
+    preset=21,
 ):
     # If no data types are enabled, we warn the user and return immediately.
     if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
@@ -211,7 +212,7 @@ def stream(
         push_gyro = partial(push, outlet=gyro_outlet) if gyro_enabled else None
 
         muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                    backend=backend, interface=interface, name=name)
+                    backend=backend, interface=interface, name=name, preset=preset)
 
         didConnect = muse.connect()
 
