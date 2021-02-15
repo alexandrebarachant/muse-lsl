@@ -66,6 +66,7 @@ class CLI:
         parser.add_argument("-P",
             "--preset",
             type=int,
+            default=None,
             help="Select preset which dictates data channels to be streamed")
         parser.add_argument(
             "-p",

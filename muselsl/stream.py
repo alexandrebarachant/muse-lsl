@@ -128,8 +128,8 @@ def stream(
     acc_enabled=False,
     gyro_enabled=False,
     eeg_disabled=False,
+    preset=None,
     timeout=AUTO_DISCONNECT_DELAY,
-    preset=21,
 ):
     # If no data types are enabled, we warn the user and return immediately.
     if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:

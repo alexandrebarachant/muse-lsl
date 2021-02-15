@@ -23,7 +23,7 @@ class Muse():
                  interface=None,
                  time_func=time,
                  name=None,
-                 preset=21):
+                 preset=None):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -77,6 +77,8 @@ class Muse():
 
                 self.adapter.start()
                 self.device = self.adapter.connect(self.address)
+                if(self.preset != None):
+                    self.select_preset(self.preset)
 
                 # subscribes to EEG stream
                 if self.enable_eeg:
