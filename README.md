@@ -151,6 +151,7 @@ Lab Streaming Layer or LSL is a system designed to unify the collection of time 
 5.  `'RuntimeError: could not create stream outlet'` (Linux)
 
 - This appears to be due to Linux-specific issues with the newest version of pylsl. Ensure that you have pylsl 1.10.5 installed in the environment in which you are trying to run Muse LSL
+- If this is preceded by `Could not instantiate IPv4 stack: getrandom`, it could be [this issue](https://github.com/boostorg/uuid/issues/91) which can be resolved by building `liblsl` with `-DBOOST_UUID_RANDOM_PROVIDER_FORCE_POSIX` (e.g. by editing `standalone_compilation_linux.sh`)
 
 ## Citing muse-lsl
 
