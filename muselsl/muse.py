@@ -23,7 +23,8 @@ class Muse():
                  interface=None,
                  time_func=time,
                  name=None,
-                 preset=None):
+                 preset=None,
+                 disable_light=False):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -56,6 +57,7 @@ class Muse():
         self.time_func = time_func
         self.backend = helper.resolve_backend(backend)
         self.preset = preset
+        self.disable_light = disable_light
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
@@ -98,6 +100,9 @@ class Muse():
 
                 if self.enable_ppg:
                     self._subscribe_ppg()
+                
+                if self.disable_light:
+                    self._disable_light()
 
                 self.last_timestamp = self.time_func()
 
@@ -128,6 +133,9 @@ class Muse():
 
                 if self.enable_ppg:
                     self._subscribe_ppg()
+                
+                if self.disable_light:
+                    self._disable_light()
 
                 self.last_timestamp = self.time_func()
 
@@ -587,3 +595,6 @@ class Muse():
         data = res[1:]
 
         return packetIndex, data
+    
+    def _disable_light(self):
+        self._write_cmd_str('L0')
