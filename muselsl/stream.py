@@ -16,6 +16,8 @@ from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
     MUSE_NB_ACC_CHANNELS, MUSE_SAMPLING_ACC_RATE, LSL_ACC_CHUNK, \
     MUSE_NB_GYRO_CHANNELS, MUSE_SAMPLING_GYRO_RATE, LSL_GYRO_CHUNK
 
+from . import bleak_backend as bleak
+
 
 def _print_muse_list(muses):
     for m in muses:
@@ -39,6 +41,14 @@ def list_muses(backend='auto', interface=None):
         print('Starting BlueMuse, see BlueMuse window for interactive list of devices.')
         subprocess.call('start bluemuse:', shell=True)
         return
+    elif backend == 'bleak':
+        muses = [
+            {'name': m.name, 'address': m.address}
+            for m in bleak.list_muses()
+        ]
+        for idx, m in enumerate(muses):
+            print(f"{idx}. {m['name']} {m['address']}")
+        return muses
     else:
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
@@ -63,7 +73,6 @@ def list_muses(backend='auto', interface=None):
 
 def _list_muses_bluetoothctl(timeout, verbose=False):
     """Identify Muse BLE devices using bluetoothctl.
-
     When using backend='gatt' on Linux, pygatt relies on the command line tool
     `hcitool` to scan for BLE devices. `hcitool` is however deprecated, and
     seems to fail on Bluetooth 5 devices. This function roughly replicates the
