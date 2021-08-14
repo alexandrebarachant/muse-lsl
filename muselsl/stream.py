@@ -1,3 +1,4 @@
+import asyncio
 import re
 import subprocess
 from sys import platform
@@ -5,6 +6,7 @@ from time import time, sleep
 from functools import partial
 from shutil import which
 
+import pdb
 from pylsl import StreamInfo, StreamOutlet
 import pygatt
 
@@ -237,10 +239,11 @@ def stream(
             print("Streaming%s%s%s%s..." %
                 (eeg_string, ppg_string, acc_string, gyro_string))
 
-            while time() - muse.last_timestamp < timeout:
+            while True:#time() - muse.last_timestamp < timeout:
                 try:
-                    sleep(1)
+                    muse.loop.run_until_complete(asyncio.sleep(1.0))
                 except KeyboardInterrupt:
+                    print("Keyboard interrupt")
                     muse.stop()
                     muse.disconnect()
                     break

@@ -1,3 +1,4 @@
+import pdb
 import bitstring
 import pygatt
 import asyncio
@@ -149,13 +150,13 @@ class Muse():
         """ Used to override _write_cmd if using bleak backend.
         """
         self.loop.run_until_complete(
-            self.client.write_gatt_char(0x000e, cmd, False)
+            self.client.write_gatt_char(0x000d, cmd, False)
         )
 
     def _write_cmd_str(self, cmd):
         """Wrapper to encode and write a command string to the Muse device.
         cmd -- string to send"""
-        self._write_cmd([len(cmd) + 1, *(ord(char) for char in cmd), ord('\n')])
+        self._write_cmd(bytearray([len(cmd) + 1, *(ord(char) for char in cmd), ord('\n')]))
 
     def ask_control(self):
         """Send a message to Muse to ask for the control status.
@@ -365,6 +366,7 @@ class Muse():
         samples are received in this order : 44, 41, 38, 32, 35
         wait until we get 35 and call the data callback
         """
+        print(f"_handle_eeg({handle})")
         if self.first_sample:
             self._init_timestamp_correction()
             self.first_sample = False
