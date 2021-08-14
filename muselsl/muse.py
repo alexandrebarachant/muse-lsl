@@ -1,12 +1,13 @@
 import bitstring
 import pygatt
+import asyncio
 import numpy as np
 from time import time, sleep
 from sys import platform
 import subprocess
 from . import helper
 from .constants import *
-
+from . import bleak_backend as bleak
 
 class Muse():
     """Muse 2016 headband"""
@@ -59,15 +60,36 @@ class Muse():
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
+
+        print('Connecting to %s: %s...' % (self.name
+                                           if self.name else 'Muse',
+                                           self.address))
         try:
             if self.backend == 'bluemuse':
                 print('Starting BlueMuse.')
                 subprocess.call('start bluemuse:', shell=True)
 
+            elif self.backend == 'bleak':
+                print('Connecting with bleak...')
+
+                self.loop = asyncio.get_event_loop()
+                self.client = self.loop.run_until_complete(
+                    bleak.connect(self.address)
+                )
+
+                # Override backend interface methods with bleak variants
+                self._write_cmd = self._write_cmd_bleak
+                self._subscribe_eeg = self._subscribe_eeg_bleak
+                self._subscribe_control = self._subscribe_control_bleak
+                self._subscribe_telemetry = self._subscribe_telemetry_bleak
+                self._subscribe_acc = self._subscribe_acc_bleak
+                self._subscribe_gyro = self._subscribe_gyro_bleak
+                self._subscribe_ppg = self._subscribe_ppg_bleak
+
+                # Subscribe to data streams
+                self._subscribe_all_streams()
+
             else:
-                print('Connecting to %s: %s...' % (self.name
-                                                   if self.name else 'Muse',
-                                                   self.address))
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
@@ -77,70 +99,58 @@ class Muse():
 
                 self.adapter.start()
                 self.device = self.adapter.connect(self.address)
-                if(self.preset != None):
-                    self.select_preset(self.preset)
-
-                # subscribes to EEG stream
-                if self.enable_eeg:
-                    self._subscribe_eeg()
-
-                if self.enable_control:
-                    self._subscribe_control()
-
-                if self.enable_telemetry:
-                    self._subscribe_telemetry()
-
-                if self.enable_acc:
-                    self._subscribe_acc()
-
-                if self.enable_gyro:
-                    self._subscribe_gyro()
-
-                if self.enable_ppg:
-                    self._subscribe_ppg()
-
-                self.last_timestamp = self.time_func()
+                self._subscribe_all_streams()
 
             return True
 
         except pygatt.exceptions.BLEError as error:
+            print("Error setting up Muse, attempting reset...")
             if ("characteristic" in str(error)):
                 self.ask_reset()
                 sleep(2)
                 self.device = self.adapter.connect(self.address)
-                self.select_preset(self.preset)
-
-                # subscribes to EEG stream
-                if self.enable_eeg:
-                    self._subscribe_eeg()
-
-                if self.enable_control:
-                    self._subscribe_control()
-
-                if self.enable_telemetry:
-                    self._subscribe_telemetry()
-
-                if self.enable_acc:
-                    self._subscribe_acc()
-
-                if self.enable_gyro:
-                    self._subscribe_gyro()
-
-                if self.enable_ppg:
-                    self._subscribe_ppg()
-
+                self._subscribe_all_streams()
                 self.last_timestamp = self.time_func()
-
                 return True
-
             else:
                 print('Connection to', self.address, 'failed')
                 return False
+
+    def _subscribe_all_streams(self):
+        if(self.preset != None):
+            self.select_preset(self.preset)
+
+        if self.enable_eeg:
+            self._subscribe_eeg()
+
+        if self.enable_control:
+            self._subscribe_control()
+
+        if self.enable_telemetry:
+            self._subscribe_telemetry()
+
+        if self.enable_acc:
+            self._subscribe_acc()
+
+        if self.enable_gyro:
+            self._subscribe_gyro()
+
+        if self.enable_ppg:
+            self._subscribe_ppg()
+
+        self.last_timestamp = self.time_func()
 
     def _write_cmd(self, cmd):
         """Wrapper to write a command to the Muse device.
         cmd -- list of bytes"""
         self.device.char_write_handle(0x000e, cmd, False)
+
+    def _write_cmd_bleak(self, cmd):
+        """ Used to override _write_cmd if using bleak backend.
+        """
+        self.loop.run_until_complete(
+            self.client.write_gatt_char(0x000e, cmd, False)
+        )
 
     def _write_cmd_str(self, cmd):
         """Wrapper to encode and write a command string to the Muse device.
@@ -259,9 +269,24 @@ class Muse():
             subprocess.call('start bluemuse://shutdown', shell=True)
             return
 
-        self.device.disconnect()
-        if self.adapter:
-            self.adapter.stop()
+        elif self.backend == 'bleak':
+            self.loop.run_until_complete(self.client.disconnect())
+
+        else:
+            self.device.disconnect()
+            if self.adapter:
+                self.adapter.stop()
+
+    def _subscribe_eeg_bleak(self):
+        """ Method used to override _subscribe_eeg if using bleak backend.
+        """
+        self.loop.run_until_complete(asyncio.gather(
+            self.client.start_notify(MUSE_GATT_ATTR_TP9, self._handle_eeg),
+            self.client.start_notify(MUSE_GATT_ATTR_AF7, self._handle_eeg),
+            self.client.start_notify(MUSE_GATT_ATTR_AF8, self._handle_eeg),
+            self.client.start_notify(MUSE_GATT_ATTR_TP10, self._handle_eeg),
+            self.client.start_notify(MUSE_GATT_ATTR_RIGHTAUX, callback=self._handle_eeg)
+        ))
 
     def _subscribe_eeg(self):
         """subscribe to eeg stream."""
@@ -396,6 +421,11 @@ class Muse():
 
         self._init_control()
 
+    def _subscribe_control_bleak(self):
+        self.loop.run_until_complete(
+            self.client.start_notify(MUSE_GATT_ATTR_STREAM_TOGGLE, self._handle_control)
+        )
+
     def _handle_control(self, handle, packet):
         """Handle the incoming messages from the 0x000e handle.
 
@@ -442,6 +472,11 @@ class Muse():
         self.device.subscribe(
             MUSE_GATT_ATTR_TELEMETRY, callback=self._handle_telemetry)
 
+    def _subscribe_telemetry_bleak(self):
+        self.loop.run_until_complete(
+            self.client.start_notify(MUSE_GATT_ATTR_TELEMETRY, self._handle_telemetry)
+        )
+
     def _handle_telemetry(self, handle, packet):
         """Handle the telemetry (battery, temperature and stuff) incoming data
         """
@@ -484,6 +519,11 @@ class Muse():
         self.device.subscribe(
             MUSE_GATT_ATTR_ACCELEROMETER, callback=self._handle_acc)
 
+    def _subscribe_acc_bleak(self):
+        self.loop.run_until_complete(
+            self.client.start_notify(MUSE_GATT_ATTR_ACCELEROMETER, self._handle_acc)
+        )
+
     def _handle_acc(self, handle, packet):
         """Handle incoming accelerometer data.
 
@@ -503,6 +543,11 @@ class Muse():
     def _subscribe_gyro(self):
         self.device.subscribe(MUSE_GATT_ATTR_GYRO, callback=self._handle_gyro)
 
+    def _subscribe_gyro_bleak(self):
+        self.loop.run_until_complete(
+            self.client.start_notify(MUSE_GATT_ATTR_GYRO, self._handle_gyro)
+        )
+
     def _handle_gyro(self, handle, packet):
         """Handle incoming gyroscope data.
 
@@ -519,6 +564,16 @@ class Muse():
             packet, scale=MUSE_GYRO_SCALE_FACTOR)
 
         self.callback_gyro(samples, timestamps)
+
+    def _subscribe_ppg_bleak(self):
+        try:
+            self.loop.run_until_complete(asyncio.gather(
+                self.client.start_notify(MUSE_GATT_ATTR_PPG1, self._handle_ppg),
+                self.client.start_notify(MUSE_GATT_ATTR_PPG2, self._handle_ppg),
+                self.client.start_notify(MUSE_GATT_ATTR_PPG3, self._handle_ppg),
+            )) 
+        except Exception as error:
+            raise Exception("PPG data is only available on Muse 2")
 
     def _subscribe_ppg(self):
         try:
