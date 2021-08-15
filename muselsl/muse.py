@@ -63,7 +63,7 @@ class Muse():
             if self.backend == 'bluemuse':
                 print('Starting BlueMuse.')
                 subprocess.call('start bluemuse:', shell=True)
-
+                self.last_timestamp = self.time_func()
             else:
                 print('Connecting to %s: %s...' % (self.name
                                                    if self.name else 'Muse',
