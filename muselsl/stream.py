@@ -58,7 +58,7 @@ def list_muses(backend='auto', interface=None):
     elif backend == 'bleak':
         muses = [
             {'name': m.name, 'address': m.address}
-            for m in _discover_muses_bleak_sync()
+            for m in discover_muses_bleak_sync()
         ]
         for idx, m in enumerate(muses):
             print(f"{idx}. {m['name']} {m['address']}")
