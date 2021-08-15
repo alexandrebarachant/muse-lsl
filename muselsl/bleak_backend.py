@@ -29,5 +29,5 @@ async def connect(address):
     except Exception as e:
         print(e)
         if client is not None:
-            await disconnect(client)
+            await client.disconnect()
 

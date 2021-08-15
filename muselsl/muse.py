@@ -287,7 +287,7 @@ class Muse():
             self.client.start_notify(MUSE_GATT_ATTR_AF7, self._handle_eeg),
             self.client.start_notify(MUSE_GATT_ATTR_AF8, self._handle_eeg),
             self.client.start_notify(MUSE_GATT_ATTR_TP10, self._handle_eeg),
-            self.client.start_notify(MUSE_GATT_ATTR_LEFTAUX, self._handle_eeg)
+            self.client.start_notify(MUSE_GATT_ATTR_RIGHTAUX, self._handle_eeg)
         ))
 
     def _subscribe_eeg(self):
@@ -364,8 +364,8 @@ class Muse():
     def _handle_eeg_bleak(self, handle, data):
         """Callback for receiving a sample.
 
-        samples are received in this order : 44, 41, 38, 32, 35
-        wait until we get 35 and call the data callback
+        For some reason sample order is different than for other backends:
+            40, 37, 31, 34, and there is no sample from 5th channel.
         """
         print(f"_handle_eeg({handle})")
         if self.first_sample:
@@ -373,7 +373,7 @@ class Muse():
             self.first_sample = False
 
         timestamp = self.time_func()
-        index = {40: 0, 37: 1, 31: 2, 34: 4}[handle]
+        index = {40: 3, 37: 2, 31: 0, 34: 1}[handle]
         tm, d = self._unpack_eeg_channel(data)
 
         if self.last_tm == 0:
@@ -381,6 +381,7 @@ class Muse():
 
         self.data[index] = d
         self.timestamps[index] = timestamp
+
         # last data received
         if handle == 34:
             if tm != self.last_tm + 1:
