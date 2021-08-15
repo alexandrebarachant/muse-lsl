@@ -1,6 +1,6 @@
-import pdb
 import bitstring
 import pygatt
+import bleak
 import asyncio
 import numpy as np
 from time import time, sleep
@@ -8,7 +8,19 @@ from sys import platform
 import subprocess
 from . import helper
 from .constants import *
-from . import bleak_backend as bleak
+
+
+async def connect_bleak(address):
+    client = None
+    try:
+        client = bleak.BleakClient(address)
+        await client.connect()
+        return client
+    except Exception as e:
+        print(e)
+        if client is not None:
+            await client.disconnect()
+
 
 class Muse():
     """Muse 2016 headband"""
@@ -75,7 +87,7 @@ class Muse():
 
                 self.loop = asyncio.get_event_loop()
                 self.client = self.loop.run_until_complete(
-                    bleak.connect(self.address)
+                    connect_bleak(self.address)
                 )
 
                 # Override backend interface methods with bleak variants
@@ -88,9 +100,7 @@ class Muse():
                 self._subscribe_ppg = self._subscribe_ppg_bleak
                 self._handle_eeg = self._handle_eeg_bleak
 
-                # Subscribe to data streams
                 self._subscribe_all_streams()
-
             else:
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
@@ -105,6 +115,7 @@ class Muse():
 
             return True
 
+        # TODO: Find out if this is relevant to bleak backend.
         except pygatt.exceptions.BLEError as error:
             print("Error setting up Muse, attempting reset...")
             if ("characteristic" in str(error)):
@@ -367,7 +378,6 @@ class Muse():
         For some reason sample order is different than for other backends:
             40, 37, 31, 34, and there is no sample from 5th channel.
         """
-        print(f"_handle_eeg({handle})")
         if self.first_sample:
             self._init_timestamp_correction()
             self.first_sample = False

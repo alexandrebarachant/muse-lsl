@@ -6,7 +6,6 @@ from time import time, sleep
 from functools import partial
 from shutil import which
 
-import pdb
 from pylsl import StreamInfo, StreamOutlet
 import pygatt
 
@@ -18,8 +17,21 @@ from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
     MUSE_NB_ACC_CHANNELS, MUSE_SAMPLING_ACC_RATE, LSL_ACC_CHUNK, \
     MUSE_NB_GYRO_CHANNELS, MUSE_SAMPLING_GYRO_RATE, LSL_GYRO_CHUNK
 
-from . import bleak_backend as bleak
+import bleak
 
+async def _discover_muses_bleak():
+    print("Searching for nearby Muse devices...")
+    devices = await bleak.BleakScanner.discover()
+    muses = []
+    for d in devices:
+        if "Muse" in d.name:
+            muses.append(d)
+    return muses
+
+def discover_muses_bleak_sync():
+    return asyncio.get_event_loop().run_until_complete(
+        _discover_muses_bleak()
+    )
 
 def _print_muse_list(muses):
     for m in muses:
@@ -46,7 +58,7 @@ def list_muses(backend='auto', interface=None):
     elif backend == 'bleak':
         muses = [
             {'name': m.name, 'address': m.address}
-            for m in bleak.list_muses()
+            for m in _discover_muses_bleak_sync()
         ]
         for idx, m in enumerate(muses):
             print(f"{idx}. {m['name']} {m['address']}")
@@ -239,7 +251,8 @@ def stream(
             print("Streaming%s%s%s%s..." %
                 (eeg_string, ppg_string, acc_string, gyro_string))
 
-            while True:#time() - muse.last_timestamp < timeout:
+            # TODO: This timeout may be too short for bleak, or backend needs optimization.
+            while time() - muse.last_timestamp < timeout:
                 try:
                     muse.loop.run_until_complete(asyncio.sleep(1.0))
                 except KeyboardInterrupt:
