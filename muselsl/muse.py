@@ -86,6 +86,7 @@ class Muse():
                 self._subscribe_acc = self._subscribe_acc_bleak
                 self._subscribe_gyro = self._subscribe_gyro_bleak
                 self._subscribe_ppg = self._subscribe_ppg_bleak
+                self._handle_eeg = self._handle_eeg_bleak
 
                 # Subscribe to data streams
                 self._subscribe_all_streams()
@@ -150,7 +151,7 @@ class Muse():
         """ Used to override _write_cmd if using bleak backend.
         """
         self.loop.run_until_complete(
-            self.client.write_gatt_char(0x000d, cmd, False)
+            self.client.write_gatt_char("273e0001-4c4d-454d-96be-f03bac821358", cmd, False)
         )
 
     def _write_cmd_str(self, cmd):
@@ -286,7 +287,7 @@ class Muse():
             self.client.start_notify(MUSE_GATT_ATTR_AF7, self._handle_eeg),
             self.client.start_notify(MUSE_GATT_ATTR_AF8, self._handle_eeg),
             self.client.start_notify(MUSE_GATT_ATTR_TP10, self._handle_eeg),
-            self.client.start_notify(MUSE_GATT_ATTR_RIGHTAUX, callback=self._handle_eeg)
+            self.client.start_notify(MUSE_GATT_ATTR_LEFTAUX, self._handle_eeg)
         ))
 
     def _subscribe_eeg(self):
@@ -359,6 +360,59 @@ class Muse():
         # update parameters
         self.reg_params[1] = R
         self._P = P
+
+    def _handle_eeg_bleak(self, handle, data):
+        """Callback for receiving a sample.
+
+        samples are received in this order : 44, 41, 38, 32, 35
+        wait until we get 35 and call the data callback
+        """
+        print(f"_handle_eeg({handle})")
+        if self.first_sample:
+            self._init_timestamp_correction()
+            self.first_sample = False
+
+        timestamp = self.time_func()
+        index = {40: 0, 37: 1, 31: 2, 34: 4}[handle]
+        tm, d = self._unpack_eeg_channel(data)
+
+        if self.last_tm == 0:
+            self.last_tm = tm - 1
+
+        self.data[index] = d
+        self.timestamps[index] = timestamp
+        # last data received
+        if handle == 34:
+            if tm != self.last_tm + 1:
+                if (tm - self.last_tm) != -65535:  # counter reset
+                    print("missing sample %d : %d" % (tm, self.last_tm))
+                    # correct sample index for timestamp estimation
+                    self.sample_index += 12 * (tm - self.last_tm + 1)
+
+            self.last_tm = tm
+
+            # calculate index of time samples
+            idxs = np.arange(0, 12) + self.sample_index
+            self.sample_index += 12
+
+            # update timestamp correction
+            # We received the first packet as soon as the last timestamp got
+            # sampled
+            self._update_timestamp_correction(idxs[-1], np.nanmin(
+                self.timestamps))
+
+            # timestamps are extrapolated backwards based on sampling rate
+            # and current time
+            timestamps = self.reg_params[1] * idxs + self.reg_params[0]
+
+            # push data
+            self.callback_eeg(self.data, timestamps)
+
+            # save last timestamp for disconnection timer
+            self.last_timestamp = timestamps[-1]
+
+            # reset sample
+            self._init_sample()
 
     def _handle_eeg(self, handle, data):
         """Callback for receiving a sample.
