@@ -19,6 +19,8 @@ from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
 
 
 def replay(filename, acc_enabled=False, gyro_enabled=False):
+    delay_time = 1/MUSE_SAMPLING_EEG_RATE
+    
     # load and prepare data from csv
     timestamp_csv = "TimeStamp"
     eeg_channels_csv = ["RAW_TP9", "RAW_AF7", "RAW_AF8", "RAW_TP10", "AUX_RIGHT"]
@@ -48,13 +50,14 @@ def replay(filename, acc_enabled=False, gyro_enabled=False):
     # convert everything to floats
     data = data[selected_csv_columns].astype(float)
     
-    print("Replay started...")
+    print(f"Starting replay of {filename} with {len(data)} values at {MUSE_SAMPLING_EEG_RATE}Hz.")
+    print(f"This should take {len(data)/ MUSE_SAMPLING_EEG_RATE:.1f} seconds.")
     for x in data.itertuples():
         timestamp, *data = tuple(x)
         # convert timestamp to unix-time
         timestamp = pd.to_datetime(timestamp).timestamp()
-        # print(data)
         eeg_outlet.push_sample(data, timestamp)
+        sleep(delay_time)
 
     print("Replay finished.")
 
