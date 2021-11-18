@@ -34,6 +34,9 @@ def main():
                 -n --participants   The number of participants in this run.
                 -i --trial-id       The id of this trial. Data is stored in a subdirectory with this name.
                                     If no id is provided, the current timestamp is used instead.
+    
+    replay   Replay data from a recorded CSV file into a new LSL stream.
+                -f --filename   Name of the recording file.
         ''')
 
     parser.add_argument('command', help='Command to run.')

@@ -101,3 +101,15 @@ class CLI:
         from . import view
         view(args.window, args.scale, args.refresh,
              args.figure, args.version, args.backend, args.data_type, args.source_id)
+    
+    def replay(self):
+        parser = argparse.ArgumentParser(
+            description='Replay data from a recorded CSV file into a new LSL stream.')
+        parser.add_argument("-f", "--filename",
+                            dest="filename", type=str, default=None,
+                            help="Name of the recording file.")
+        # parser.add_argument("-t", "--type", type=str, default="EEG",
+        #                     help="Data type to record from. Either EEG, PPG, ACC, or GYRO.")
+        args = parser.parse_args(sys.argv[2:])
+        from . import replay
+        replay(args.filename)
