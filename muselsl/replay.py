@@ -20,26 +20,26 @@ from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
 
 def replay(filename, acc_enabled=False, gyro_enabled=False):
     delay_time = 1/MUSE_SAMPLING_EEG_RATE
-    
+
     # load and prepare data from csv
     timestamp_csv = "TimeStamp"
-    eeg_channels_csv = ["RAW_TP9", "RAW_AF7", "RAW_AF8", "RAW_TP10", "AUX_RIGHT"]
+    eeg_channels_csv = ["RAW_TP9", "RAW_AF7", "RAW_AF8", "RAW_TP10"]
     acc_channels_csv = ["Accelerometer_X", "Accelerometer_Y", "Accelerometer_Z"]
     gyro_channels_csv = ["Gyro_X", "Gyro_Y", "Gyro_Z"]
-    
+
     selected_csv_columns = []
 
     data = pd.read_csv(filename)
     data = drop_events(data)
     data = data.set_index(timestamp_csv)
-    
+
     selected_csv_columns += eeg_channels_csv
     eeg_info = StreamInfo('Muse', 'EEG', MUSE_NB_EEG_CHANNELS, MUSE_SAMPLING_EEG_RATE, 'float32',
                             'Muse')
     eeg_info.desc().append_child_value("manufacturer", "Muse")
     eeg_channels = eeg_info.desc().append_child("channels")
 
-    for c in ['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX']:
+    for c in ['TP9', 'AF7', 'AF8', 'TP10']:
         eeg_channels.append_child("channel") \
             .append_child_value("label", c) \
             .append_child_value("unit", "microvolts") \
@@ -49,7 +49,7 @@ def replay(filename, acc_enabled=False, gyro_enabled=False):
 
     # convert everything to floats
     data = data[selected_csv_columns].astype(float)
-    
+
     print(f"Starting replay of {filename} with {len(data)} values at {MUSE_SAMPLING_EEG_RATE}Hz.")
     print(f"This should take {len(data)/ MUSE_SAMPLING_EEG_RATE:.1f} seconds.")
     for x in data.itertuples():
