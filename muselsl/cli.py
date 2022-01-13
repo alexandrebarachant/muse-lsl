@@ -92,13 +92,19 @@ class CLI:
             dest='disable_eeg',
             action='store_true',
             help="Disable EEG data")
+        parser.add_argument(
+            '-dl',
+            '--disable-light',
+            dest='disable_light',
+            action='store_true',
+            help='Turn off light on the Muse S headband')
 
 
         args = parser.parse_args(sys.argv[2:])
         from . import stream
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
-               args.acc, args.gyro, args.disable_eeg, args.preset)
+               args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light)
 
     def record(self):
         parser = argparse.ArgumentParser(
