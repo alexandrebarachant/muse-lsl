@@ -97,7 +97,7 @@ class CLI:
             '--disable-light',
             dest='disable_light',
             action='store_true',
-            help='Turn off headband light')
+            help='Turn off light on the Muse S headband')
 
 
         args = parser.parse_args(sys.argv[2:])
