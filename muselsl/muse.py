@@ -60,7 +60,7 @@ class Muse():
         self.preset = preset
         self.disable_light = disable_light
 
-    def connect(self, interface=None, backend='auto'):
+    def connect(self, interface=None):
         """Connect to the device"""
         try:
             if self.backend == 'bluemuse':
