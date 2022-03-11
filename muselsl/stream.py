@@ -1,13 +1,14 @@
 import re
 import subprocess
 from sys import platform
-from time import time, sleep
+from time import time
 from functools import partial
 from shutil import which
 
 from pylsl import StreamInfo, StreamOutlet
 import pygatt
 
+from . import backends
 from . import helper
 from .muse import Muse
 from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
@@ -39,7 +40,9 @@ def list_muses(backend='auto', interface=None):
         print('Starting BlueMuse, see BlueMuse window for interactive list of devices.')
         subprocess.call('start bluemuse:', shell=True)
         return
-    else:
+    elif backend == 'bleak':
+        adapter = backends.BleakBackend()
+    elif backend == 'bgapi':
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
     try:
@@ -231,7 +234,7 @@ def stream(
 
             while time() - muse.last_timestamp < timeout:
                 try:
-                    sleep(1)
+                    backends.sleep(1)
                 except KeyboardInterrupt:
                     muse.stop()
                     muse.disconnect()
