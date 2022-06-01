@@ -30,8 +30,7 @@ class BleakBackend:
     def scan(self, timeout=10):
         if isinstance(bleak, ModuleNotFoundError):
             raise bleak
-        scanner = bleak.BleakScanner()
-        devices = _wait(scanner.discover(timeout))
+        devices = _wait(bleak.BleakScanner.discover(timeout))
         return [{'name':device.name, 'address':device.address} for device in devices]
     def connect(self, address):
         result = BleakDevice(self, address)
