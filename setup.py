@@ -40,7 +40,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         "bitstring",
-        "bleak",
+        "bleak>=0.18.0",
         "pygatt",
         "pandas",
         "scikit-learn",
