@@ -101,6 +101,7 @@ class CLI:
         parser.add_argument(
             "-lslt",
             "--lsltime",
+            default=False,
             dest='lsl_time',
             action="store_true",
             help="Use pylsl's local_clock() for timestamps instead of Python's time.time()")
@@ -110,7 +111,8 @@ class CLI:
         from . import stream
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
-               args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light, args.lsltime)
+               args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light,
+               args.lsl_time)
 
     def record(self):
         parser = argparse.ArgumentParser(
