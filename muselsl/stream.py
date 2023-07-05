@@ -1,21 +1,21 @@
 import re
 import subprocess
-from sys import platform
-from time import time
 from functools import partial
 from shutil import which
+from sys import platform
+from time import time
 
-from pylsl import StreamInfo, StreamOutlet
 import pygatt
+from pylsl import StreamInfo, StreamOutlet, local_clock
 
-from . import backends
-from . import helper
+from . import backends, helper
+from .constants import (AUTO_DISCONNECT_DELAY, LSL_ACC_CHUNK, LSL_EEG_CHUNK,
+                        LSL_GYRO_CHUNK, LSL_PPG_CHUNK, MUSE_NB_ACC_CHANNELS,
+                        MUSE_NB_EEG_CHANNELS, MUSE_NB_GYRO_CHANNELS,
+                        MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_ACC_RATE,
+                        MUSE_SAMPLING_EEG_RATE, MUSE_SAMPLING_GYRO_RATE,
+                        MUSE_SAMPLING_PPG_RATE, MUSE_SCAN_TIMEOUT)
 from .muse import Muse
-from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
-    MUSE_NB_EEG_CHANNELS, MUSE_SAMPLING_EEG_RATE, LSL_EEG_CHUNK,  \
-    MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_PPG_RATE, LSL_PPG_CHUNK, \
-    MUSE_NB_ACC_CHANNELS, MUSE_SAMPLING_ACC_RATE, LSL_ACC_CHUNK, \
-    MUSE_NB_GYRO_CHANNELS, MUSE_SAMPLING_GYRO_RATE, LSL_GYRO_CHUNK
 
 
 def _print_muse_list(muses):
@@ -133,6 +133,7 @@ def stream(
     eeg_disabled=False,
     preset=None,
     disable_light=False,
+    lsl_time=False,
     timeout=AUTO_DISCONNECT_DELAY,
 ):
     # If no data types are enabled, we warn the user and return immediately.
@@ -215,8 +216,10 @@ def stream(
         push_acc = partial(push, outlet=acc_outlet) if acc_enabled else None
         push_gyro = partial(push, outlet=gyro_outlet) if gyro_enabled else None
 
+        time_func = local_clock if lsl_time else time
+
         muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light)
+                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light, time_func=time_func)
 
         didConnect = muse.connect()
 
@@ -232,7 +235,7 @@ def stream(
             print("Streaming%s%s%s%s..." %
                 (eeg_string, ppg_string, acc_string, gyro_string))
 
-            while time() - muse.last_timestamp < timeout:
+            while time_func() - muse.last_timestamp < timeout:
                 try:
                     backends.sleep(1)
                 except KeyboardInterrupt:
