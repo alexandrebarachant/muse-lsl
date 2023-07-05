@@ -235,7 +235,7 @@ def stream(
             print("Streaming%s%s%s%s..." %
                 (eeg_string, ppg_string, acc_string, gyro_string))
 
-            while time() - muse.last_timestamp < timeout:
+            while time_func() - muse.last_timestamp < timeout:
                 try:
                     backends.sleep(1)
                 except KeyboardInterrupt:
