@@ -101,7 +101,6 @@ class CLI:
         parser.add_argument(
             "-lslt",
             "--lsltime",
-            default=False,
             dest='lsl_time',
             action="store_true",
             help="Use pylsl's local_clock() for timestamps instead of Python's time.time()")
