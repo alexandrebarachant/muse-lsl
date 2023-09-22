@@ -70,9 +70,9 @@ class Muse():
                 subprocess.call('start bluemuse:', shell=True)
                 self.last_timestamp = self.time_func()
             else:
-                print('Connecting to %s: %s...' % (self.name
+                print('Connecting to %s: %s, timing out after %s seconds...' % (self.name
                                                    if self.name else 'Muse',
-                                                   self.address))
+                                                   self.address, int(self.timeout)))
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
