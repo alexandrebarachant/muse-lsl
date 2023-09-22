@@ -17,6 +17,7 @@ def main():
                 -n --name       Device name (e.g. Muse-41D2).
                 -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
                 -i --interface  The interface to use, 'hci0' for gatt or a com port for bgapi.
+                -t --timeout    Length of timeout before giving up on connecting to an identified device.
                 -p --ppg        Include PPG data
                 -c --acc        Include accelerometer data
                 -g --gyro       Include gyroscope data
