@@ -11,7 +11,7 @@ import pygatt
 from . import backends
 from . import helper
 from .muse import Muse
-from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
+from .constants import MUSE_SCAN_TIMEOUT,  \
     MUSE_NB_EEG_CHANNELS, MUSE_SAMPLING_EEG_RATE, LSL_EEG_CHUNK,  \
     MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_PPG_RATE, LSL_PPG_CHUNK, \
     MUSE_NB_ACC_CHANNELS, MUSE_SAMPLING_ACC_RATE, LSL_ACC_CHUNK, \
@@ -133,7 +133,7 @@ def stream(
     eeg_disabled=False,
     preset=None,
     disable_light=False,
-    timeout=AUTO_DISCONNECT_DELAY,
+    timeout=None
 ):
     # If no data types are enabled, we warn the user and return immediately.
     if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
@@ -216,8 +216,7 @@ def stream(
         push_gyro = partial(push, outlet=gyro_outlet) if gyro_enabled else None
 
         muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light)
-
+                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light, timeout=timeout)
         didConnect = muse.connect()
 
         if(didConnect):
