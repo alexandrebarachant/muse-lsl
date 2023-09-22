@@ -66,6 +66,7 @@ class CLI:
         parser.add_argument(
             "-t",
             "--timeout",
+            dest="timeout",
             type=float,
             default=10.0,
             help="Length of timeout before giving up on connecting to an identified device.")
@@ -180,6 +181,13 @@ class CLI:
             help=
             "The interface to use, 'hci0' for gatt or a com port for bgapi.")
         parser.add_argument(
+            "-t",
+            "--timeout",
+            dest="timeout",
+            type=float,
+            default=10.0,
+            help="Length of timeout before giving up on connecting to an identified device.")
+        parser.add_argument(
             "-d",
             "--duration",
             dest="duration",
@@ -196,7 +204,7 @@ class CLI:
         args = parser.parse_args(sys.argv[2:])
         from . import record_direct
         record_direct(args.duration, args.address, args.filename, args.backend,
-                      args.interface, args.name)
+                      args.interface, args.name, args.timeout)
 
     def view(self):
         parser = argparse.ArgumentParser(

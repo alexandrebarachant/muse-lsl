@@ -42,7 +42,6 @@ class BleakDevice:
         self._adapter = adapter
         self._timeout = connection_timeout
         self._client = bleak.BleakClient(address, timeout=self._timeout)  # <- CRITICAL timeout value HERE
-        print(connection_timeout)  # testing
     def connect(self):
         _wait(self._client.connect())
         self._adapter.connected.add(self)
