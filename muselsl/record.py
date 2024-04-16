@@ -218,9 +218,15 @@ def record_direct(duration,
     t_init = time()
     print('Start recording at time t=%.3f' % t_init)
 
+    last_update = t_init
     while (time() - t_init) < duration:
         try:
             backends.sleep(1)
+
+            # Send a keep alive every minute
+            if time() - last_update > 60:
+                last_update = time()
+                muse.keep_alive()
         except KeyboardInterrupt:
             break
 
