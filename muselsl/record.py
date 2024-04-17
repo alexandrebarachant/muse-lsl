@@ -1,6 +1,8 @@
+import bleak
 import numpy as np
 import pandas as pd
 import os
+import sys
 from typing import Union, List, Optional
 from pathlib import Path
 from pylsl import StreamInlet, resolve_byprop
@@ -12,7 +14,6 @@ from .muse import Muse
 from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
 
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
-
 
 def record(
     duration: int,
@@ -212,7 +213,9 @@ def record_direct(duration,
         timestamps.append(new_timestamps)
 
     muse = Muse(address, save_eeg, backend=backend)
-    muse.connect()
+    if not muse.connect():
+        print(f'Failed to connect to Muse: {address}', file=sys.stderr)
+        return
     muse.start()
 
     t_init = time()
@@ -221,13 +224,32 @@ def record_direct(duration,
     last_update = t_init
     while (time() - t_init) < duration:
         try:
-            backends.sleep(1)
+            try:
+                backends.sleep(1)
 
-            # Send a keep alive every minute
-            if time() - last_update > 60:
-                last_update = time()
-                muse.keep_alive()
+                # Send a keep alive every 10 secs
+                if time() - last_update > 10:
+                    last_update = time()
+                    muse.keep_alive()
+            except bleak.exc.BleakError:
+                print('Disconnected. Attempting to reconnect...')
+                # Do not giveup since we make a best effort to continue
+                # data collection. Assume device is out of range or another
+                # temp error.
+                while True:
+                    muse.connect(retries=-1)
+                    try:
+                        muse.resume()
+                    except bleak.exc.BleakDBusError:
+                        # Something is wrong with this connection
+                        print('DBus error occurred. Reconnecting.')
+                        muse.disconnect()
+                        continue
+                    else:
+                        break
+                print('Connected. Continuing with data collection...')
         except KeyboardInterrupt:
+            print('Interrupt received. Exiting data collection.')
             break
 
     muse.stop()

@@ -60,7 +60,7 @@ class Muse():
         self.preset = preset
         self.disable_light = disable_light
 
-    def connect(self, interface=None):
+    def connect(self, interface=None, retries=0):
         """Connect to the device"""
         try:
             if self.backend == 'bluemuse':
@@ -81,7 +81,11 @@ class Muse():
                         serial_port=self.interface)
 
                 self.adapter.start()
-                self.device = self.adapter.connect(self.address)
+                if ((device := self.adapter.connect(self.address, retries))
+                    is None):
+                    return False
+                self.device = device
+
                 if(self.preset != None):
                     self.select_preset(self.preset)
 
