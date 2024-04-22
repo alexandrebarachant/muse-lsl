@@ -1,3 +1,6 @@
+import logging
+import sys
+
 import bitstring
 import pygatt
 import numpy as np
@@ -7,6 +10,9 @@ import subprocess
 from . import backends
 from . import helper
 from .constants import *
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class Muse():
@@ -64,11 +70,11 @@ class Muse():
         """Connect to the device"""
         try:
             if self.backend == 'bluemuse':
-                print('Starting BlueMuse.')
+                logger.info('Starting BlueMuse.')
                 subprocess.call('start bluemuse:', shell=True)
                 self.last_timestamp = self.time_func()
             else:
-                print('Connecting to %s: %s...' % (self.name
+                logger.info('Connecting to %s: %s...' % (self.name
                                                    if self.name else 'Muse',
                                                    self.address))
                 if self.backend == 'gatt':
@@ -145,7 +151,7 @@ class Muse():
                 return True
 
             else:
-                print('Connection to', self.address, 'failed')
+                logger.error('Connection to', self.address, 'failed')
                 return False
 
     def _write_cmd(self, cmd):
@@ -260,7 +266,7 @@ class Muse():
         if preset[0] == 'p':
             preset = preset[1:]
         if str(preset) != '21':
-            print('Sending command for non-default preset: p' + preset)
+            logger.debug('Sending command for non-default preset: p' + preset)
         preset = bytes(preset, 'utf-8')
         self._write_cmd([0x04, 0x70, *preset, 0x0a])
 
@@ -368,7 +374,7 @@ class Muse():
         if handle == 35:
             if tm != self.last_tm + 1:
                 if (tm - self.last_tm) != -65535:  # counter reset
-                    print("missing sample %d : %d" % (tm, self.last_tm))
+                    logger.debug("missing sample %d : %d" % (tm, self.last_tm))
                     # correct sample index for timestamp estimation
                     self.sample_index += 12 * (tm - self.last_tm + 1)
 
@@ -564,7 +570,7 @@ class Muse():
         # last data received
         if handle == 62:
             if tm != self.last_tm_ppg + 1:
-                print("missing sample %d : %d" % (tm, self.last_tm_ppg))
+                logger.debug("missing sample %d : %d" % (tm, self.last_tm_ppg))
             self.last_tm_ppg = tm
 
             # calculate index of time samples
