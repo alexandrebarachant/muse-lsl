@@ -31,7 +31,8 @@ class Muse():
                  time_func=time,
                  name=None,
                  preset=None,
-                 disable_light=False):
+                 disable_light=False,
+                 timeout=None):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -45,6 +46,7 @@ class Muse():
         """
 
         self.address = address
+        self.timeout = timeout
         self.name = name
         self.callback_eeg = callback_eeg
         self.callback_telemetry = callback_telemetry
@@ -76,7 +78,7 @@ class Muse():
             else:
                 logger.info('Connecting to %s: %s...' % (self.name
                                                    if self.name else 'Muse',
-                                                   self.address))
+                                                   self.address, int(self.timeout)))
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
@@ -87,7 +89,7 @@ class Muse():
                         serial_port=self.interface)
 
                 self.adapter.start()
-                self.device = self.adapter.connect(self.address)
+                self.device = self.adapter.connect(self.address, self.timeout)
                 if(self.preset != None):
                     self.select_preset(self.preset)
 
