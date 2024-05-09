@@ -183,8 +183,7 @@ def record_direct(duration,
                   filename=None,
                   backend='auto',
                   interface=None,
-                  name=None,
-                  timeout=None):
+                  name=None):
     if backend == 'bluemuse':
         raise (NotImplementedError(
             'Direct record not supported with BlueMuse backend. Use record after starting stream instead.'
@@ -212,8 +211,7 @@ def record_direct(duration,
         eeg_samples.append(new_samples)
         timestamps.append(new_timestamps)
 
-    muse = Muse(address, save_eeg, backend=backend, timeout=timeout)
-    print("Recording direct received", str(timeout), "for timeout!")
+    muse = Muse(address, save_eeg, backend=backend)
     muse.connect()
     muse.start()
 
