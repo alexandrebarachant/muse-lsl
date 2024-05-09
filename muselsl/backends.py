@@ -32,16 +32,15 @@ class BleakBackend:
             raise bleak
         devices = _wait(bleak.BleakScanner.discover(timeout))
         return [{'name':device.name, 'address':device.address} for device in devices]
-    def connect(self, address, connection_timeout=None):
-        result = BleakDevice(self, address, connection_timeout)
+    def connect(self, address):
+        result = BleakDevice(self, address)
         result.connect()
         return result
 
 class BleakDevice:
-    def __init__(self, adapter, address, connection_timeout=None):
+    def __init__(self, adapter, address):
         self._adapter = adapter
-        self._timeout = connection_timeout
-        self._client = bleak.BleakClient(address, timeout=self._timeout)  # <- CRITICAL timeout value HERE
+        self._client = bleak.BleakClient(address)
     def connect(self):
         _wait(self._client.connect())
         self._adapter.connected.add(self)
