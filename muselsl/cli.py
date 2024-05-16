@@ -63,6 +63,13 @@ class CLI:
             default=None,
             help=
             "The interface to use, 'hci0' for gatt or a com port for bgapi.")
+        parser.add_argument(
+            "-t",
+            "--timeout",
+            dest="timeout",
+            type=float,
+            default=10.0,
+            help="Length of timeout before giving up on connecting to an identified device.")
         parser.add_argument("-P",
             "--preset",
             type=int,
@@ -104,7 +111,7 @@ class CLI:
         from . import stream
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
-               args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light)
+               args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light, args.timeout)
 
     def record(self):
         parser = argparse.ArgumentParser(
@@ -174,6 +181,13 @@ class CLI:
             help=
             "The interface to use, 'hci0' for gatt or a com port for bgapi.")
         parser.add_argument(
+            "-t",
+            "--timeout",
+            dest="timeout",
+            type=float,
+            default=10.0,
+            help="Length of timeout before giving up on connecting to an identified device.")
+        parser.add_argument(
             "-d",
             "--duration",
             dest="duration",
@@ -190,7 +204,7 @@ class CLI:
         args = parser.parse_args(sys.argv[2:])
         from . import record_direct
         record_direct(args.duration, args.address, args.filename, args.backend,
-                      args.interface, args.name)
+                      args.interface, args.name, args.timeout)
 
     def view(self):
         parser = argparse.ArgumentParser(
