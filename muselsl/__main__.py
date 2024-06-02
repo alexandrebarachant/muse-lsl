@@ -11,6 +11,7 @@ def main():
     list        List available Muse devices.
                 -b --backend    BLE backend to use. can be auto, bluemuse, gatt or bgapi.
                 -i --interface  The interface to use, 'hci0' for gatt or a com port for bgapi.
+                -l --log        Set the logging level
 
     stream      Start an LSL stream from Muse headset.
                 -a --address    Device MAC address.
@@ -20,8 +21,13 @@ def main():
                 -p --ppg        Include PPG data
                 -c --acc        Include accelerometer data
                 -g --gyro       Include gyroscope data
+                -l --log        Set the logging level
+                -r --retries    How many times to retry connecting to the device on a failed attempt
                 --disable-eeg   Disable EEG data
-
+                --disable-light Turn off light on the Muse S headband'
+                --lsltime       Use pylsl's local_clock() for timestamps instead of Python's time.time()
+                --preset        Select preset which dictates data channels to be streamed
+                
     view     Visualize EEG data from an LSL stream.
                 -w --window     Window length to display in seconds.
                 -s --scale      Scale in uV.

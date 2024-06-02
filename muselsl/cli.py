@@ -118,7 +118,7 @@ class CLI:
             "--retries",
             default=1,
             dest='retries',
-            action="store_true",
+            type=int,
             help="How many times to retry connecting to the device on a failed attempt")
         parser.add_argument(
             '-l',
