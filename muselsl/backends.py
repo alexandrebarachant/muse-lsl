@@ -1,10 +1,13 @@
 import asyncio
 import atexit
+import sys
 import time
 try:
     import bleak
 except ModuleNotFoundError as error:
     bleak = error
+
+RETRY_SLEEP = 1
 
 def _wait(coroutine):
     loop = asyncio.get_event_loop()
@@ -32,18 +35,38 @@ class BleakBackend:
             raise bleak
         devices = _wait(bleak.BleakScanner.discover(timeout))
         return [{'name':device.name, 'address':device.address} for device in devices]
-    def connect(self, address):
+    def connect(self, address, retries):
         result = BleakDevice(self, address)
-        result.connect()
+        if not result.connect(retries):
+            return None
         return result
 
 class BleakDevice:
     def __init__(self, adapter, address):
         self._adapter = adapter
-        self._client = bleak.BleakClient(address)
-    def connect(self):
-        _wait(self._client.connect())
+        self._address = address
+        self._client = None
+    # Use retries=-1 to continue attempting to reconnect forever
+    def connect(self, retries):
+        attempts = 1
+        while True:
+            self._client = bleak.BleakClient(self._address)
+            if attempts > 1:
+                print(f'Connection attempt {attempts}')
+            try:
+                _wait(self._client.connect())
+            except (
+                bleak.exc.BleakDeviceNotFoundError, bleak.exc.BleakError
+            ) as err:
+                print(f'Failed to connect: {err}', file=sys.stderr)
+                if attempts == 1 + retries:
+                    return False
+                sleep(RETRY_SLEEP)
+                attempts += 1
+            else:
+                break
         self._adapter.connected.add(self)
+        return True
     def disconnect(self):
         _wait(self._client.disconnect())
         self._adapter.connected.remove(self)
