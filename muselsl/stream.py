@@ -4,6 +4,7 @@ from functools import partial
 from shutil import which
 from sys import platform
 from time import time
+import logging
 
 import pygatt
 from pylsl import StreamInfo, StreamOutlet, local_clock
@@ -14,7 +15,7 @@ from .constants import (AUTO_DISCONNECT_DELAY, LSL_ACC_CHUNK, LSL_EEG_CHUNK,
                         MUSE_NB_EEG_CHANNELS, MUSE_NB_GYRO_CHANNELS,
                         MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_ACC_RATE,
                         MUSE_SAMPLING_EEG_RATE, MUSE_SAMPLING_GYRO_RATE,
-                        MUSE_SAMPLING_PPG_RATE, MUSE_SCAN_TIMEOUT)
+                        MUSE_SAMPLING_PPG_RATE, LIST_SCAN_TIMEOUT, LOG_LEVELS)
 from .muse import Muse
 
 
@@ -26,10 +27,11 @@ def _print_muse_list(muses):
 
 
 # Returns a list of available Muse devices.
-def list_muses(backend='auto', interface=None):
+def list_muses(backend='auto', interface=None, log_level=logging.ERROR):
+    logging.basicConfig(level=log_level)
     if backend == 'auto' and which('bluetoothctl') is not None:
         print("Backend was 'auto' and bluetoothctl was found, using to list muses...")
-        return _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
+        return _list_muses_bluetoothctl(LIST_SCAN_TIMEOUT)
 
     backend = helper.resolve_backend(backend)
 
@@ -48,13 +50,13 @@ def list_muses(backend='auto', interface=None):
     try:
         adapter.start()
         print('Searching for Muses, this may take up to 10 seconds...')
-        devices = adapter.scan(timeout=MUSE_SCAN_TIMEOUT)
+        devices = adapter.scan(timeout=LIST_SCAN_TIMEOUT)
         adapter.stop()
     except pygatt.exceptions.BLEError as e:
         if backend == 'gatt':
             print('pygatt failed to scan for BLE devices. Trying with '
                   'bluetoothctl.')
-            return _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
+            return _list_muses_bluetoothctl(LIST_SCAN_TIMEOUT)
         else:
             raise e
 
@@ -134,7 +136,8 @@ def stream(
     preset=None,
     disable_light=False,
     lsl_time=False,
-    timeout=AUTO_DISCONNECT_DELAY,
+    retries=1,
+    log_level=logging.ERROR
 ):
     # If no data types are enabled, we warn the user and return immediately.
     if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
@@ -219,9 +222,9 @@ def stream(
         time_func = local_clock if lsl_time else time
 
         muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light, time_func=time_func)
+                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light, time_func=time_func, log_level=log_level)
 
-        didConnect = muse.connect()
+        didConnect = muse.connect(retries=retries)
 
         if(didConnect):
             print('Connected.')
@@ -235,7 +238,7 @@ def stream(
             print("Streaming%s%s%s%s..." %
                 (eeg_string, ppg_string, acc_string, gyro_string))
 
-            while time_func() - muse.last_timestamp < timeout:
+            while time_func() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
                 try:
                     backends.sleep(1)
                 except KeyboardInterrupt:
@@ -255,7 +258,7 @@ def stream(
 
         muse = Muse(address=address, callback_eeg=None, callback_ppg=None, callback_acc=None, callback_gyro=None,
                     backend=backend, interface=interface, name=name)
-        muse.connect()
+        muse.connect(retries=retries)
 
         if not address and not name:
             print('Targeting first device BlueMuse discovers...')

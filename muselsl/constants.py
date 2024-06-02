@@ -1,3 +1,5 @@
+import logging
+
 MUSE_NB_EEG_CHANNELS = 5
 MUSE_SAMPLING_EEG_RATE = 256
 LSL_EEG_CHUNK = 12
@@ -40,11 +42,26 @@ MUSE_GATT_ATTR_THERMISTOR = "273e0012-4c4d-454d-96be-f03bac821358" # muse S only
 MUSE_ACCELEROMETER_SCALE_FACTOR = 0.0000610352
 MUSE_GYRO_SCALE_FACTOR = 0.0074768
 
-MUSE_SCAN_TIMEOUT = 10.5
+# How long to wait while scanning for devices
+LIST_SCAN_TIMEOUT = 10.5
+# How long to wait after device stops sending data before ending the stream
 AUTO_DISCONNECT_DELAY = 3
+# How long to wait in between connection attempts
+RETRY_SLEEP_TIMEOUT = 1
 
 LSL_SCAN_TIMEOUT = 5
 LSL_BUFFER = 360
 
 VIEW_SUBSAMPLE = 2
 VIEW_BUFFER = 12
+
+LOG_LEVELS = {
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARNING,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL
+}
+
+
+

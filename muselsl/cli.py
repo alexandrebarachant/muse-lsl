@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 import argparse
-
+from .constants import LOG_LEVELS
 
 class CLI:
     def __init__(self, command):
@@ -27,9 +27,17 @@ class CLI:
             help=
             "The interface to use, 'hci0' for gatt or a com port for bgapi. WIll auto-detect if not specified"
         )
+        parser.add_argument(
+            '-l',
+            "--log", 
+            choices=LOG_LEVELS.keys(),
+            dest="log_level",
+            default='info',
+            help='Set the logging level'
+        )
         args = parser.parse_args(sys.argv[2:])
         from . import list_muses
-        list_muses(args.backend, args.interface)
+        list_muses(args.backend, args.interface, LOG_LEVELS[args.log_level])
 
     def stream(self):
         parser = argparse.ArgumentParser(
@@ -105,14 +113,28 @@ class CLI:
             dest='lsl_time',
             action="store_true",
             help="Use pylsl's local_clock() for timestamps instead of Python's time.time()")
-
+        parser.add_argument(
+            "-r",
+            "--retries",
+            default=1,
+            dest='retries',
+            action="store_true",
+            help="How many times to retry connecting to the device on a failed attempt")
+        parser.add_argument(
+            '-l',
+            "--log", 
+            choices=LOG_LEVELS.keys(),
+            dest="log_level",
+            default='info',
+            help='Set the logging level'
+        )
 
         args = parser.parse_args(sys.argv[2:])
         from . import stream
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
                args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light,
-               args.lsl_time)
+               args.lsl_time, args.retries, LOG_LEVELS[args.log_level])
 
     def record(self):
         parser = argparse.ArgumentParser(

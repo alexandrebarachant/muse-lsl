@@ -11,12 +11,10 @@ from . import backends
 from . import helper
 from .constants import *
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
 class Muse():
-    """Muse 2016 headband"""
+    """Muse headband"""
 
     def __init__(self,
                  address,
@@ -31,7 +29,8 @@ class Muse():
                  time_func=time,
                  name=None,
                  preset=None,
-                 disable_light=False):
+                 disable_light=False,
+                 log_level=logging.ERROR):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -43,6 +42,7 @@ class Muse():
         callback_gyro -- function(timestamp, samples)
         - samples is a list of 3 samples, where each sample is [x, y, z]
         """
+        logging.basicConfig(stream=sys.stdout, level=log_level)
 
         self.address = address
         self.name = name

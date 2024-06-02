@@ -6,8 +6,7 @@ try:
     import bleak
 except ModuleNotFoundError as error:
     bleak = error
-
-RETRY_SLEEP = 1
+from .constants import RETRY_SLEEP_TIMEOUT
 
 def _wait(coroutine):
     loop = asyncio.get_event_loop()
@@ -61,7 +60,7 @@ class BleakDevice:
                 print(f'Failed to connect: {err}', file=sys.stderr)
                 if attempts == 1 + retries:
                     return False
-                sleep(RETRY_SLEEP)
+                sleep(RETRY_SLEEP_TIMEOUT)
                 attempts += 1
             else:
                 break
