@@ -13,6 +13,9 @@ from . import backends
 from .muse import Muse
 from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
 
+import time
+from time import sleep
+import pygame
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
 
 def record(
@@ -70,13 +73,21 @@ def record(
     res = []
     timestamps = []
     markers = []
+    blinkOrNot = []
     t_init = time()
     time_correction = inlet.time_correction()
     last_written_timestamp = None
     print('Start recording at time t=%.3f' % t_init)
     print('Time correction: ', time_correction)
+
+    pygame.mixer.init()
+    metronome_sound = pygame.mixer.Sound('metronome_click.wav')
+
     while (time() - t_init) < duration:
         try:
+            metronome_sound.play()
+            print("Blink now!")
+            
             data, timestamp = inlet.pull_chunk(
                 timeout=1.0, max_samples=chunk_length)
 
@@ -84,6 +95,8 @@ def record(
                 res.append(data)
                 timestamps.extend(timestamp)
                 tr = time()
+
+            
             if inlet_marker:
                 marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
                 if timestamp:
@@ -104,8 +117,11 @@ def record(
                 )
                 last_written_timestamp = timestamps[-1]
 
+
         except KeyboardInterrupt:
             break
+            
+        
 
     time_correction = inlet.time_correction()
     print("Time correction: ", time_correction)
