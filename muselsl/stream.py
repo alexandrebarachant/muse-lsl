@@ -90,13 +90,20 @@ def _list_muses_bluetoothctl(timeout, verbose=False):
     scan = pexpect.spawn('bluetoothctl scan on')
     try:
         scan.expect('foooooo', timeout=timeout)
-    except pexpect.EOF:
-        before_eof = scan.before.decode('utf-8', 'replace')
-        msg = f'Unexpected error when scanning: {before_eof}'
-        raise ValueError(msg)
-    except pexpect.TIMEOUT:
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        # Both EOF and TIMEOUT are expected - the scan completed normally
         if verbose:
-            print(scan.before.decode('utf-8', 'replace').split('\r\n'))
+            try:
+                output = scan.before.decode('utf-8', 'replace')
+                print(output.split('\r\n'))
+            except:
+                pass
+
+    # Terminate the scan process if still running
+    try:
+        scan.terminate(force=True)
+    except:
+        pass
 
     # List devices using bluetoothctl
     list_devices_cmd = ['bluetoothctl', 'devices']

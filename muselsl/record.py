@@ -149,7 +149,7 @@ def _save(
     data = pd.DataFrame(data=res, columns=["timestamps"] + ch_names)
 
     directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
+    if directory and not os.path.exists(directory):
         os.makedirs(directory)
 
     if inlet_marker and markers:
@@ -263,7 +263,7 @@ def record_direct(duration,
     recording['timestamps'] = timestamps
 
     directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
+    if directory and not os.path.exists(directory):
         os.makedirs(directory)
 
     recording.to_csv(filename, float_format='%.3f')
