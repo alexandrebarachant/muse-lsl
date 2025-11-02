@@ -47,8 +47,8 @@ setup(
         "numpy",
         "seaborn",
         "pexpect",
-    ] +
-    (["pylsl==1.10.5"] if os.sys.platform.startswith("linux") else ["pylsl"]),
+        "pylsl>=1.16.2",  # Updated for compatibility with modern LSL features
+    ],
     extras_require={"Viewer V2": ["mne", "vispy"]},
     classifiers=[
         # How mature is this project?  Common values are
