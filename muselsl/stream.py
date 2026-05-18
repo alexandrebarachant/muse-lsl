@@ -15,7 +15,8 @@ from .constants import (AUTO_DISCONNECT_DELAY, LSL_ACC_CHUNK, LSL_EEG_CHUNK,
                         MUSE_NB_EEG_CHANNELS, MUSE_NB_GYRO_CHANNELS,
                         MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_ACC_RATE,
                         MUSE_SAMPLING_EEG_RATE, MUSE_SAMPLING_GYRO_RATE,
-                        MUSE_SAMPLING_PPG_RATE, LIST_SCAN_TIMEOUT, LOG_LEVELS)
+                        MUSE_SAMPLING_PPG_RATE, LIST_SCAN_TIMEOUT, LOG_LEVELS,
+                        RETRY_SLEEP_TIMEOUT)
 from .muse import Muse
 
 
@@ -147,7 +148,14 @@ def stream(
     # For any backend except bluemuse, we will start LSL streams hooked up to the muse callbacks.
     if backend != 'bluemuse':
         if not address:
-            found_muse = find_muse(name, backend)
+            attempts = 0
+            found_muse = None
+            while found_muse is None and (retries < 0 or attempts <= retries):
+                found_muse = find_muse(name, backend)
+                if found_muse is None and (retries < 0 or attempts < retries):
+                    print('Muse not found. Retrying scan...')
+                    backends.sleep(RETRY_SLEEP_TIMEOUT)
+                attempts += 1
             if not found_muse:
                 return
             else:

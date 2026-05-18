@@ -1,10 +1,8 @@
 import numpy as np
 import matplotlib
 from scipy.signal import lfilter, lfilter_zi, firwin
-from time import sleep
 from pylsl import StreamInlet, resolve_byprop
 import seaborn as sns
-from threading import Thread
 from .constants import VIEW_BUFFER, VIEW_SUBSAMPLE, LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK
 
 
@@ -22,7 +20,7 @@ def view(window, scale, refresh, figure, backend, version=1):
     print("Start acquiring data.")
 
     fig, axes = matplotlib.pyplot.subplots(1, 1, figsize=figsize, sharex=True)
-    lslv = LSLViewer(streams[0], fig, axes, window, scale)
+    lslv = LSLViewer(streams[0], fig, axes, window, scale, refresh)
     fig.canvas.mpl_connect('close_event', lslv.stop)
 
     help_str = """
@@ -39,11 +37,12 @@ def view(window, scale, refresh, figure, backend, version=1):
 
 
 class LSLViewer():
-    def __init__(self, stream, fig, axes, window, scale, dejitter=True):
+    def __init__(self, stream, fig, axes, window, scale, refresh, dejitter=True):
         """Init"""
         self.stream = stream
         self.window = window
         self.scale = scale
+        self.refresh = refresh
         self.dejitter = dejitter
         self.inlet = StreamInlet(stream, max_chunklen=LSL_EEG_CHUNK)
         self.filt = True
@@ -95,7 +94,7 @@ class LSLViewer():
                         for ii in range(self.n_chan)]
         axes.set_yticklabels(ticks_labels)
 
-        self.display_every = int(0.2 / (12 / self.sfreq))
+        self.display_every = max(1, int(self.refresh / (12 / self.sfreq)))
 
         self.bf = firwin(32, np.array([1, 40]) / (self.sfreq / 2.), width=0.05,
                          pass_zero=False)
@@ -106,53 +105,50 @@ class LSLViewer():
         self.data_f = np.zeros((self.n_samples, self.n_chan))
 
     def update_plot(self):
-        k = 0
-        try:
-            while self.started:
-                samples, timestamps = self.inlet.pull_chunk(timeout=1.0,
-                                                            max_samples=LSL_EEG_CHUNK)
+        updated = False
+        for _ in range(self.display_every):
+            samples, timestamps = self.inlet.pull_chunk(timeout=0.0,
+                                                        max_samples=LSL_EEG_CHUNK)
+            if not timestamps:
+                break
 
-                if timestamps:
-                    if self.dejitter:
-                        timestamps = np.float64(np.arange(len(timestamps)))
-                        timestamps /= self.sfreq
-                        timestamps += self.times[-1] + 1. / self.sfreq
-                    self.times = np.concatenate([self.times, timestamps])
-                    self.n_samples = int(self.sfreq * self.window)
-                    self.times = self.times[-self.n_samples:]
-                    self.data = np.vstack([self.data, samples])
-                    self.data = self.data[-self.n_samples:]
-                    filt_samples, self.filt_state = lfilter(
-                        self.bf, self.af,
-                        samples,
-                        axis=0, zi=self.filt_state)
-                    self.data_f = np.vstack([self.data_f, filt_samples])
-                    self.data_f = self.data_f[-self.n_samples:]
-                    k += 1
-                    if k == self.display_every:
+            if self.dejitter:
+                timestamps = np.float64(np.arange(len(timestamps)))
+                timestamps /= self.sfreq
+                timestamps += self.times[-1] + 1. / self.sfreq
+            self.times = np.concatenate([self.times, timestamps])
+            self.n_samples = int(self.sfreq * self.window)
+            self.times = self.times[-self.n_samples:]
+            self.data = np.vstack([self.data, samples])
+            self.data = self.data[-self.n_samples:]
+            filt_samples, self.filt_state = lfilter(
+                self.bf, self.af,
+                samples,
+                axis=0, zi=self.filt_state)
+            self.data_f = np.vstack([self.data_f, filt_samples])
+            self.data_f = self.data_f[-self.n_samples:]
+            updated = True
 
-                        if self.filt:
-                            plot_data = self.data_f
-                        elif not self.filt:
-                            plot_data = self.data - self.data.mean(axis=0)
-                        for ii in range(self.n_chan):
-                            self.lines[ii].set_xdata(self.times[::self.subsample] -
-                                                     self.times[-1])
-                            self.lines[ii].set_ydata(plot_data[::self.subsample, ii] /
-                                                     self.scale - ii)
-                            impedances = np.std(plot_data, axis=0)
+        if updated:
+            if self.filt:
+                plot_data = self.data_f
+            elif not self.filt:
+                plot_data = self.data - self.data.mean(axis=0)
+            for ii in range(self.n_chan):
+                self.lines[ii].set_xdata(self.times[::self.subsample] -
+                                         self.times[-1])
+                self.lines[ii].set_ydata(plot_data[::self.subsample, ii] /
+                                         self.scale - ii)
+                impedances = np.std(plot_data, axis=0)
 
-                        ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
-                                                       impedances[ii])
-                                        for ii in range(self.n_chan)]
-                        self.axes.set_yticklabels(ticks_labels)
-                        self.axes.set_xlim(-self.window, 0)
-                        self.fig.canvas.draw()
-                        k = 0
-                else:
-                    sleep(0.2)
-        except RuntimeError as e:
-            raise
+            ticks_labels = ['%s - %.2f' % (self.ch_names[ii],
+                                           impedances[ii])
+                            for ii in range(self.n_chan)]
+            self.axes.set_yticklabels(ticks_labels)
+            self.axes.set_xlim(-self.window, 0)
+            self.fig.canvas.draw_idle()
+
+        return self.started
 
     def onclick(self, event):
         print((event.button, event.x, event.y, event.xdata, event.ydata))
@@ -172,9 +168,12 @@ class LSLViewer():
 
     def start(self):
         self.started = True
-        self.thread = Thread(target=self.update_plot)
-        self.thread.daemon = True
-        self.thread.start()
+        self.timer = self.fig.canvas.new_timer(
+            interval=max(1, int(self.refresh * 1000)))
+        self.timer.add_callback(self.update_plot)
+        self.timer.start()
 
-    def stop(self, close_event):
+    def stop(self, close_event=None):
         self.started = False
+        if hasattr(self, 'timer'):
+            self.timer.stop()
