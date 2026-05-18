@@ -45,7 +45,7 @@ MUSE_GYRO_SCALE_FACTOR = 0.0074768
 # How long to wait while scanning for devices
 LIST_SCAN_TIMEOUT = 10.5
 # How long to wait after device stops sending data before ending the stream
-AUTO_DISCONNECT_DELAY = 3
+AUTO_DISCONNECT_DELAY = 10
 # How long to wait in between connection attempts
 RETRY_SLEEP_TIMEOUT = 1
 

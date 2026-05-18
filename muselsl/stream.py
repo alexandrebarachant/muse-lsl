@@ -226,6 +226,10 @@ def stream(
 
         didConnect = muse.connect(retries=retries)
 
+        if not didConnect:
+            print('Failed to connect to Muse.')
+            return
+
         if(didConnect):
             print('Connected.')
             muse.start()
