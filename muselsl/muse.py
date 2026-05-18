@@ -88,7 +88,7 @@ class Muse():
                         serial_port=self.interface)
 
                 self.adapter.start()
-                device = self.adapter.connect(self.address, retries)
+                device = self.adapter.connect(self.address, retries, self.name)
                 if device is None:
                     return False
                 self.device = device
@@ -96,28 +96,34 @@ class Muse():
                 if(self.preset != None):
                     self.select_preset(self.preset)
 
-                # subscribes to EEG stream
                 if self.enable_eeg:
+                    print('[muse] Subscribing to EEG sensors...')
                     self._subscribe_eeg()
 
                 if self.enable_control:
+                    print('[muse] Subscribing to control channel...')
                     self._subscribe_control()
 
                 if self.enable_telemetry:
+                    print('[muse] Subscribing to telemetry...')
                     self._subscribe_telemetry()
 
                 if self.enable_acc:
+                    print('[muse] Subscribing to accelerometer...')
                     self._subscribe_acc()
 
                 if self.enable_gyro:
+                    print('[muse] Subscribing to gyroscope...')
                     self._subscribe_gyro()
 
                 if self.enable_ppg:
+                    print('[muse] Subscribing to PPG...')
                     self._subscribe_ppg()
                 
                 if self.disable_light:
                     self._disable_light()
 
+                print('[muse] Headband setup complete.')
                 self.last_timestamp = self.time_func()
 
             return True
