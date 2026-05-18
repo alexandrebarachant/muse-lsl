@@ -72,6 +72,9 @@ fi
 
 if ! kill -0 "$STREAM_PID" 2>/dev/null; then
   echo "[$(date +%H:%M:%S)] Stream ended before viewer opened — wear the headband and try again."
+  if grep -q "No Muses found" "$STREAM_LOG" 2>/dev/null; then
+    echo "Muse was not advertising during the scan. Power-cycle it and start this script about 2 seconds after the lights begin cascading."
+  fi
   exit 1
 fi
 
