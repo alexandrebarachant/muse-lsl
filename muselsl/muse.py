@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import List, cast
 
 import bitstring
 import pygatt
@@ -305,9 +306,9 @@ class Muse():
 
         res = aa.unpack(pattern)
         packetIndex = res[0]
-        data = res[1:]
+        samples = res[1:]
         # 12 bits on a 2 mVpp range
-        data = 0.48828125 * (np.array(data) - 2048)
+        data = 0.48828125 * (np.array(samples) - 2048)
         return packetIndex, data
 
     def _init_sample(self):
@@ -443,7 +444,8 @@ class Muse():
         pattern = "uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8, \
                     uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8,uint:8"
 
-        chars = bit_decoder.unpack(pattern)
+        # uint patterns always decode to ints; cast so chr()/slicing typecheck
+        chars = cast(List[int], bit_decoder.unpack(pattern))
 
         # Length of the string
         n_incoming = chars[0]
@@ -473,7 +475,7 @@ class Muse():
 
         bit_decoder = bitstring.Bits(bytes=packet)
         pattern = "uint:16,uint:16,uint:16,uint:16,uint:16"  # The rest is 0 padding
-        data = bit_decoder.unpack(pattern)
+        data = cast(List[int], bit_decoder.unpack(pattern))
 
         battery = data[1] / 512
         fuel_gauge = data[2] * 2.2

@@ -2,10 +2,12 @@ import asyncio
 import atexit
 import sys
 import time
+from typing import Any
 try:
     import bleak
 except ModuleNotFoundError as error:
-    bleak = error
+    # Defer the import failure until a Bleak backend is actually used (see scan()).
+    bleak = error  # type: ignore[assignment]
 from .constants import RETRY_SLEEP_TIMEOUT
 
 def _wait(coroutine):
@@ -44,7 +46,7 @@ class BleakDevice:
     def __init__(self, adapter, address):
         self._adapter = adapter
         self._address = address
-        self._client = None
+        self._client: Any = None
     # Use retries=-1 to continue attempting to reconnect forever
     def connect(self, retries):
         attempts = 1
