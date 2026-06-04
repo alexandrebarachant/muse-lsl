@@ -10,9 +10,17 @@ except ModuleNotFoundError as error:
     bleak = error  # type: ignore[assignment]
 from .constants import RETRY_SLEEP_TIMEOUT
 
+_loop = None
+
+def _get_event_loop():
+    global _loop
+    if _loop is None or _loop.is_closed():
+        _loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_loop)
+    return _loop
+
 def _wait(coroutine):
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(coroutine)
+    return _get_event_loop().run_until_complete(coroutine)
 
 def sleep(seconds):
     time.sleep(seconds)
@@ -34,37 +42,72 @@ class BleakBackend:
     def scan(self, timeout=10):
         if isinstance(bleak, ModuleNotFoundError):
             raise bleak
+        start = time.monotonic()
+        print(f'[0.0s] Scanning for BLE devices ({timeout}s)...')
         devices = _wait(bleak.BleakScanner.discover(timeout))
+        print(f'[{time.monotonic() - start:.1f}s] Scan complete, {len(devices)} devices found.')
         return [{'name':device.name, 'address':device.address} for device in devices]
-    def connect(self, address, retries):
-        result = BleakDevice(self, address)
+    def connect(self, address, retries, name=None):
+        result = BleakDevice(self, address, name=name)
         if not result.connect(retries):
             return None
         return result
 
 class BleakDevice:
-    def __init__(self, adapter, address):
+    def __init__(self, adapter, address, name=None):
         self._adapter = adapter
         self._address = address
+        self._name = name
         self._client: Any = None
+
+    def _elapsed(self, start):
+        return time.monotonic() - start
+
+    def _refresh_address(self, start):
+        if not self._name:
+            return
+        print(f'[{self._elapsed(start):.1f}s] Scanning for {self._name}...')
+        devices = _wait(bleak.BleakScanner.discover(5.0))
+        for device in devices:
+            if device.name and self._name in device.name:
+                if device.address != self._address:
+                    print(f'[{self._elapsed(start):.1f}s] Updated address: {device.address}')
+                self._address = device.address
+                return
+        print(f'[{self._elapsed(start):.1f}s] {self._name} not seen during scan')
+
     # Use retries=-1 to continue attempting to reconnect forever
     def connect(self, retries):
+        start = time.monotonic()
         attempts = 1
+        connect_errors = (
+            bleak.exc.BleakDeviceNotFoundError,
+            bleak.exc.BleakError,
+            TimeoutError,
+            asyncio.TimeoutError,
+        )
         while True:
-            self._client = bleak.BleakClient(self._address)
-            if attempts > 1:
-                print(f'Connection attempt {attempts}')
+            if attempts == 1:
+                print(f'[{self._elapsed(start):.1f}s] Connecting to {self._address}...')
+            else:
+                self._refresh_address(start)
+                print(f'[{self._elapsed(start):.1f}s] Connection attempt {attempts}...')
+            client = bleak.BleakClient(self._address, timeout=30.0)
             try:
-                _wait(self._client.connect())
-            except (
-                bleak.exc.BleakDeviceNotFoundError, bleak.exc.BleakError
-            ) as err:
-                print(f'Failed to connect: {err}', file=sys.stderr)
+                _wait(client.connect())
+            except connect_errors as err:
+                print(f'[{self._elapsed(start):.1f}s] Failed to connect: {err}', file=sys.stderr)
+                try:
+                    _wait(client.disconnect())
+                except Exception:
+                    pass
                 if attempts == 1 + retries:
                     return False
                 sleep(RETRY_SLEEP_TIMEOUT)
                 attempts += 1
             else:
+                print(f'[{self._elapsed(start):.1f}s] BLE connected.')
+                self._client = client
                 break
         self._adapter.connected.add(self)
         return True
