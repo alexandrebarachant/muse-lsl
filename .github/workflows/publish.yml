@@ -29,9 +29,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     # Trusted publishing (OIDC) - no API token needed.
-    environment:
-      name: pypi
-      url: https://pypi.org/p/muselsl
     permissions:
       id-token: write
     steps:
