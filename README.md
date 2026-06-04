@@ -1,5 +1,4 @@
-
-[![DOI](https://zenodo.org/badge/80209610.svg)](https://zenodo.org/badge/latestdoi/80209610)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4540829.svg)](https://doi.org/10.5281/zenodo.4540829)
 
 # Muse LSL
 
