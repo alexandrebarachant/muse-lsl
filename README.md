@@ -59,8 +59,6 @@ Once installed, the `muselsl` command works from anywhere:
 muselsl list
 ```
 
-> **What does `ensurepath` do?** pipx drops each tool's launcher into a folder (e.g. `~/.local/bin`) that a fresh shell may not search. Running `pipx ensurepath` adds that folder to your PATH so the `muselsl` command is found. You only need to run it once per machine.
-
 #### As a library (for use inside your own Python project)
 
 Install it into a virtual environment with `pip`:
@@ -70,8 +68,6 @@ python3 -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install muselsl
 ```
-
-On modern macOS and Linux, installing with a bare `pip install muselsl` into the system Python will fail with an `externally-managed-environment` error ([PEP 668](https://peps.python.org/pep-0668/)) — this is expected. Use a virtual environment (above) or `pipx` (for the CLI) instead.
 
 ### Setting Up a Stream
 

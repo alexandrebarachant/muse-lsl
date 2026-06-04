@@ -24,7 +24,7 @@ long_description = get_long_description()
 
 setup(
     name="muselsl",
-    version="2.4.0",
+    version="2.4.1",
     description="Stream and visualize EEG data from the Muse headset.",
     keywords="muse lsl eeg ble neuroscience",
     url="https://github.com/alexandrebarachant/muse-lsl/",
@@ -47,8 +47,14 @@ setup(
         "numpy",
         "seaborn",
         "pexpect",
-    ] +
-    (["pylsl==1.10.5"] if os.sys.platform.startswith("linux") else ["pylsl"]),
+        # Evaluated at install time via environment markers (not build time),
+        # so the correct pin ships in the universal wheel for every platform.
+        # Linux needs 1.10.5 (see "could not create stream outlet" in the
+        # README's Common Issues); other platforms need >=1.16 for a
+        # universal2/arm64 liblsl on Apple Silicon (see issue #203).
+        'pylsl==1.10.5; sys_platform == "linux"',
+        'pylsl>=1.16; sys_platform != "linux"',
+    ],
     extras_require={"Viewer V2": ["mne", "vispy"]},
     classifiers=[
         # How mature is this project?  Common values are
