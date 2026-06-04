@@ -88,8 +88,8 @@ class Muse():
                         serial_port=self.interface)
 
                 self.adapter.start()
-                if ((device := self.adapter.connect(self.address, retries))
-                    is None):
+                device = self.adapter.connect(self.address, retries)
+                if device is None:
                     return False
                 self.device = device
 
