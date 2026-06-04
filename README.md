@@ -10,7 +10,7 @@ A Python package for streaming, visualizing, and recording EEG data from the Mus
 
 The code relies on a number of different bluetooth backends for connecting to the muse. We recommend using the `bleak` backend (enabled by default), but you may be interested in [BlueMuse](https://github.com/kowalej/BlueMuse/tree/master/Dist) for a GUI to discover and connect to Muse devices on Windows or [bgapi] if you are on a Mac with a BLED112 dongle. 
 
-**Compatible with Python 2.7 and Python 3.x**
+**Requires Python 3.9+** (we recommend Python 3.10–3.12)
 
 **Compatible with Muse 2, Muse S, and the classic Muse (2016)**
 
@@ -20,9 +20,58 @@ _Note: if you run into any issues, first check out out [Common Issues](#common-i
 
 ### Installation
 
-Install Muse LSL with pip
+`muselsl` is both a **command-line tool** and a **Python library**. Pick the path that matches how you want to use it.
 
-    pip install muselsl
+#### As a command-line tool (recommended for most people)
+
+The simplest way to get the `muselsl` command is [`pipx`](https://pipx.pypa.io), which installs it in its own isolated environment and puts it on your PATH — no virtual environment to manage.
+
+**macOS**
+
+```bash
+brew install pipx
+pipx ensurepath        # one-time: adds pipx's app folder to your PATH
+# close and reopen your terminal once after running ensurepath
+pipx install muselsl
+```
+
+**Linux** (Debian/Ubuntu; use your distro's package manager elsewhere)
+
+```bash
+sudo apt install pipx
+pipx ensurepath        # one-time: adds pipx's app folder to your PATH
+# close and reopen your terminal once after running ensurepath
+pipx install muselsl
+```
+
+**Windows** (PowerShell, using the official python.org Python)
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+# close and reopen your terminal once after running ensurepath
+pipx install muselsl
+```
+
+Once installed, the `muselsl` command works from anywhere:
+
+```bash
+muselsl list
+```
+
+> **What does `ensurepath` do?** pipx drops each tool's launcher into a folder (e.g. `~/.local/bin`) that a fresh shell may not search. Running `pipx ensurepath` adds that folder to your PATH so the `muselsl` command is found. You only need to run it once per machine.
+
+#### As a library (for use inside your own Python project)
+
+Install it into a virtual environment with `pip`:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install muselsl
+```
+
+On modern macOS and Linux, installing with a bare `pip install muselsl` into the system Python will fail with an `externally-managed-environment` error ([PEP 668](https://peps.python.org/pep-0668/)) — this is expected. Use a virtual environment (above) or `pipx` (for the CLI) instead.
 
 ### Setting Up a Stream
 
@@ -124,6 +173,10 @@ Lab Streaming Layer or LSL is a system designed to unify the collection of time 
 1.  Connection issues with BLED112 dongle:
 
 - You may need to use the `--interface` argument to provide the appropriate COM port value for the BLED112 device. The default value is COM9. To setup or view the device's COM port go to your OS's system settings
+
+2.  `error: externally-managed-environment` when running `pip install` (macOS/Linux):
+
+- This is expected on modern, package-manager-provided Pythons ([PEP 668](https://peps.python.org/pep-0668/)). Don't use `--break-system-packages`; instead install the CLI with `pipx`, or install into a virtual environment, as described in [Installation](#installation).
 
 ### Linux
 
