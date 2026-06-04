@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib
+import matplotlib.pyplot as plt
 from scipy.signal import lfilter, lfilter_zi, firwin
 from time import sleep
 from pylsl import StreamInlet, resolve_byprop
@@ -21,7 +22,7 @@ def view(window, scale, refresh, figure, backend, version=1):
         raise(RuntimeError("Can't find EEG stream."))
     print("Start acquiring data.")
 
-    fig, axes = matplotlib.pyplot.subplots(1, 1, figsize=figsize, sharex=True)
+    fig, axes = plt.subplots(1, 1, figsize=figsize, sharex=True)
     lslv = LSLViewer(streams[0], fig, axes, window, scale)
     fig.canvas.mpl_connect('close_event', lslv.stop)
 
@@ -35,7 +36,7 @@ def view(window, scale, refresh, figure, backend, version=1):
                """
     print(help_str)
     lslv.start()
-    matplotlib.pyplot.show()
+    plt.show()
 
 
 class LSLViewer():

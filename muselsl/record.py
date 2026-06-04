@@ -135,7 +135,7 @@ def _save(
     ch_names: List[str],
     last_written_timestamp: Optional[float] = None,
 ):
-    res = np.concatenate(res, axis=0)
+    res_arr = np.concatenate(res, axis=0)
     timestamps = np.array(timestamps) + time_correction
 
     if dejitter:
@@ -145,8 +145,8 @@ def _save(
         lr.fit(X, y)
         timestamps = lr.predict(X)
 
-    res = np.c_[timestamps, res]
-    data = pd.DataFrame(data=res, columns=["timestamps"] + ch_names)
+    res_arr = np.c_[timestamps, res_arr]
+    data = pd.DataFrame(data=res_arr, columns=["timestamps"] + ch_names)
 
     directory = os.path.dirname(filename)
     if not os.path.exists(directory):
@@ -255,12 +255,12 @@ def record_direct(duration,
     muse.stop()
     muse.disconnect()
 
-    timestamps = np.concatenate(timestamps)
-    eeg_samples = np.concatenate(eeg_samples, 1).T
+    timestamps_arr = np.concatenate(timestamps)
+    eeg_samples_arr = np.concatenate(eeg_samples, 1).T
     recording = pd.DataFrame(
-        data=eeg_samples, columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
+        data=eeg_samples_arr, columns=['TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'])
 
-    recording['timestamps'] = timestamps
+    recording['timestamps'] = timestamps_arr
 
     directory = os.path.dirname(filename)
     if not os.path.exists(directory):
