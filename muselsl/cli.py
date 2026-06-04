@@ -127,6 +127,15 @@ class CLI:
             type=int,
             help="How many times to retry connecting to the device on a failed attempt")
         _add_log_arg(parser)
+        parser.add_argument(
+            '-m',
+            '--model',
+            dest='model',
+            type=str,
+            default='auto',
+            choices=('auto', 'athena', 'legacy'),
+            help='Headset protocol: auto (probe GATT), athena (Gen 3), or legacy',
+        )
 
         args = parser.parse_args(sys.argv[2:])
         configure_logging(LOG_LEVELS[args.log_level])
@@ -134,7 +143,7 @@ class CLI:
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
                args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light,
-               args.lsl_time, args.retries)
+               args.lsl_time, args.retries, args.model)
 
     def record(self):
         parser = argparse.ArgumentParser(

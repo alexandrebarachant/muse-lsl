@@ -10,6 +10,7 @@ import subprocess
 from . import backends
 from . import helper
 from .constants import *
+from .stream_descriptor import StreamDescriptor
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,31 @@ class Muse():
 
     def _default_control_callback(self, message):
         logger.info(f"Control message: {message}")
+
+    def stream_descriptors(self):
+        """LSL stream shapes for legacy Muse (matches pre-refactor stream.py)."""
+        return [
+            StreamDescriptor(
+                'EEG', 'EEG', MUSE_NB_EEG_CHANNELS,
+                ('TP9', 'AF7', 'AF8', 'TP10', 'Right AUX'),
+                MUSE_SAMPLING_EEG_RATE, LSL_EEG_CHUNK, 'microvolts',
+            ),
+            StreamDescriptor(
+                'PPG', 'PPG', MUSE_NB_PPG_CHANNELS,
+                ('PPG1', 'PPG2', 'PPG3'),
+                MUSE_SAMPLING_PPG_RATE, LSL_PPG_CHUNK, 'mmHg',
+            ),
+            StreamDescriptor(
+                'ACC', 'ACC', MUSE_NB_ACC_CHANNELS,
+                ('X', 'Y', 'Z'),
+                MUSE_SAMPLING_ACC_RATE, LSL_ACC_CHUNK, 'g',
+            ),
+            StreamDescriptor(
+                'GYRO', 'GYRO', MUSE_NB_GYRO_CHANNELS,
+                ('X', 'Y', 'Z'),
+                MUSE_SAMPLING_GYRO_RATE, LSL_GYRO_CHUNK, 'dps',
+            ),
+        ]
 
     def connect(self, interface=None, retries=0):
         """Connect to the device"""
@@ -281,6 +307,23 @@ class Muse():
             logger.debug('Sending command for non-default preset: p' + preset)
         preset = bytes(preset, 'utf-8')
         self._write_cmd([0x04, 0x70, *preset, 0x0a])
+
+    def refresh_subscriptions(self):
+        """Subscribe to enabled streams (e.g. after callbacks are set post-connect)."""
+        if self.backend == 'bluemuse' or self.device is None:
+            return
+        if self.enable_eeg:
+            self._subscribe_eeg()
+        if self.enable_control:
+            self._subscribe_control()
+        if self.enable_telemetry:
+            self._subscribe_telemetry()
+        if self.enable_acc:
+            self._subscribe_acc()
+        if self.enable_gyro:
+            self._subscribe_gyro()
+        if self.enable_ppg:
+            self._subscribe_ppg()
 
     def disconnect(self):
         """disconnect."""
