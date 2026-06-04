@@ -163,7 +163,7 @@ class Muse():
                 return True
 
             else:
-                logger.error('Connection to', self.address, 'failed')
+                logger.error('Connection to %s failed', self.address)
                 return False
 
     def _write_cmd(self, cmd):
