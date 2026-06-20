@@ -49,13 +49,13 @@ class Muse():
         self.name = name
         self.callback_eeg = callback_eeg
         self.callback_telemetry = callback_telemetry
-        self.callback_control = callback_control
+        self.callback_control = callback_control or self._default_control_callback
         self.callback_acc = callback_acc
         self.callback_gyro = callback_gyro
         self.callback_ppg = callback_ppg
 
         self.enable_eeg = not callback_eeg is None
-        self.enable_control = not callback_control is None
+        self.enable_control = True  # Always enable control
         self.enable_telemetry = not callback_telemetry is None
         self.enable_acc = not callback_acc is None
         self.enable_gyro = not callback_gyro is None
@@ -66,6 +66,11 @@ class Muse():
         self.backend = helper.resolve_backend(backend)
         self.preset = preset
         self.disable_light = disable_light
+
+        self._init_control()
+
+    def _default_control_callback(self, message):
+        logger.info(f"Control message: {message}")
 
     def connect(self, interface=None, retries=0):
         """Connect to the device"""
@@ -119,7 +124,7 @@ class Muse():
                 if self.enable_ppg:
                     print('[muse] Subscribing to PPG...')
                     self._subscribe_ppg()
-                
+
                 if self.disable_light:
                     self._disable_light()
 
@@ -153,7 +158,7 @@ class Muse():
 
                 if self.enable_ppg:
                     self._subscribe_ppg()
-                
+
                 if self.disable_light:
                     self._disable_light()
 
@@ -616,6 +621,6 @@ class Muse():
         data = res[1:]
 
         return packetIndex, data
-    
+
     def _disable_light(self):
         self._write_cmd_str('L0')
