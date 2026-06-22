@@ -125,6 +125,20 @@ class BleakDevice:
             declaration_handle,
             bytearray(value),
             wait_for_response))
+    def char_write_uuid(self, uuid, value, wait_for_response=True):
+        _wait(self._client.write_gatt_char(
+            uuid,
+            bytearray(value),
+            response=wait_for_response))
+
+    def has_characteristic(self, uuid):
+        target = uuid.lower()
+        for service in self._client.services:
+            for char in service.characteristics:
+                if char.uuid.lower() == target:
+                    return True
+        return False
+
     def subscribe(self, uuid, callback=None, indication=False, wait_for_response=True):
         def wrap(gatt_characteristic, data):
             value_handle = gatt_characteristic.handle + 1
