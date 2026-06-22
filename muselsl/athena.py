@@ -6,7 +6,6 @@ https://github.com/brainflow-dev/brainflow/pull/779
 
 import logging
 import struct
-import sys
 from time import sleep, time
 
 import bitstring
@@ -223,10 +222,7 @@ class Athena:
         preset=None,
         disable_light=False,
         low_latency=True,
-        log_level=logging.ERROR,
     ):
-        logging.basicConfig(stream=sys.stdout, level=log_level)
-
         self.address = address
         self.name = name
         self.callback_eeg = callback_eeg
@@ -341,6 +337,7 @@ class Athena:
             self.device.char_write_handle(0x000e, cmd, False)
 
     def _write_cmd_str(self, cmd):
+        logger.debug('[athena] -> cmd %r', cmd)
         self._write_cmd([len(cmd) + 1, *(ord(c) for c in cmd), ord('\n')])
 
     def _run_init_sequence(self):
@@ -407,10 +404,26 @@ class Athena:
 
         Primary block uses 14-byte header; optional 5-byte subpacket headers follow.
         """
-        for packet in split_packets(data):
-            for tag, _package_num, device_tick, payload in iter_sensor_blocks(packet):
-                self._init_timestamp(device_tick)
-                self._parse_payload(tag, device_tick, payload)
+        # ponytail: exceptions raised in a Bleak notify callback are swallowed by
+        # asyncio, so wrap + log or a decode bug looks identical to "no data arriving".
+        try:
+            logger.debug(
+                '[athena] notify handle=0x%04x len=%d data=%s',
+                handle, len(data), bytes(data).hex(),
+            )
+            packets = split_packets(data)
+            if not packets:
+                logger.debug('[athena] notify produced no framed packets (len=%d)', len(data))
+            for packet in packets:
+                for tag, _package_num, device_tick, payload in iter_sensor_blocks(packet):
+                    logger.debug(
+                        '[athena] block tag=0x%02x tick=%d payload_len=%d',
+                        tag, device_tick, len(payload),
+                    )
+                    self._init_timestamp(device_tick)
+                    self._parse_payload(tag, device_tick, payload)
+        except Exception:
+            logger.exception('[athena] exception in _handle_data (handle=0x%04x)', handle)
 
     def _parse_payload(self, tag, device_tick, data):
         config = get_sensor_config(tag)
@@ -431,11 +444,22 @@ class Athena:
             device_tick, n_samples, rate,
             self._t0_tick, self._t0_host, self.time_func,
         )
-        self.last_timestamp = float(timestamps[-1])
+        # The liveness watchdog (stream.py) compares last_timestamp against the host
+        # wall clock, so track host receipt time here — not the device-tick sample
+        # time, which runs on its own clock and would trip the 3s watchdog. The
+        # device timestamps still flow to the LSL callbacks below.
+        self.last_timestamp = self.time_func()
+        logger.debug(
+            '[athena] %s tag=0x%02x n=%d device_ts=%.3f host_ts=%.3f',
+            sensor_type, tag, n_samples, float(timestamps[-1]), self.last_timestamp,
+        )
 
-        if sensor_type == 'eeg' and self.enable_eeg and tag == 0x11:
+        if sensor_type == 'eeg' and self.enable_eeg:
+            # Tag 0x11 packs 4 channels, 0x12 packs 8 (first 4 are TP9/AF7/AF8/TP10,
+            # the rest are aux). Decode all n_channels for correct 14-bit offsets,
+            # then push only the 4 the outlet expects (mirrors BrainFlow PR #779).
             samples = decode_eeg(data, n_channels, n_samples)
-            self.callback_eeg(samples, timestamps)
+            self.callback_eeg(samples[:MUSE_ATHENA_NB_EEG_CHANNELS], timestamps)
 
         elif sensor_type == 'acc_gyro':
             acc, gyro = decode_acc_gyro(data, n_samples)
@@ -449,7 +473,8 @@ class Athena:
             self.callback_optics(samples, timestamps)
 
     def _handle_control(self, handle, packet):
+        n_incoming = packet[0]
+        message = bytes(packet[1:1 + n_incoming]).decode('ascii', errors='replace')
+        logger.debug('[athena] control reply: %r', message)
         if self.enable_control and self.callback_control:
-            n_incoming = packet[0]
-            message = bytes(packet[1:1 + n_incoming]).decode('ascii', errors='replace')
             self.callback_control(message)

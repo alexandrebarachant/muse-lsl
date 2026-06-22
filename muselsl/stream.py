@@ -1,3 +1,4 @@
+import logging
 import re
 import subprocess
 from functools import partial
@@ -17,6 +18,8 @@ from .constants import (
 from .devices import create_device
 from .lsl_outlet import build_outlet
 from .muse import Muse
+
+logger = logging.getLogger(__name__)
 
 
 def _print_muse_list(muses):
@@ -239,11 +242,19 @@ def stream(
             while time_func() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
                 try:
                     backends.sleep(1)
+                    logger.debug(
+                        'stream alive: %.2fs since last data (disconnect at %ds)',
+                        time_func() - muse.last_timestamp, AUTO_DISCONNECT_DELAY,
+                    )
                 except KeyboardInterrupt:
                     muse.stop()
                     muse.disconnect()
                     break
 
+            logger.debug(
+                'auto-disconnect: %.2fs since last data exceeded %ds',
+                time_func() - muse.last_timestamp, AUTO_DISCONNECT_DELAY,
+            )
             print('Disconnected.')
 
     # For bluemuse backend, we don't need to create LSL streams directly, since these are handled in BlueMuse itself.
