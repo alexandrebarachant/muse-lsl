@@ -1,4 +1,5 @@
 import bleak
+import logging
 import numpy as np
 import pandas as pd
 import os
@@ -12,6 +13,8 @@ from .stream import find_muse
 from . import backends
 from .muse import Muse
 from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
+
+logger = logging.getLogger(__name__)
 
 # Records a fixed duration of EEG data from an LSL stream into a CSV file
 
@@ -36,12 +39,15 @@ def record(
                                  strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
 
     print("Looking for a %s stream..." % (data_source))
+    logger.debug('Resolving %s stream (chunk_length=%d, timeout=%ss)',
+                 data_source, chunk_length, LSL_SCAN_TIMEOUT)
     streams = resolve_byprop('type', data_source, timeout=LSL_SCAN_TIMEOUT)
 
     if len(streams) == 0:
         print("Can't find %s stream." % (data_source))
         return
 
+    logger.info('Found %s stream; recording to %s', data_source, filename)
     print("Started acquiring data.")
     inlet = StreamInlet(streams[0], max_chunklen=chunk_length)
     # eeg_time_correction = inlet.time_correction()
@@ -102,9 +108,12 @@ def record(
                     ch_names,
                     last_written_timestamp=last_written_timestamp,
                 )
+                logger.debug('Saved up to t=%.3f (%d chunks buffered)',
+                             timestamps[-1], len(res))
                 last_written_timestamp = timestamps[-1]
 
         except KeyboardInterrupt:
+            logger.info('Recording interrupted by user')
             break
 
     time_correction = inlet.time_correction()
@@ -213,12 +222,14 @@ def record_direct(duration,
         timestamps.append(new_timestamps)
 
     muse = Muse(address, save_eeg, backend=backend)
+    logger.debug('Connecting to Muse %s (backend=%s)', address, backend)
     if not muse.connect():
         print(f'Failed to connect to Muse: {address}', file=sys.stderr)
         return
     muse.start()
 
     t_init = time()
+    logger.info('Recording directly from %s to %s for %ss', address, filename, duration)
     print('Start recording at time t=%.3f' % t_init)
 
     last_update = t_init
@@ -230,8 +241,10 @@ def record_direct(duration,
                 # Send a keep alive every 10 secs
                 if time() - last_update > 10:
                     last_update = time()
+                    logger.debug('Sending keep-alive')
                     muse.keep_alive()
             except bleak.exc.BleakError:
+                logger.warning('BLE error; attempting to reconnect', exc_info=True)
                 print('Disconnected. Attempting to reconnect...')
                 # Do not giveup since we make a best effort to continue
                 # data collection. Assume device is out of range or another

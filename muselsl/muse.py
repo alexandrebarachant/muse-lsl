@@ -1,5 +1,4 @@
 import logging
-import sys
 from typing import List, cast
 
 import bitstring
@@ -30,8 +29,7 @@ class Muse():
                  time_func=time,
                  name=None,
                  preset=None,
-                 disable_light=False,
-                 log_level=logging.ERROR):
+                 disable_light=False):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -43,7 +41,8 @@ class Muse():
         callback_gyro -- function(timestamp, samples)
         - samples is a list of 3 samples, where each sample is [x, y, z]
         """
-        logging.basicConfig(stream=sys.stdout, level=log_level)
+        # Logging is configured once at the CLI entry point (see cli.py); a
+        # device object must not mutate global logging state.
 
         self.address = address
         self.name = name

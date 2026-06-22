@@ -4,7 +4,6 @@ from functools import partial
 from shutil import which
 from sys import platform
 from time import time
-import logging
 
 import pygatt
 from pylsl import StreamInfo, StreamOutlet, local_clock
@@ -15,7 +14,7 @@ from .constants import (AUTO_DISCONNECT_DELAY, LSL_ACC_CHUNK, LSL_EEG_CHUNK,
                         MUSE_NB_EEG_CHANNELS, MUSE_NB_GYRO_CHANNELS,
                         MUSE_NB_PPG_CHANNELS, MUSE_SAMPLING_ACC_RATE,
                         MUSE_SAMPLING_EEG_RATE, MUSE_SAMPLING_GYRO_RATE,
-                        MUSE_SAMPLING_PPG_RATE, LIST_SCAN_TIMEOUT, LOG_LEVELS,
+                        MUSE_SAMPLING_PPG_RATE, LIST_SCAN_TIMEOUT,
                         RETRY_SLEEP_TIMEOUT)
 from .muse import Muse
 
@@ -28,8 +27,7 @@ def _print_muse_list(muses):
 
 
 # Returns a list of available Muse devices.
-def list_muses(backend='auto', interface=None, log_level=logging.ERROR):
-    logging.basicConfig(level=log_level)
+def list_muses(backend='auto', interface=None):
     if backend == 'auto' and which('bluetoothctl') is not None:
         print("Backend was 'auto' and bluetoothctl was found, using to list muses...")
         return _list_muses_bluetoothctl(LIST_SCAN_TIMEOUT)
@@ -138,8 +136,7 @@ def stream(
     preset=None,
     disable_light=False,
     lsl_time=False,
-    retries=1,
-    log_level=logging.ERROR
+    retries=1
 ):
     # If no data types are enabled, we warn the user and return immediately.
     if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
@@ -231,7 +228,7 @@ def stream(
         time_func = local_clock if lsl_time else time
 
         muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light, time_func=time_func, log_level=log_level)
+                    backend=backend, interface=interface, name=name, preset=preset, disable_light=disable_light, time_func=time_func)
 
         didConnect = muse.connect(retries=retries)
 
