@@ -2,6 +2,18 @@
 import sys
 import argparse
 from .constants import LOG_LEVELS
+from .helper import configure_logging
+
+
+def _add_log_arg(parser):
+    parser.add_argument(
+        '-l',
+        '--log',
+        choices=LOG_LEVELS.keys(),
+        dest='log_level',
+        default='info',
+        help='Set the logging level')
+
 
 class CLI:
     def __init__(self, command):
@@ -27,17 +39,11 @@ class CLI:
             help=
             "The interface to use, 'hci0' for gatt or a com port for bgapi. WIll auto-detect if not specified"
         )
-        parser.add_argument(
-            '-l',
-            "--log", 
-            choices=LOG_LEVELS.keys(),
-            dest="log_level",
-            default='info',
-            help='Set the logging level'
-        )
+        _add_log_arg(parser)
         args = parser.parse_args(sys.argv[2:])
+        configure_logging(LOG_LEVELS[args.log_level])
         from . import list_muses
-        list_muses(args.backend, args.interface, LOG_LEVELS[args.log_level])
+        list_muses(args.backend, args.interface)
 
     def stream(self):
         parser = argparse.ArgumentParser(
@@ -120,21 +126,15 @@ class CLI:
             dest='retries',
             type=int,
             help="How many times to retry connecting to the device on a failed attempt")
-        parser.add_argument(
-            '-l',
-            "--log", 
-            choices=LOG_LEVELS.keys(),
-            dest="log_level",
-            default='info',
-            help='Set the logging level'
-        )
+        _add_log_arg(parser)
 
         args = parser.parse_args(sys.argv[2:])
+        configure_logging(LOG_LEVELS[args.log_level])
         from . import stream
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
                args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light,
-               args.lsl_time, args.retries, LOG_LEVELS[args.log_level])
+               args.lsl_time, args.retries)
 
     def record(self):
         parser = argparse.ArgumentParser(
@@ -166,8 +166,10 @@ class CLI:
             type=str,
             default="EEG",
             help="Data type to record from. Either EEG, PPG, ACC, or GYRO.")
+        _add_log_arg(parser)
 
         args = parser.parse_args(sys.argv[2:])
+        configure_logging(LOG_LEVELS[args.log_level])
         from . import record
         record(args.duration, args.filename, args.dejitter, args.type)
 
@@ -217,7 +219,9 @@ class CLI:
             type=str,
             default=None,
             help="Name of the recording file.")
+        _add_log_arg(parser)
         args = parser.parse_args(sys.argv[2:])
+        configure_logging(LOG_LEVELS[args.log_level])
         from . import record_direct
         record_direct(args.duration, args.address, args.filename, args.backend,
                       args.interface, args.name)
@@ -269,7 +273,9 @@ class CLI:
             type=str,
             default='TkAgg',
             help="Matplotlib backend to use. Default: %(default)s")
+        _add_log_arg(parser)
         args = parser.parse_args(sys.argv[2:])
+        configure_logging(LOG_LEVELS[args.log_level])
         from . import view
         view(args.window, args.scale, args.refresh, args.figure, args.version,
              args.backend)

@@ -1,5 +1,17 @@
+import logging
 import platform
 import warnings
+
+
+def configure_logging(level):
+    """Set the process-wide log level. Call once at the CLI entry point.
+
+    logging.basicConfig() is a no-op once a handler exists, so a later call
+    can't lower/raise the level. setLevel() always applies, so this stays
+    authoritative no matter what ran first.
+    """
+    logging.basicConfig(level=level)
+    logging.getLogger().setLevel(level)
 
 
 def warn_bluemuse_not_supported(extra_text = ''):
