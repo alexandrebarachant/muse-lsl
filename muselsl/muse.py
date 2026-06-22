@@ -391,8 +391,9 @@ class Muse():
             if tm != self.last_tm + 1:
                 if (tm - self.last_tm) != -65535:  # counter reset
                     logger.debug("missing sample %d : %d" % (tm, self.last_tm))
-                    # correct sample index for timestamp estimation
-                    self.sample_index += 12 * (tm - self.last_tm + 1)
+                    # advance the index past only the *missing* packets; the
+                    # `+= 12` below still accounts for the current packet
+                    self.sample_index += 12 * (tm - self.last_tm - 1)
 
             self.last_tm = tm
 
@@ -467,7 +468,7 @@ class Muse():
         # Add to current message
         self._current_msg += incoming_message
 
-        if incoming_message[-1] == '}':  # Message ended completely
+        if incoming_message and incoming_message[-1] == '}':  # Message ended completely
             self.callback_control(self._current_msg)
 
             self._init_control()

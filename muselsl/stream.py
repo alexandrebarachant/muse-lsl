@@ -119,7 +119,7 @@ def find_muse(name=None, backend='auto'):
     muses = list_muses(backend)
     if name:
         for muse in muses:
-            if muse['name'] == name:
+            if name in muse['name']:
                 return muse
     elif muses:
         return muses[0]

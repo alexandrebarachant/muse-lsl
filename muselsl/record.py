@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 import sys
-from typing import Union, List, Optional
+from typing import Union, List
 from pathlib import Path
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
@@ -72,7 +72,9 @@ def record(
     markers = []
     t_init = time()
     time_correction = inlet.time_correction()
+    marker_time_correction = inlet_marker.time_correction() if inlet_marker else 0
     last_written_timestamp = None
+    n_written = 0  # rows already flushed to disk
     print('Start recording at time t=%.3f' % t_init)
     print('Time correction: ', time_correction)
     while (time() - t_init) < duration:
@@ -91,7 +93,7 @@ def record(
 
             # Save every 5s
             if continuous and (last_written_timestamp is None or last_written_timestamp + 5 < timestamps[-1]):
-                _save(
+                n_written = _save(
                     filename,
                     res,
                     timestamps,
@@ -100,7 +102,8 @@ def record(
                     inlet_marker,
                     markers,
                     ch_names,
-                    last_written_timestamp=last_written_timestamp,
+                    marker_time_correction,
+                    n_written=n_written,
                 )
                 last_written_timestamp = timestamps[-1]
 
@@ -119,6 +122,8 @@ def record(
         inlet_marker,
         markers,
         ch_names,
+        marker_time_correction,
+        n_written=n_written,
     )
 
     print("Done - wrote file: {}".format(filename))
@@ -133,8 +138,9 @@ def _save(
     inlet_marker,
     markers,
     ch_names: List[str],
-    last_written_timestamp: Optional[float] = None,
-):
+    marker_time_correction: float = 0,
+    n_written: int = 0,
+) -> int:
     res_arr = np.concatenate(res, axis=0)
     timestamps = np.array(timestamps) + time_correction
 
@@ -158,21 +164,25 @@ def _save(
             data['Marker%d' % ii] = 0
         # process markers:
         for marker in markers:
-            # find index of markers
-            ix = np.argmin(np.abs(marker[1] - timestamps))
+            # find index of markers; markers carry their own LSL clock, so
+            # reconcile it with the EEG clock before nearest-neighbour matching
+            ix = np.argmin(np.abs((marker[1] + marker_time_correction) - timestamps))
             for ii in range(n_markers):
                 data.loc[ix, "Marker%d" % ii] = marker[0][ii]
 
     # If file doesn't exist, create with headers
     # If it does exist, just append new rows
+    total_rows = len(data)
     if not Path(filename).exists():
         # print("Saving whole file")
         data.to_csv(filename, float_format='%.3f', index=False)
     else:
         # print("Appending file")
-        # truncate already written timestamps
-        data = data[data['timestamps'] > last_written_timestamp]
-        data.to_csv(filename, float_format='%.3f', index=False, mode='a', header=False)
+        # append only rows not yet written (by position, not timestamp, so the
+        # boundary is immune to time_correction/dejitter shifting values)
+        data.iloc[n_written:].to_csv(filename, float_format='%.3f', index=False, mode='a', header=False)
+
+    return total_rows
 
 
 
