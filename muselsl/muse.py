@@ -41,9 +41,6 @@ class Muse():
         callback_gyro -- function(timestamp, samples)
         - samples is a list of 3 samples, where each sample is [x, y, z]
         """
-        # Logging is configured once at the CLI entry point (see cli.py); a
-        # device object must not mutate global logging state.
-
         self.address = address
         self.name = name
         self.callback_eeg = callback_eeg
