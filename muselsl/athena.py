@@ -21,7 +21,6 @@ from .constants import (
     MUSE_ATHENA_ACCELEROMETER_SCALE,
     MUSE_ATHENA_BATTERY_SCALE,
     MUSE_ATHENA_DEFAULT_PRESET,
-    MUSE_ATHENA_DEVICE_CLOCK_HZ,
     MUSE_ATHENA_EEG_SCALE,
     MUSE_ATHENA_GATT_CONTROL,
     MUSE_ATHENA_GATT_DATA_1,
@@ -42,6 +41,7 @@ from .constants import (
     MUSE_ATHENA_VALID_PRESETS,
 )
 from .stream_descriptor import StreamDescriptor
+from .timestamps import RLSTimestampCorrector
 
 logger = logging.getLogger(__name__)
 
@@ -142,23 +142,28 @@ def split_packets(data):
 
 
 def parse_packet_header(packet):
-    """Return (device_tick, packet_index, primary_tag, payload_bytes)."""
-    device_tick = struct.unpack_from('<I', packet, 2)[0]
+    """Return (packet_index, primary_tag, payload_bytes).
+
+    Bytes 3-8 are header padding we don't decode; BrainFlow reads only the
+    packet index (1-2), tag (9) and block index (10). Timestamps come from host
+    arrival time, not the device (see RLSTimestampCorrector), so there is no
+    device clock to parse here.
+    """
     packet_index = struct.unpack_from('<H', packet, 1)[0]
     primary_tag = packet[9]
     payload = packet[MUSE_ATHENA_PACKET_HEADER_SIZE:]
-    return device_tick, packet_index, primary_tag, payload
+    return packet_index, primary_tag, payload
 
 
 def iter_sensor_blocks(packet):
-    """Yield (tag, package_num, device_tick, payload) for primary + subpackets."""
-    device_tick, packet_index, primary_tag, payload = parse_packet_header(packet)
+    """Yield (tag, package_num, payload) for primary + subpackets."""
+    packet_index, primary_tag, payload = parse_packet_header(packet)
     offset = 0
     remaining = len(payload)
 
     def emit(tag, block_index, block_payload):
         package_num = (packet_index << 8) | block_index
-        yield tag, package_num, device_tick, block_payload
+        yield tag, package_num, block_payload
 
     config = get_sensor_config(primary_tag)
     if config is not None:
@@ -188,20 +193,6 @@ def iter_sensor_blocks(packet):
         block = payload[start:end]
         yield from emit(tag, sub_index, block)
         offset += MUSE_ATHENA_SUBPACKET_HEADER_SIZE + sensor_len
-
-
-def device_tick_delta(tick, t0_tick):
-    """uint32 device tick difference with wraparound."""
-    return (tick - t0_tick) & 0xFFFFFFFF
-
-
-def sample_timestamps(device_tick, n_samples, sampling_rate, t0_tick, t0_host, time_func):
-    """Per-sample host timestamps from device clock (§2.8)."""
-    base = t0_host + device_tick_delta(device_tick, t0_tick) / MUSE_ATHENA_DEVICE_CLOCK_HZ
-    return np.array(
-        [base + i / sampling_rate for i in range(n_samples)],
-        dtype=np.float64,
-    )
 
 
 class Athena:
@@ -248,9 +239,9 @@ class Athena:
         self.adapter = None
         self.last_timestamp = self.time_func()
         self._battery = 0.0
-        self._timestamp_initialized = False
-        self._t0_tick = 0
-        self._t0_host = 0.0
+        # One dejitter corrector per stream (eeg / acc_gyro / optics); each runs
+        # at its own rate, created lazily on its first packet.
+        self._correctors = {}
 
     def stream_descriptors(self):
         """LSL stream shapes for Athena."""
@@ -385,24 +376,24 @@ class Athena:
             self.adapter.stop()
 
     def _reset_timestamps(self):
-        self._timestamp_initialized = False
-        self._t0_tick = 0
-        self._t0_host = 0.0
+        self._correctors = {}
 
-    def _init_timestamp(self, device_tick):
-        if not self._timestamp_initialized:
-            self._t0_tick = device_tick
-            self._t0_host = self.time_func()
-            self._timestamp_initialized = True
+    def _corrector(self, sensor_type, sampling_rate):
+        corrector = self._correctors.get(sensor_type)
+        if corrector is None:
+            corrector = RLSTimestampCorrector(sampling_rate, self.time_func)
+            self._correctors[sensor_type] = corrector
+        return corrector
 
     def _handle_data(self, handle, data):
         """BLE notify callback: demux length-prefixed packets by sensor tag.
 
         One notification may contain several packets back-to-back:
 
-            [len][idx_lo][idx_hi][tick x4][---][tag][idx2][---][payload...][sub hdr+payload]*
+            [len][idx_lo][idx_hi][---header---][tag][idx2][payload...][sub hdr+payload]*
 
         Primary block uses 14-byte header; optional 5-byte subpacket headers follow.
+        Each packet is host-timestamped once on arrival.
         """
         # ponytail: exceptions raised in a Bleak notify callback are swallowed by
         # asyncio, so wrap + log or a decode bug looks identical to "no data arriving".
@@ -415,17 +406,16 @@ class Athena:
             if not packets:
                 logger.debug('[athena] notify produced no framed packets (len=%d)', len(data))
             for packet in packets:
-                for tag, _package_num, device_tick, payload in iter_sensor_blocks(packet):
+                host_time = self.time_func()
+                for tag, _package_num, payload in iter_sensor_blocks(packet):
                     logger.debug(
-                        '[athena] block tag=0x%02x tick=%d payload_len=%d',
-                        tag, device_tick, len(payload),
+                        '[athena] block tag=0x%02x payload_len=%d', tag, len(payload),
                     )
-                    self._init_timestamp(device_tick)
-                    self._parse_payload(tag, device_tick, payload)
+                    self._parse_payload(tag, host_time, payload)
         except Exception:
             logger.exception('[athena] exception in _handle_data (handle=0x%04x)', handle)
 
-    def _parse_payload(self, tag, device_tick, data):
+    def _parse_payload(self, tag, host_time, data):
         config = get_sensor_config(tag)
         if config is None:
             return
@@ -440,18 +430,13 @@ class Athena:
                 self._battery = pct
             return
 
-        timestamps = sample_timestamps(
-            device_tick, n_samples, rate,
-            self._t0_tick, self._t0_host, self.time_func,
-        )
-        # The liveness watchdog (stream.py) compares last_timestamp against the host
-        # wall clock, so track host receipt time here — not the device-tick sample
-        # time, which runs on its own clock and would trip the 3s watchdog. The
-        # device timestamps still flow to the LSL callbacks below.
-        self.last_timestamp = self.time_func()
+        timestamps = self._corrector(sensor_type, rate).timestamps(n_samples, host_time)
+        # Dejittered host timestamps, so this doubles as the liveness watchdog
+        # clock (stream.py) — same as legacy Muse._handle_eeg.
+        self.last_timestamp = float(timestamps[-1])
         logger.debug(
-            '[athena] %s tag=0x%02x n=%d device_ts=%.3f host_ts=%.3f',
-            sensor_type, tag, n_samples, float(timestamps[-1]), self.last_timestamp,
+            '[athena] %s tag=0x%02x n=%d ts=%.3f', sensor_type, tag, n_samples,
+            self.last_timestamp,
         )
 
         if sensor_type == 'eeg' and self.enable_eeg:

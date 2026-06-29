@@ -1,26 +1,30 @@
 import numpy as np
 
-from muselsl.athena import device_tick_delta, sample_timestamps
+from muselsl.timestamps import RLSTimestampCorrector
 
 
-def test_device_tick_delta_wraparound():
-    assert device_tick_delta(10, 0xFFFFFFF0) == 26
+def _corrector(rate=256.0, t0=100.0):
+    return RLSTimestampCorrector(rate, lambda: t0)
 
 
-def test_sample_timestamps_spacing():
-    ts = sample_timestamps(
-        device_tick=1000,
-        n_samples=4,
-        sampling_rate=256.0,
-        t0_tick=1000,
-        t0_host=100.0,
-        time_func=None,
-    )
+def test_timestamps_length_and_uniform_spacing():
+    ts = _corrector().timestamps(4, host_time=100.0)
     assert len(ts) == 4
-    assert np.allclose(np.diff(ts), 1.0 / 256.0)
+    diffs = np.diff(ts)
+    assert np.allclose(diffs, diffs[0])          # uniformly spaced
+    assert abs(diffs[0] - 1.0 / 256.0) < 1e-4    # close to nominal period
 
 
-def test_sample_timestamps_advances_with_tick():
-    ts0 = sample_timestamps(1000, 2, 256.0, 1000, 0.0, None)
-    ts1 = sample_timestamps(2000, 2, 256.0, 1000, 0.0, None)
-    assert ts1[0] > ts0[0]
+def test_timestamps_advance_across_packets():
+    c = _corrector()
+    ts0 = c.timestamps(2, host_time=100.0)
+    ts1 = c.timestamps(2, host_time=100.1)
+    assert ts1[0] > ts0[-1]
+
+
+def test_rejects_nonpositive_rate():
+    try:
+        RLSTimestampCorrector(0, lambda: 0.0)
+    except ValueError:
+        return
+    raise AssertionError('expected ValueError for non-positive sampling_rate')

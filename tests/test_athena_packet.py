@@ -9,13 +9,12 @@ from muselsl.athena import (
 )
 
 
-def _build_eeg_packet(device_tick=1000, payload=None):
+def _build_eeg_packet(packet_index=7, payload=None):
     payload = payload or bytes(28)
     packet_len = 14 + len(payload)
     pkt = bytearray(packet_len)
     pkt[0] = packet_len
-    struct.pack_into('<H', pkt, 1, 7)
-    struct.pack_into('<I', pkt, 2, device_tick)
+    struct.pack_into('<H', pkt, 1, packet_index)  # bytes 3-8 are header padding
     pkt[9] = 0x11
     pkt[10] = 0
     pkt[14:] = payload
@@ -28,8 +27,8 @@ def test_split_packets_single():
 
 
 def test_split_packets_concatenated():
-    p1 = _build_eeg_packet(device_tick=1)
-    p2 = _build_eeg_packet(device_tick=2)
+    p1 = _build_eeg_packet(packet_index=1)
+    p2 = _build_eeg_packet(packet_index=2)
     both = p1 + p2
     assert split_packets(both) == [p1, p2]
 
@@ -40,12 +39,11 @@ def test_split_packets_rejects_bad_length():
 
 
 def test_iter_sensor_blocks_primary_eeg():
-    pkt = _build_eeg_packet(device_tick=12345)
+    pkt = _build_eeg_packet()
     blocks = list(iter_sensor_blocks(pkt))
     assert len(blocks) == 1
-    tag, _pkg, tick, payload = blocks[0]
+    tag, _pkg, payload = blocks[0]
     assert tag == 0x11
-    assert tick == 12345
     assert len(payload) == 28
 
 

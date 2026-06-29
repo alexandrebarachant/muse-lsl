@@ -26,6 +26,18 @@
 **Priority:** P2
 **Depends on:** Phase 2 (validated decoder + fixture-capture workflow).
 
+### Investigate the unused packet-header bytes (potential device clock)
+
+**What:** Reverse-engineer bytes 3-8 of the 14-byte Athena packet header (and bytes 2-4 of the 5-byte subpacket header) to determine whether they carry a usable device timestamp/counter — its offset, width, and tick rate.
+
+**Why:** Timestamps currently come from host arrival time + nominal rate (`RLSTimestampCorrector`), matching BrainFlow, which ignores these bytes entirely. That's correct and sufficient. But raw captures show a slowly-incrementing value in bytes 3-6, e.g. at packet_index 0/307/308/309 the bytes read `74/81/82/82 d6 b7 8b 01 00` — suggesting a real on-device counter. If it's a reliable hardware clock, it could give better intra-packet sample timing and drop detection than host arrival time. Not needed now; noting it before it's forgotten.
+
+**Context:** Do NOT read these bytes for timing until validated — our original implementation read a uint32 at offset 2, which overlaps `packet_index` (bytes 1-2), and produced compressed/wrong timestamps (the bug Phase-2 timestamp work replaced). Width/units are unknown. Best disambiguated from a clean sustained capture: log header bytes alongside host arrival times and check whether bytes 3-6 advance linearly with wall-clock and at what Hz.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** A clean sustained capture from a charged, well-seated band.
+
 ## Legacy / Infrastructure
 
 ### Dedupe the subscribe sequence in muse.py `connect()`
