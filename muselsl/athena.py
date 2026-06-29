@@ -81,14 +81,22 @@ def optics_canonical_index(tag, channel):
     return -1
 
 
+# 14-bit unsigned samples are centered on this midpoint; subtracting it yields
+# signed, zero-centered µV, matching legacy Muse (muse.py subtracts 2048 for 12-bit).
+EEG_MIDPOINT = 1 << 13
+
+
 def decode_eeg(data, n_channels, n_samples):
-    """Decode 14-bit LSB-first EEG payload -> (n_channels, n_samples) float32 µV."""
+    """Decode 14-bit LSB-first EEG payload -> (n_channels, n_samples) float32 µV.
+
+    Output is zero-centered (DC offset removed), like legacy Muse EEG.
+    """
     out = np.zeros((n_channels, n_samples), dtype=np.float32)
     for sample in range(n_samples):
         for channel in range(n_channels):
             bit_start = (sample * n_channels + channel) * 14
             raw = extract_lsb_bits(data, bit_start, 14)
-            out[channel, sample] = raw * MUSE_ATHENA_EEG_SCALE
+            out[channel, sample] = (raw - EEG_MIDPOINT) * MUSE_ATHENA_EEG_SCALE
     return out
 
 

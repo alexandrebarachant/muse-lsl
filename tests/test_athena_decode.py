@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from muselsl.athena import decode_eeg, decode_optics, extract_lsb_bits
@@ -31,10 +32,13 @@ def test_extract_lsb_bits_known_pattern():
     assert extract_lsb_bits(bytes([0x80, 0x01]), 7, 2) == 0b11
 
 
-def test_decode_eeg_zero_payload():
+def test_decode_eeg_is_zero_centered():
+    from muselsl.athena import EEG_MIDPOINT
+    from muselsl.constants import MUSE_ATHENA_EEG_SCALE
+    # all-zero raw decodes to -midpoint*scale (DC removed, like legacy Muse)
     out = decode_eeg(bytes(28), 4, 4)
     assert out.shape == (4, 4)
-    assert out.sum() == 0.0
+    assert np.allclose(out, -EEG_MIDPOINT * MUSE_ATHENA_EEG_SCALE)
 
 
 def test_decode_optics_canonical_placement():
