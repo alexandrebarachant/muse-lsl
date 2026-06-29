@@ -8,7 +8,6 @@ import logging
 import struct
 from time import sleep, time
 
-import bitstring
 import numpy as np
 import pygatt
 
@@ -50,12 +49,15 @@ OPTICS_CHANNEL_NAMES = tuple(f'OPT{i}' for i in range(MUSE_ATHENA_NB_OPTICS_CHAN
 
 
 def extract_lsb_bits(data, bit_start, bit_width):
-    """Read bit_width bits at absolute bit index bit_start (LSB-first in byte stream)."""
-    bits = bitstring.Bits(bytes=data)
+    """Read bit_width bits starting at absolute bit index bit_start, LSB-first
+    within each byte (matches BrainFlow custom_cast.h::extract_lsb_bits).
+
+    Bit i lives at byte i // 8, bit position i % 8 counting from the LSB.
+    """
     value = 0
     for bit in range(bit_width):
         absolute_bit = bit_start + bit
-        if bits[absolute_bit]:
+        if (data[absolute_bit // 8] >> (absolute_bit % 8)) & 0x01:
             value |= 1 << bit
     return value
 

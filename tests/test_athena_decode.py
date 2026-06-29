@@ -22,8 +22,13 @@ def test_athena_optics_decode():
 
 def test_extract_lsb_bits_known_pattern():
     # bits 0-13 set -> 0x3FFF
-    data = bytes([0xFF, 0xFF])
-    assert extract_lsb_bits(data, 0, 14) == 0x3FFF
+    assert extract_lsb_bits(bytes([0xFF, 0xFF]), 0, 14) == 0x3FFF
+    # LSB-first within each byte: bit 0 is the LSB of byte 0 (not the MSB)
+    assert extract_lsb_bits(bytes([0x01, 0x00]), 0, 14) == 1
+    # bit 8 is the LSB of byte 1
+    assert extract_lsb_bits(bytes([0x00, 0x01]), 0, 14) == 1 << 8
+    # a 2-bit window straddling the byte boundary (bit 7 = MSB of byte 0, bit 8 = LSB of byte 1)
+    assert extract_lsb_bits(bytes([0x80, 0x01]), 7, 2) == 0b11
 
 
 def test_decode_eeg_zero_payload():
