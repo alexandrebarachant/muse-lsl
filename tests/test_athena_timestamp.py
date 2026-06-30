@@ -1,6 +1,6 @@
 import numpy as np
 
-from muselsl.timestamps import RLSTimestampCorrector
+from muselsl.athena import RLSTimestampCorrector
 
 
 def _corrector(rate=256.0, t0=100.0):
