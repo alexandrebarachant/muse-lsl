@@ -95,8 +95,9 @@ def record(
                 if timestamp:
                     markers.append([marker, timestamp])
 
-            # Save every 5s
-            if continuous and (last_written_timestamp is None or last_written_timestamp + 5 < timestamps[-1]):
+            # Save every 5s (only once we actually have samples — guards the
+            # empty-stream np.concatenate crash and timestamps[-1] on no data)
+            if continuous and timestamps and (last_written_timestamp is None or last_written_timestamp + 5 < timestamps[-1]):
                 _save(
                     filename,
                     res,
@@ -115,6 +116,10 @@ def record(
         except KeyboardInterrupt:
             logger.info('Recording interrupted by user')
             break
+
+    if not res:
+        print("No samples received from the %s stream; nothing to save." % data_source)
+        return
 
     time_correction = inlet.time_correction()
     print("Time correction: ", time_correction)
