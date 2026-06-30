@@ -101,6 +101,12 @@ class CLI:
             action="store_true",
             help="Include gyroscope data")
         parser.add_argument(
+            "-o",
+            "--optics",
+            default=False,
+            action="store_true",
+            help="Include optical (fNIRS) data (Muse S Athena only)")
+        parser.add_argument(
             '-d',
             '--disable-eeg',
             dest='disable_eeg',
@@ -142,8 +148,8 @@ class CLI:
         from . import stream
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
-               args.acc, args.gyro, args.disable_eeg, args.preset, args.disable_light,
-               args.lsl_time, args.retries, args.model)
+               args.acc, args.gyro, args.optics, args.disable_eeg, args.preset,
+               args.disable_light, args.lsl_time, args.retries, args.model)
 
     def record(self):
         parser = argparse.ArgumentParser(

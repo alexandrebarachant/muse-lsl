@@ -127,7 +127,7 @@ def find_muse(name=None, backend='auto'):
 
 
 # Begins LSL stream(s) from a Muse with a given address with data sources determined by arguments
-def _descriptor_enabled(name, eeg_disabled, ppg_enabled, acc_enabled, gyro_enabled):
+def _descriptor_enabled(name, eeg_disabled, ppg_enabled, acc_enabled, gyro_enabled, optics_enabled):
     if name == 'EEG':
         return not eeg_disabled
     if name == 'PPG':
@@ -137,7 +137,7 @@ def _descriptor_enabled(name, eeg_disabled, ppg_enabled, acc_enabled, gyro_enabl
     if name == 'GYRO':
         return gyro_enabled
     if name == 'OPTICS':
-        return False
+        return optics_enabled
     return False
 
 
@@ -149,6 +149,7 @@ def stream(
     ppg_enabled=False,
     acc_enabled=False,
     gyro_enabled=False,
+    optics_enabled=False,
     eeg_disabled=False,
     preset=None,
     disable_light=False,
@@ -157,7 +158,7 @@ def stream(
     model='auto',
 ):
     # If no data types are enabled, we warn the user and return immediately.
-    if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
+    if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled and not optics_enabled:
         print('Stream initiation failed: At least one data source must be enabled.')
         return
 
@@ -203,7 +204,7 @@ def stream(
 
         enabled = {
             d.name: _descriptor_enabled(
-                d.name, eeg_disabled, ppg_enabled, acc_enabled, gyro_enabled,
+                d.name, eeg_disabled, ppg_enabled, acc_enabled, gyro_enabled, optics_enabled,
             )
             for d in muse.stream_descriptors()
         }
@@ -216,15 +217,18 @@ def stream(
         push_ppg = partial(push, outlet=outlets['PPG']) if 'PPG' in outlets else None
         push_acc = partial(push, outlet=outlets['ACC']) if 'ACC' in outlets else None
         push_gyro = partial(push, outlet=outlets['GYRO']) if 'GYRO' in outlets else None
+        push_optics = partial(push, outlet=outlets['OPTICS']) if 'OPTICS' in outlets else None
 
         muse.callback_eeg = push_eeg
         muse.callback_ppg = push_ppg
         muse.callback_acc = push_acc
         muse.callback_gyro = push_gyro
+        muse.callback_optics = push_optics
         muse.enable_eeg = push_eeg is not None
         muse.enable_ppg = push_ppg is not None
         muse.enable_acc = push_acc is not None
         muse.enable_gyro = push_gyro is not None
+        muse.enable_optics = push_optics is not None
         muse.refresh_subscriptions()
 
         if didConnect:
@@ -235,9 +239,10 @@ def stream(
             ppg_string = " PPG" if ppg_enabled else ""
             acc_string = " ACC" if acc_enabled else ""
             gyro_string = " GYRO" if gyro_enabled else ""
+            optics_string = " OPTICS" if optics_enabled else ""
 
-            print("Streaming%s%s%s%s..." %
-                (eeg_string, ppg_string, acc_string, gyro_string))
+            print("Streaming%s%s%s%s%s..." %
+                (eeg_string, ppg_string, acc_string, gyro_string, optics_string))
 
             while time_func() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
                 try:
