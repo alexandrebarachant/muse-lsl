@@ -7,6 +7,7 @@ https://github.com/brainflow-dev/brainflow/pull/779
 import logging
 import struct
 from time import sleep, time
+from typing import Any
 
 import numpy as np
 import pygatt
@@ -245,8 +246,8 @@ class Athena:
         self.disable_light = disable_light
         self.low_latency = low_latency
 
-        self.device = None
-        self.adapter = None
+        self.device: Any = None
+        self.adapter: Any = None
         self.last_timestamp = self.time_func()
         self._battery = 0.0
         # One dejitter corrector per stream (eeg / acc_gyro / optics); each runs
