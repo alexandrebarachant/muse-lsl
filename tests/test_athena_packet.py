@@ -73,7 +73,9 @@ def test_decode_acc_gyro_shapes():
 
 
 def test_decode_battery():
-    assert decode_battery(struct.pack('<H', 256)) == 1.0
+    # percent = raw / 512, so a full 100% reads ~51200
+    assert decode_battery(struct.pack('<H', 512)) == 1.0
+    assert decode_battery(struct.pack('<H', 51200)) == 100.0
 
 
 def test_optics_canonical_index():

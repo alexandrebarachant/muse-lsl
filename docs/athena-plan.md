@@ -19,8 +19,34 @@ EEG = 5 separate characteristics        EEG + IMU + optics + battery ALL
   273e0003..0007 (one per channel)        multiplexed across just TWO chars:
   assembled by hardcoded GATT handle      273e0013 (DATA_1) + 273e0014 (DATA_2)
 PPG = 3 chars (273e000f..0011)          one tag-routed parser handles both
-12-bit EEG, host-side RLS dejitter      14-bit EEG, 256 kHz device-tick timestamps
+12-bit EEG, host-side RLS dejitter      14-bit EEG, host-side RLS dejitter
 ```
+
+---
+
+## 1a. Hardware-validated corrections (supersede the plan below)
+
+The sections below were written from the BrainFlow source before hardware
+access. These points were corrected/confirmed against a physical Athena and
+are the source of truth where they conflict with §2:
+
+- **Timestamps are host-time, NOT device-clock.** §2.8 prescribed a 256 kHz
+  device-tick scheme; the device carries no usable tick (the field we read at
+  offset 2 overlapped `packet_index`). BrainFlow uses host arrival time; we use
+  the legacy RLS host-time dejitter (`RLSTimestampCorrector`), one per stream.
+  `DEVICE_CLOCK_HZ` removed.
+- **EEG bit extraction is LSB-first within each byte.** The plan said so
+  correctly, but the first implementation used `bitstring` (MSB-first) and
+  produced white noise. Fixed to match `custom_cast.h`.
+- **EEG is zero-centered.** Subtract the 14-bit midpoint (8192) before scaling,
+  matching legacy Muse's `-2048`. (Open question in §2.7 resolved.)
+- **EEG µV scale UNRESOLVED.** Ours `1450/16383`=0.0885 vs BrainFlow `0.40293`
+  (4.55x). Decode shape is correct; absolute scale needs ground-truth.
+- **Battery scale is `1/512`, not `1/256`** (the plan's `/256` over-reads 2x).
+- **PPG is not a separate Athena stream** — no PPG tag exists; the optical
+  (fNIRS) channels carry the PPG-type signal (validated: ~60 bpm pulse).
+- **Validated on hardware:** EEG (mains lock + 1/f), ACC (1.006 g), GYRO
+  (centered), optics (cardiac pulse). Dev disconnects were battery, not protocol.
 
 ---
 
