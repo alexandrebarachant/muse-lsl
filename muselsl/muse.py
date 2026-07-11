@@ -336,13 +336,15 @@ class Muse():
             self.adapter.stop()
 
     def _subscribe_eeg(self):
-        """subscribe to eeg stream."""
-        self.device.subscribe(MUSE_GATT_ATTR_TP9, callback=self._handle_eeg)
-        self.device.subscribe(MUSE_GATT_ATTR_AF7, callback=self._handle_eeg)
-        self.device.subscribe(MUSE_GATT_ATTR_AF8, callback=self._handle_eeg)
-        self.device.subscribe(MUSE_GATT_ATTR_TP10, callback=self._handle_eeg)
-        self.device.subscribe(
-            MUSE_GATT_ATTR_RIGHTAUX, callback=self._handle_eeg)
+            """subscribe to eeg stream."""
+            for uuid in (MUSE_GATT_ATTR_TP9, MUSE_GATT_ATTR_AF7,
+                        MUSE_GATT_ATTR_AF8, MUSE_GATT_ATTR_TP10,
+                        MUSE_GATT_ATTR_RIGHTAUX):
+                try:
+                    self.device.subscribe(uuid, callback=self._handle_eeg)
+                except ValueError as e:
+                    if "already started" not in str(e):
+                        raise
 
     def _unpack_eeg_channel(self, packet):
         """Decode data packet of one EEG channel.
@@ -463,10 +465,15 @@ class Muse():
         self._current_msg = ""
 
     def _subscribe_control(self):
-        self.device.subscribe(
-            MUSE_GATT_ATTR_STREAM_TOGGLE, callback=self._handle_control)
+            try:
+                self.device.subscribe(
+                    MUSE_GATT_ATTR_STREAM_TOGGLE, callback=self._handle_control)
+            except ValueError as e:
+                if "already started" not in str(e):
+                    raise
 
-        self._init_control()
+            self._init_control()
+
 
     def _handle_control(self, handle, packet):
         """Handle the incoming messages from the 0x000e handle.
@@ -512,8 +519,12 @@ class Muse():
             self._init_control()
 
     def _subscribe_telemetry(self):
-        self.device.subscribe(
-            MUSE_GATT_ATTR_TELEMETRY, callback=self._handle_telemetry)
+            try:
+                self.device.subscribe(
+                    MUSE_GATT_ATTR_TELEMETRY, callback=self._handle_telemetry)
+            except ValueError as e:
+                if "already started" not in str(e):
+                    raise
 
     def _handle_telemetry(self, handle, packet):
         """Handle the telemetry (battery, temperature and stuff) incoming data
@@ -554,8 +565,12 @@ class Muse():
         return packet_index, samples
 
     def _subscribe_acc(self):
-        self.device.subscribe(
-            MUSE_GATT_ATTR_ACCELEROMETER, callback=self._handle_acc)
+            try:
+                self.device.subscribe(
+                    MUSE_GATT_ATTR_ACCELEROMETER, callback=self._handle_acc)
+            except ValueError as e:
+                if "already started" not in str(e):
+                    raise
 
     def _handle_acc(self, handle, packet):
         """Handle incoming accelerometer data.
@@ -574,7 +589,11 @@ class Muse():
         self.callback_acc(samples, timestamps)
 
     def _subscribe_gyro(self):
-        self.device.subscribe(MUSE_GATT_ATTR_GYRO, callback=self._handle_gyro)
+            try:
+                self.device.subscribe(MUSE_GATT_ATTR_GYRO, callback=self._handle_gyro)
+            except ValueError as e:
+                if "already started" not in str(e):
+                    raise
 
     def _handle_gyro(self, handle, packet):
         """Handle incoming gyroscope data.
@@ -594,19 +613,22 @@ class Muse():
         self.callback_gyro(samples, timestamps)
 
     def _subscribe_ppg(self):
-        try:
-            """subscribe to ppg stream."""
-            self.device.subscribe(
-                MUSE_GATT_ATTR_PPG1, callback=self._handle_ppg)
-            self.device.subscribe(
-                MUSE_GATT_ATTR_PPG2, callback=self._handle_ppg)
-            self.device.subscribe(
-                MUSE_GATT_ATTR_PPG3, callback=self._handle_ppg)
+            try:
+                """subscribe to ppg stream."""
+                self.device.subscribe(
+                    MUSE_GATT_ATTR_PPG1, callback=self._handle_ppg)
+                self.device.subscribe(
+                    MUSE_GATT_ATTR_PPG2, callback=self._handle_ppg)
+                self.device.subscribe(
+                    MUSE_GATT_ATTR_PPG3, callback=self._handle_ppg)
 
-        except pygatt.exceptions.BLEError as error:
-            raise Exception(
-                'PPG data is not available on this device. PPG is only available on Muse 2'
-            )
+            except pygatt.exceptions.BLEError as error:
+                raise Exception(
+                    'PPG data is not available on this device. PPG is only available on Muse 2'
+                )
+            except ValueError as e:
+                if "already started" not in str(e):
+                    raise
 
     def _handle_ppg(self, handle, data):
         """Callback for receiving a sample.
