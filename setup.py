@@ -47,13 +47,11 @@ setup(
         "numpy",
         "seaborn",
         "pexpect",
-        # Evaluated at install time via environment markers (not build time),
-        # so the correct pin ships in the universal wheel for every platform.
-        # Linux needs 1.10.5 (see "could not create stream outlet" in the
-        # README's Common Issues); other platforms need >=1.16 for a
-        # universal2/arm64 liblsl on Apple Silicon (see issue #203).
-        'pylsl==1.10.5; sys_platform == "linux"',
-        'pylsl>=1.16; sys_platform != "linux"',
+        # >=1.16 is needed for a universal2/arm64 liblsl on Apple Silicon
+        # (see issue #203). The old Linux pin to 1.10.5 is being removed; CI
+        # will tell us if the original "could not create stream outlet" issue
+        # resurfaces (see issue #235).
+        'pylsl>=1.16',
     ],
     extras_require={"Viewer V2": ["mne", "vispy"]},
     classifiers=[
