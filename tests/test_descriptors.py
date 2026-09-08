@@ -1,3 +1,5 @@
+import pytest
+
 from muselsl.athena import Athena
 from muselsl.constants import (
     LSL_ACC_CHUNK,
@@ -13,6 +15,7 @@ from muselsl.constants import (
     MUSE_SAMPLING_GYRO_RATE,
     MUSE_SAMPLING_PPG_RATE,
 )
+from muselsl.lsl_outlet import build_outlet
 from muselsl.muse import Muse
 from muselsl.stream import _descriptor_enabled
 
@@ -64,3 +67,10 @@ def test_ppg_flag_enables_athena_optics():
     assert _descriptor_enabled('OPTICS', False, False, False, False, True)
     # Disabled when neither flag is set.
     assert not _descriptor_enabled('OPTICS', False, False, False, False, False)
+
+
+@pytest.mark.parametrize("descriptor", Muse('addr').stream_descriptors() + Athena('addr').stream_descriptors())
+def test_build_outlet_smoke(descriptor):
+    """Creating a StreamOutlet must not raise; guards against liblsl/pylsl packaging regressions."""
+    outlet = build_outlet(descriptor, '00:00:00:00:00:00')
+    assert outlet.get_info().type() == descriptor.stype
