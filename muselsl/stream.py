@@ -137,7 +137,7 @@ def _descriptor_enabled(name, eeg_disabled, ppg_enabled, acc_enabled, gyro_enabl
     if name == 'GYRO':
         return gyro_enabled
     if name == 'OPTICS':
-        return optics_enabled
+        return ppg_enabled or optics_enabled
     return False
 
 

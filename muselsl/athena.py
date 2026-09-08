@@ -312,7 +312,7 @@ class Athena:
                 MUSE_ATHENA_SAMPLING_GYRO_RATE, LSL_ATHENA_GYRO_CHUNK, 'dps',
             ),
             StreamDescriptor(
-                'OPTICS', 'OPTICS', MUSE_ATHENA_NB_OPTICS_CHANNELS, OPTICS_CHANNEL_NAMES,
+                'OPTICS', 'PPG', MUSE_ATHENA_NB_OPTICS_CHANNELS, OPTICS_CHANNEL_NAMES,
                 MUSE_ATHENA_SAMPLING_OPTICS_RATE, LSL_ATHENA_OPTICS_CHUNK, 'a.u.',
             ),
         ]

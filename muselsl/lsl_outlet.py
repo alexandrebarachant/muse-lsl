@@ -7,7 +7,7 @@ _CHANNEL_TYPE = {
     'PPG': 'PPG',
     'ACC': 'accelerometer',
     'GYRO': 'gyroscope',
-    'OPTICS': 'optics',
+    'OPTICS': 'PPG',
 }
 
 
